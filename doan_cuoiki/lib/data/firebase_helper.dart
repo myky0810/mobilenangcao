@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 /// Firestore-only auth (phone + password) per your requirement.
 ///
@@ -110,5 +111,81 @@ class FirebaseHelper {
         message: 'Mật khẩu không đúng.',
       );
     }
+  }
+
+  static Future<void> changePassword({
+    required String phone,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final normalized = normalizePhone(phone);
+    final ref = _users.doc(normalized);
+
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'user-not-found',
+          message: 'Tài khoản không tồn tại.',
+        );
+      }
+
+      final data = snap.data();
+      final salt = data?['passwordSalt'] as String?;
+      final hash = data?['passwordHash'] as String?;
+      if (salt == null || hash == null) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'corrupt-user',
+          message: 'Tài khoản bị lỗi dữ liệu.',
+        );
+      }
+
+      final inputHash = _hashPassword(saltBase64: salt, pass: oldPassword);
+      if (inputHash != hash) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'wrong-password',
+          message: 'Mật khẩu cũ không đúng.',
+        );
+      }
+
+      final newSalt = _randomSaltBase64();
+      final newHash = _hashPassword(saltBase64: newSalt, pass: newPassword);
+      tx.update(ref, {
+        'passwordSalt': newSalt,
+        'passwordHash': newHash,
+        'passwordUpdatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  static Future<void> deleteAccount({required String phone}) async {
+    final normalized = normalizePhone(phone);
+    final ref = _users.doc(normalized);
+
+    // Best-effort: delete avatar objects if they exist.
+    // (We don't know the extension, so try common ones.)
+    try {
+      final storage = FirebaseStorage.instance;
+      final candidates = <String>[
+        'avatars/$normalized/avatar.jpg',
+        'avatars/$normalized/avatar.png',
+        'avatars/$normalized/avatar.webp',
+      ];
+      for (final path in candidates) {
+        try {
+          await storage.ref(path).delete();
+        } catch (_) {
+          // Ignore missing or permission errors.
+        }
+      }
+    } catch (_) {
+      // Ignore if storage is not available on the current platform.
+    }
+
+    await ref.delete();
   }
 }

@@ -10,12 +10,16 @@ import 'package:doan_cuoiki/screen/forgototp.dart';
 import 'package:doan_cuoiki/screen/loginhaspass.dart';
 import 'package:doan_cuoiki/screen/homescreen.dart';
 import 'package:doan_cuoiki/screen/profile.dart';
-import 'package:doan_cuoiki/screen/info.dart';
+import 'package:doan_cuoiki/screen/changeinfo.dart';
+import 'package:doan_cuoiki/screen/infomation.dart';
+import 'package:doan_cuoiki/screen/changepass.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
+import 'package:vietnam_provinces/vietnam_provinces.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await VietnamProvinces.initialize(version: AdministrativeDivisionVersion.v1);
   runApp(const MyApp());
 }
 
@@ -26,13 +30,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
-      ).copyWith(
-        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Spartan'),
-        primaryTextTheme:
-            ThemeData.dark().primaryTextTheme.apply(fontFamily: 'Spartan'),
-      ),
+      theme: ThemeData.dark()
+          .copyWith(
+            scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
+          )
+          .copyWith(
+            textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Spartan'),
+            primaryTextTheme: ThemeData.dark().primaryTextTheme.apply(
+              fontFamily: 'Spartan',
+            ),
+          ),
       initialRoute: '/',
       routes: {
         '/': (context) => const Welcome(),
@@ -46,10 +53,20 @@ class MyApp extends StatelessWidget {
               ModalRoute.of(context)!.settings.arguments as String?;
           return ProfileScreen(phoneNumber: phoneNumber);
         },
+        '/infomation': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return InfomationScreen(phoneNumber: phoneNumber);
+        },
         '/info': (context) {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return InfoScreen(phoneNumber: phoneNumber);
+        },
+        '/changepass': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return ChangePassScreen(phoneNumber: phoneNumber);
         },
         '/login': (context) => LoginEmail(),
         '/loginhaspass': (context) {

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../data/firebase_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -57,6 +60,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final Set<int> _favorites = {};
 
+  DocumentReference<Map<String, dynamic>>? _userDocRef() {
+    final phone = widget.phoneNumber;
+    if (phone == null || phone.trim().isEmpty) return null;
+    final normalized = FirebaseHelper.normalizePhone(phone);
+    return FirebaseFirestore.instance.collection('users').doc(normalized);
+  }
+
+  bool _looksLikePhone(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return false;
+    return RegExp(r'^[0-9+\s()\-]+$').hasMatch(v);
+  }
+
+  String _displayNameFromData(Map<String, dynamic>? data) {
+    final name = (data?['name'] as String?)?.trim();
+    if (name != null && name.isNotEmpty) return name;
+
+    final legacyPhoneField = (data?['phone'] as String?)?.trim();
+    if (legacyPhoneField != null &&
+        legacyPhoneField.isNotEmpty &&
+        !_looksLikePhone(legacyPhoneField) &&
+        !legacyPhoneField.contains('@')) {
+      return legacyPhoneField;
+    }
+
+    return 'Người dùng';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
+    final userRef = _userDocRef();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -131,11 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 12),
 
           // Name
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Xin chào,',
                   style: TextStyle(
                     color: Colors.white54,
@@ -143,15 +175,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Nguyễn Văn Điều',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(height: 2),
+                if (userRef == null)
+                  const Text(
+                    'Người dùng',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
+                else
+                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: userRef.snapshots(),
+                    builder: (context, snapshot) {
+                      final displayName = _displayNameFromData(
+                        snapshot.data?.data(),
+                      );
+                      return Text(
+                        displayName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    },
                   ),
-                ),
               ],
             ),
           ),
@@ -207,10 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const Expanded(
             child: Text(
               'Tìm kiếm',
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 15,
-              ),
+              style: TextStyle(color: Colors.white38, fontSize: 15),
             ),
           ),
           Container(
@@ -232,10 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
-              colors: [
-                const Color(0xFF1e5a9e),
-                const Color(0xFF3b82c8),
-              ],
+              colors: [const Color(0xFF1e5a9e), const Color(0xFF3b82c8)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -368,10 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {},
                 child: const Text(
                   'Xem tất cả',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.blue, fontSize: 14),
                 ),
               ),
             ],
@@ -480,10 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {},
             child: const Text(
               'Xem tất cả',
-              style: TextStyle(
-                color: Colors.blue,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.blue, fontSize: 14),
             ),
           ),
         ],
@@ -521,13 +559,15 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 height: 180,
                 decoration: BoxDecoration(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   color: const Color(0xFF252525),
                 ),
                 child: ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: Image.asset(
                     car.image,
                     width: double.infinity,
@@ -592,10 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   car.subtitle,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
                 ),
                 const SizedBox(height: 10),
                 Text(
@@ -617,9 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNav() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Container(
         height: 70,
         decoration: BoxDecoration(
@@ -659,7 +694,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         // Navigate to profile screen when person icon is tapped
         if (index == 3) {
-          Navigator.pushNamed(
+          Navigator.pushReplacementNamed(
             context,
             '/profile',
             arguments: widget.phoneNumber,
@@ -675,10 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
           shape: BoxShape.circle,
           gradient: isActive
               ? LinearGradient(
-                  colors: [
-                    const Color(0xFF3b82c8),
-                    const Color(0xFF1e5a9e),
-                  ],
+                  colors: [const Color(0xFF3b82c8), const Color(0xFF1e5a9e)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
@@ -717,7 +749,7 @@ class CarBrand {
   final String? assetPath;
 
   CarBrand({required this.name, this.icon, this.assetPath})
-      : assert(icon != null || assetPath != null);
+    : assert(icon != null || assetPath != null);
 }
 
 class _BrandLogo extends StatelessWidget {
@@ -739,11 +771,7 @@ class _BrandLogo extends StatelessWidget {
       );
     }
 
-    return Icon(
-      brand.icon,
-      color: Colors.white,
-      size: size,
-    );
+    return Icon(brand.icon, color: Colors.white, size: size);
   }
 }
 

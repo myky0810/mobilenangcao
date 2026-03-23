@@ -3,6 +3,8 @@ import 'package:doan_cuoiki/widgets/luxury_logo.dart';
 import 'package:doan_cuoiki/data/firebase_helper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginEmail extends StatefulWidget {
   const LoginEmail({super.key});
@@ -17,6 +19,7 @@ class _LoginEmailState extends State<LoginEmail>
   late Animation<double> _fadeAnim;
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   @override
   void initState() {
@@ -265,7 +268,21 @@ class _LoginEmailState extends State<LoginEmail>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Google
-                          _SocialIconButton(onTap: () {}, child: _GoogleIcon()),
+                          _SocialIconButton(
+                            onTap: _isGoogleLoading
+                                ? () {}
+                                : _handleGoogleLogin,
+                            child: _isGoogleLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : _GoogleIcon(),
+                          ),
                           const SizedBox(width: 50),
                           // Apple
                           _SocialIconButton(
@@ -318,11 +335,7 @@ class _LoginEmailState extends State<LoginEmail>
       if (!mounted) return;
       setState(() => _isLoading = false);
       // Chuyển sang trang loginhaspass với số điện thoại
-      Navigator.pushNamed(
-        context,
-        '/loginhaspass',
-        arguments: '+84$phone',
-      );
+      Navigator.pushNamed(context, '/loginhaspass', arguments: '+84$phone');
     } on FirebaseException catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -341,6 +354,74 @@ class _LoginEmailState extends State<LoginEmail>
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Đăng nhập thất bại')));
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    if (_isGoogleLoading) return;
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        if (!mounted) return;
+        setState(() => _isGoogleLoading = false);
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
+      final email = (user?.email ?? googleUser.email).trim();
+      if (email.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'missing-email',
+          message: 'Không lấy được email từ tài khoản Google.',
+        );
+      }
+
+      final displayName = (user?.displayName ?? googleUser.displayName ?? '')
+          .trim();
+      final photoUrl = (user?.photoURL)?.trim();
+      final uid = (user?.uid ?? '').trim();
+
+      await FirebaseFirestore.instance.collection('users').doc(email).set({
+        'provider': 'google',
+        'googleUid': uid,
+        'email': email,
+        'name': displayName,
+        if (photoUrl != null && photoUrl.isNotEmpty) 'avatarUrl': photoUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (!mounted) return;
+      setState(() => _isGoogleLoading = false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/home',
+        (route) => false,
+        arguments: email,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _isGoogleLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Đăng nhập Google thất bại')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isGoogleLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng nhập Google thất bại')),
+      );
     }
   }
 

@@ -23,8 +23,13 @@ class _MazdaScreenState extends State<MazdaScreen> {
       rating: 4.8,
       reviewCount: 156,
       isNew: true,
-      description: 'Mazda CX-5 thế hệ mới với thiết kế KODO đẹp mắt, động cơ SKYACTIV tiết kiệm nhiên liệu và hệ thống an toàn i-ACTIVSENSE tiên tiến. SUV 5 chỗ lý tưởng cho gia đình hiện đại.',
-      gallery: ['assets/images/products/car1.jpg', 'assets/images/products/car2.jpg', 'assets/images/products/car3.jpg'],
+      description:
+          'Mazda CX-5 thế hệ mới với thiết kế KODO đẹp mắt, động cơ SKYACTIV tiết kiệm nhiên liệu và hệ thống an toàn i-ACTIVSENSE tiên tiến. SUV 5 chỗ lý tưởng cho gia đình hiện đại.',
+      gallery: [
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     ),
     MazdaCar(
       id: 'mazda_2',
@@ -35,8 +40,13 @@ class _MazdaScreenState extends State<MazdaScreen> {
       rating: 4.7,
       reviewCount: 123,
       isNew: false,
-      description: 'Mazda3 sedan hạng C với thiết kế thể thao, vận hành linh hoạt và nội thất cao cấp. Sự lựa chọn hoàn hảo cho khách hàng trẻ năng động trong đô thị.',
-      gallery: ['assets/images/products/car2.jpg', 'assets/images/products/car3.jpg', 'assets/images/products/car1.jpg'],
+      description:
+          'Mazda3 sedan hạng C với thiết kế thể thao, vận hành linh hoạt và nội thất cao cấp. Sự lựa chọn hoàn hảo cho khách hàng trẻ năng động trong đô thị.',
+      gallery: [
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     ),
     MazdaCar(
       id: 'mazda_3',
@@ -47,8 +57,13 @@ class _MazdaScreenState extends State<MazdaScreen> {
       rating: 4.6,
       reviewCount: 98,
       isNew: false,
-      description: 'Mazda6 sedan hạng D sang trọng với thiết kế thanh lịch, công nghệ hiện đại và trải nghiệm lái xe đầy cảm hứng. Dành cho những ai yêu thích sự tinh tế.',
-      gallery: ['assets/images/products/car3.jpg', 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+      description:
+          'Mazda6 sedan hạng D sang trọng với thiết kế thanh lịch, công nghệ hiện đại và trải nghiệm lái xe đầy cảm hứng. Dành cho những ai yêu thích sự tinh tế.',
+      gallery: [
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     ),
     MazdaCar(
       id: 'mazda_4',
@@ -59,8 +74,13 @@ class _MazdaScreenState extends State<MazdaScreen> {
       rating: 4.5,
       reviewCount: 87,
       isNew: false,
-      description: 'Mazda CX-30 crossover compact với thiết kế coupe thể thao, động cơ mạnh mẽ và trang thiết bị tiện nghi. Phù hợp cho lối sống năng động.',
-      gallery: ['assets/images/products/car1.jpg', 'assets/images/products/car2.jpg', 'assets/images/products/car3.jpg'],
+      description:
+          'Mazda CX-30 crossover compact với thiết kế coupe thể thao, động cơ mạnh mẽ và trang thiết bị tiện nghi. Phù hợp cho lối sống năng động.',
+      gallery: [
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     ),
     MazdaCar(
       id: 'mazda_5',
@@ -71,8 +91,13 @@ class _MazdaScreenState extends State<MazdaScreen> {
       rating: 4.7,
       reviewCount: 134,
       isNew: false,
-      description: 'Mazda CX-8 SUV 7 chỗ cao cấp với không gian rộng rãi, thiết kế sang trọng và công nghệ an toàn tiên tiến. Lựa chọn hoàn hảo cho gia đình đông thành viên.',
-      gallery: ['assets/images/products/car2.jpg', 'assets/images/products/car3.jpg', 'assets/images/products/car1.jpg'],
+      description:
+          'Mazda CX-8 SUV 7 chỗ cao cấp với không gian rộng rãi, thiết kế sang trọng và công nghệ an toàn tiên tiến. Lựa chọn hoàn hảo cho gia đình đông thành viên.',
+      gallery: [
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     ),
     MazdaCar(
       id: 'mazda_6',
@@ -83,8 +108,13 @@ class _MazdaScreenState extends State<MazdaScreen> {
       rating: 4.4,
       reviewCount: 76,
       isNew: false,
-      description: 'Mazda2 hatchback nhỏ gọn với thiết kế trẻ trung, vận hành tiết kiệm và giá thành hợp lý. Xe đô thị lý tưởng cho người mua xe lần đầu.',
-      gallery: ['assets/images/products/car3.jpg', 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+      description:
+          'Mazda2 hatchback nhỏ gọn với thiết kế trẻ trung, vận hành tiết kiệm và giá thành hợp lý. Xe đô thị lý tưởng cho người mua xe lần đầu.',
+      gallery: [
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     ),
   ];
 
@@ -275,7 +305,10 @@ class _MazdaScreenState extends State<MazdaScreen> {
                     top: 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),

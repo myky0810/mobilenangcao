@@ -37,13 +37,13 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-  backgroundColor: const Color(0xFF1a1a1a),
+      backgroundColor: const Color(0xFF1a1a1a),
       body: SafeArea(
         child: Column(
           children: [
             // Header với back button và heart icon
             _buildHeader(),
-            
+
             // Main content scrollable
             Expanded(
               child: SingleChildScrollView(
@@ -52,17 +52,17 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                   children: [
                     // Main car image
                     _buildMainImage(),
-                    
+
                     // Card info + gallery (giống ảnh)
                     _buildInfoCard(),
-                    
+
                     // Bottom spacing
                     const SizedBox(height: 100),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom price and buy button
             _buildBottomSection(),
           ],
@@ -74,7 +74,7 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   Widget _buildHeader() {
     return Container(
       height: 60,
-  color: const Color(0xFF2f2f2f),
+      color: const Color(0xFF2f2f2f),
       child: Row(
         children: [
           // Back button
@@ -86,9 +86,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
               size: 20,
             ),
           ),
-          
+
           const Spacer(),
-          
+
           // Heart button
           IconButton(
             onPressed: () {
@@ -179,8 +179,10 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
               children: [
                 if (widget.isNew)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(4),
@@ -278,10 +280,10 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-    color: const Color(0xFF2f2f2f),
+        color: const Color(0xFF2f2f2f),
         boxShadow: [
           BoxShadow(
-      color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -297,10 +299,7 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
               children: [
                 const Text(
                   'Giá',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -314,7 +313,7 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
               ],
             ),
           ),
-          
+
           // Buy button
           SizedBox(
             width: 120,

@@ -251,7 +251,10 @@ class _VolvoScreenState extends State<VolvoScreen> {
                     top: 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),
@@ -271,7 +274,10 @@ class _VolvoScreenState extends State<VolvoScreen> {
                   bottom: 12,
                   left: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(8),
@@ -288,11 +294,7 @@ class _VolvoScreenState extends State<VolvoScreen> {
                           ),
                         ),
                         const SizedBox(width: 2),
-                        const Icon(
-                          Icons.star,
-                          color: Colors.orange,
-                          size: 12,
-                        ),
+                        const Icon(Icons.star, color: Colors.orange, size: 12),
                       ],
                     ),
                   ),
@@ -316,7 +318,7 @@ class _VolvoScreenState extends State<VolvoScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Price
                   Text(
                     car['price'],
@@ -327,14 +329,11 @@ class _VolvoScreenState extends State<VolvoScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  
+
                   // Price note
                   Text(
                     car['priceNote'],
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
                 ],
               ),
@@ -384,7 +383,7 @@ class _VolvoScreenState extends State<VolvoScreen> {
         setState(() {
           _activeNavIndex = index;
         });
-        
+
         // Navigate to different screens
         if (index == 0) {
           Navigator.pushReplacementNamed(

@@ -875,8 +875,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             'carBrand': car.subtitle,
             'carImage': car.image,
             'carPrice': car.price,
-            'carDescription': 'Xe ${car.name} từ ${car.subtitle} với chất lượng cao và trang bị hiện đại.',
-            'carImages': [car.image, 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+            'carDescription':
+                'Xe ${car.name} từ ${car.subtitle} với chất lượng cao và trang bị hiện đại.',
+            'carImages': [
+              car.image,
+              'assets/images/products/car1.jpg',
+              'assets/images/products/car2.jpg',
+            ],
             'rating': 4.5,
             'reviewCount': 95,
             'isNew': index == 0, // Car đầu tiên sẽ có NEW tag
@@ -973,7 +978,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     top: 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),

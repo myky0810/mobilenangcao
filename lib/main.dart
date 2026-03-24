@@ -112,7 +112,9 @@ class MyApp extends StatelessWidget {
           return FavoriteScreen(phoneNumber: phoneNumber);
         },
         '/detailcar': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
           return DetailCarScreen(
             carName: args['carName'] as String,
             carBrand: args['carBrand'] as String,

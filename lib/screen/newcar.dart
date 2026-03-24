@@ -260,11 +260,18 @@ class _NewCarScreenState extends State<NewCarScreen> {
           '/detailcar',
           arguments: {
             'carName': car.name,
-            'carBrand': car.name.split(' ')[0], // Lấy brand từ tên xe (TOYOTA, MAZDA, etc.)
+            'carBrand': car.name.split(
+              ' ',
+            )[0], // Lấy brand từ tên xe (TOYOTA, MAZDA, etc.)
             'carImage': car.image,
             'carPrice': car.price,
-            'carDescription': 'Xe ${car.name} với động cơ ${car.engine}, kích thước ${car.dimensions}. Thiết kế hiện đại, trang bị cao cấp và công nghệ tiên tiến.',
-            'carImages': <String>[car.image, 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+            'carDescription':
+                'Xe ${car.name} với động cơ ${car.engine}, kích thước ${car.dimensions}. Thiết kế hiện đại, trang bị cao cấp và công nghệ tiên tiến.',
+            'carImages': <String>[
+              car.image,
+              'assets/images/products/car1.jpg',
+              'assets/images/products/car2.jpg',
+            ],
             'rating': 4.6,
             'reviewCount': 120,
             'isNew': true, // Tất cả xe ở trang NewCar đều có NEW tag
@@ -286,7 +293,10 @@ class _NewCarScreenState extends State<NewCarScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red,
                     borderRadius: BorderRadius.circular(4),
@@ -317,87 +327,88 @@ class _NewCarScreenState extends State<NewCarScreen> {
 
             const SizedBox(height: 16),
 
-          Row(
-            children: [
-              // Car image
-              Expanded(
-                flex: 2,
-                child: Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.black,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      car.image,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(
-                            Icons.directions_car,
-                            color: Colors.white24,
-                            size: 50,
-                          ),
-                        );
-                      },
+            Row(
+              children: [
+                // Car image
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.black,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        car.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.directions_car,
+                              color: Colors.white24,
+                              size: 50,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(width: 16),
+                const SizedBox(width: 16),
 
-              // Car specs
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSpecRow('${car.seats}'),
-                    const SizedBox(height: 8),
-                    _buildSpecRow('Kích thước (mm):'),
-                    const SizedBox(height: 4),
-                    Text(
-                      car.dimensions,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                // Car specs
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSpecRow('${car.seats}'),
+                      const SizedBox(height: 8),
+                      _buildSpecRow('Kích thước (mm):'),
+                      const SizedBox(height: 4),
+                      Text(
+                        car.dimensions,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildSpecRow('Động cơ:'),
-                    const SizedBox(height: 4),
-                    Text(
-                      car.engine,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 8),
+                      _buildSpecRow('Động cơ:'),
+                      const SizedBox(height: 4),
+                      Text(
+                        car.engine,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Price
-          Text(
-            'Giá chi tiết: ${car.price}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
+              ],
             ),
-          ),
-        ],
+
+            const SizedBox(height: 16),
+
+            // Price
+            Text(
+              'Giá chi tiết: ${car.price}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildSpecRow(String text) {

@@ -23,8 +23,13 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       rating: 4.7,
       reviewCount: 145,
       isNew: false,
-      description: 'Hyundai Santa Fe SUV 7 chỗ cao cấp với thiết kế mạnh mẽ, động cơ Turbo mạnh mẽ và trang bị an toàn hiện đại. Lựa chọn lý tưởng cho gia đình lớn và những chuyến du lịch dài.',
-      gallery: ['assets/images/products/car1.jpg', 'assets/images/products/car2.jpg', 'assets/images/products/car3.jpg'],
+      description:
+          'Hyundai Santa Fe SUV 7 chỗ cao cấp với thiết kế mạnh mẽ, động cơ Turbo mạnh mẽ và trang bị an toàn hiện đại. Lựa chọn lý tưởng cho gia đình lớn và những chuyến du lịch dài.',
+      gallery: [
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     ),
     HyundaiCar(
       id: 'hyundai_2',
@@ -35,8 +40,13 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       rating: 4.6,
       reviewCount: 128,
       isNew: true,
-      description: 'Hyundai Tucson thế hệ mới với thiết kế táo bạo, công nghệ SmartSense và nội thất sang trọng. SUV compact hoàn hảo cho cuộc sống đô thị năng động.',
-      gallery: ['assets/images/products/car2.jpg', 'assets/images/products/car3.jpg', 'assets/images/products/car1.jpg'],
+      description:
+          'Hyundai Tucson thế hệ mới với thiết kế táo bạo, công nghệ SmartSense và nội thất sang trọng. SUV compact hoàn hảo cho cuộc sống đô thị năng động.',
+      gallery: [
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     ),
     HyundaiCar(
       id: 'hyundai_3',
@@ -47,8 +57,13 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       rating: 4.4,
       reviewCount: 94,
       isNew: false,
-      description: 'Hyundai Accent sedan hạng B thông minh với thiết kế trẻ trung, vận hành tiết kiệm nhiên liệu và giá thành phù hợp. Lựa chọn thông minh cho khách hàng lần đầu mua xe.',
-      gallery: ['assets/images/products/car3.jpg', 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+      description:
+          'Hyundai Accent sedan hạng B thông minh với thiết kế trẻ trung, vận hành tiết kiệm nhiên liệu và giá thành phù hợp. Lựa chọn thông minh cho khách hàng lần đầu mua xe.',
+      gallery: [
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     ),
     HyundaiCar(
       id: 'hyundai_4',
@@ -59,8 +74,13 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       rating: 4.5,
       reviewCount: 112,
       isNew: false,
-      description: 'Hyundai Elantra sedan hạng C với thiết kế coupe thể thao, động cơ mạnh mẽ và trang bị công nghệ hiện đại. Phù hợp cho những ai yêu thích sự năng động và phong cách.',
-      gallery: ['assets/images/products/car1.jpg', 'assets/images/products/car2.jpg', 'assets/images/products/car3.jpg'],
+      description:
+          'Hyundai Elantra sedan hạng C với thiết kế coupe thể thao, động cơ mạnh mẽ và trang bị công nghệ hiện đại. Phù hợp cho những ai yêu thích sự năng động và phong cách.',
+      gallery: [
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     ),
     HyundaiCar(
       id: 'hyundai_5',
@@ -71,8 +91,13 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       rating: 4.3,
       reviewCount: 87,
       isNew: false,
-      description: 'Hyundai Kona crossover nhỏ gọn với thiết kế cá tính, vận hành linh hoạt trong đô thị và tiết kiệm nhiên liệu. SUV đô thị hoàn hảo cho giới trẻ hiện đại.',
-      gallery: ['assets/images/products/car2.jpg', 'assets/images/products/car3.jpg', 'assets/images/products/car1.jpg'],
+      description:
+          'Hyundai Kona crossover nhỏ gọn với thiết kế cá tính, vận hành linh hoạt trong đô thị và tiết kiệm nhiên liệu. SUV đô thị hoàn hảo cho giới trẻ hiện đại.',
+      gallery: [
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     ),
     HyundaiCar(
       id: 'hyundai_6',
@@ -83,8 +108,13 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       rating: 4.5,
       reviewCount: 106,
       isNew: false,
-      description: 'Hyundai Creta SUV 5 chỗ với thiết kế hiện đại, khoang cabin rộng rãi và trang bị tiện nghi đầy đủ. Lựa chọn cân bằng giữa tính thực dụng và phong cách.',
-      gallery: ['assets/images/products/car3.jpg', 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+      description:
+          'Hyundai Creta SUV 5 chỗ với thiết kế hiện đại, khoang cabin rộng rãi và trang bị tiện nghi đầy đủ. Lựa chọn cân bằng giữa tính thực dụng và phong cách.',
+      gallery: [
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     ),
   ];
 
@@ -274,7 +304,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
                     top: 12,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),

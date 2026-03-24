@@ -172,11 +172,12 @@ class _MercedesScreenState extends State<MercedesScreen> {
             'carBrand': car['brand'],
             'carImage': car['image'],
             'carPrice': car['price'],
-      'carDescription': (car['description'] as String?) ?? '',
-      'carImages': (car['gallery'] as List<String>?) ??
-        <String>[car['image'] as String],
+            'carDescription': (car['description'] as String?) ?? '',
+            'carImages':
+                (car['gallery'] as List<String>?) ??
+                <String>[car['image'] as String],
             'rating': (car['rating'] as num).toDouble(),
-      'reviewCount': (car['reviewCount'] as int?) ?? 80,
+            'reviewCount': (car['reviewCount'] as int?) ?? 80,
             'isNew': car['isNew'] == true,
             'phoneNumber': widget.phoneNumber,
           },
@@ -189,137 +190,133 @@ class _MercedesScreenState extends State<MercedesScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Car Image with heart icon
-          Stack(
-            children: [
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Car Image with heart icon
+            Stack(
+              children: [
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    color: Colors.grey[900],
                   ),
-                  color: Colors.grey[900],
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Image.asset(
+                      car['image'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[800],
+                          child: const Center(
+                            child: Icon(
+                              Icons.directions_car,
+                              color: Colors.white30,
+                              size: 60,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+                // Heart icon
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () => _toggleFavorite(car),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.6),
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.white,
+                        size: 22,
+                      ),
+                    ),
                   ),
-                  child: Image.asset(
-                    car['image'],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[800],
-                        child: const Center(
-                          child: Icon(
-                            Icons.directions_car,
-                            color: Colors.white30,
-                            size: 60,
+                ),
+                // Rating
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${car['rating']}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              // Heart icon
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => _toggleFavorite(car),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.6),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.star, color: Colors.orange, size: 12),
+                      ],
                     ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ),
-              // Rating
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${car['rating']}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(
-                        Icons.star,
-                        color: Colors.orange,
-                        size: 12,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Car Info
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Car name
-                Text(
-                  car['name'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Price
-                Text(
-                  car['price'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                
-                // Price note
-                Text(
-                  car['priceNote'],
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+
+            // Car Info
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Car name
+                  Text(
+                    car['name'],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Price
+                  Text(
+                    car['price'],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Price note
+                  Text(
+                    car['priceNote'],
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -364,7 +361,7 @@ class _MercedesScreenState extends State<MercedesScreen> {
         setState(() {
           _activeNavIndex = index;
         });
-        
+
         // Navigate to different screens
         if (index == 0) {
           Navigator.pushReplacementNamed(

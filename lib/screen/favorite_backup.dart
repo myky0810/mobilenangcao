@@ -11,40 +11,9 @@ class FavoriteScreen extends StatefulWidget {
 }
 
 class _FavoriteScreenState extends State<FavoriteScreen> {
-  int _activeNavIndex = 2; // Favorite được chọn (index 2)
   List<Map<String, dynamic>> _favoriteCars = [];
   bool _isLoading = true;
-
-  // Sample data cho test (sẽ thay thế bằng data từ Firebase)
-  final List<FavoriteCarModel> _sampleCars = [
-    FavoriteCarModel(
-      id: '1',
-      name: 'C 200 Avantgarde (VỊ)',
-      brand: 'Mercedes',
-      price: '1.599.000.000đ',
-      priceNote: 'Lăn bánh từ 1.8 tỷ',
-      image: 'assets/images/products/car1.jpg',
-      isFavorited: true,
-    ),
-    FavoriteCarModel(
-      id: '2',
-      name: 'Toyota Camry 2026',
-      brand: 'Toyota',
-      price: '1.220.000.000đ',
-      priceNote: 'Lăn bánh từ 1.4 tỷ',
-      image: 'assets/images/products/car2.jpg',
-      isFavorited: true,
-    ),
-    FavoriteCarModel(
-      id: '3',
-      name: 'BMW 3 Series',
-      brand: 'BMW',
-      price: '1.899.000.000đ',
-      priceNote: 'Lăn bánh từ 2.1 tỷ',
-      image: 'assets/images/products/car3.jpg',
-      isFavorited: true,
-    ),
-  ];
+  int _activeNavIndex = 2;
 
   @override
   void initState() {
@@ -59,18 +28,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       // Lấy danh sách yêu thích từ SharedPreferences
       final favorites = await FavoriteService.getFavorites();
 
-      if (favorites.isNotEmpty) {
-        setState(() {
-          _favoriteCars = favorites;
-          _isLoading = false;
-        });
-      } else {
-        // Nếu chưa có favorite nào, tạm thời dùng sample data
-        setState(() {
-          _favoriteCars = _sampleCars.map((car) => car.toMap()).toList();
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _favoriteCars = favorites;
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -86,10 +47,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Future<void> _removeFromFavorites(String carId) async {
     try {
-      // Xóa từ SharedPreferences
       await FavoriteService.removeFromFavorites(carId);
 
-      // Cập nhật UI
       setState(() {
         _favoriteCars.removeWhere((car) => car['id'] == carId);
       });
@@ -98,8 +57,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Đã xóa khỏi danh sách yêu thích'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            backgroundColor: Colors.orange,
           ),
         );
       }
@@ -120,9 +78,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF333333),
       appBar: _buildAppBar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _buildBody(),
+      body: _buildBody(),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -136,7 +92,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
       ),
       title: const Text(
-        'Sản phẩm yêu thích',
+        'Xe yêu thích',
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -148,29 +104,33 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   }
 
   Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+        ),
+      );
+    }
+
     if (_favoriteCars.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.favorite_border_rounded,
-              size: 80,
-              color: Colors.grey[600],
-            ),
-            const SizedBox(height: 16),
+            Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
             Text(
-              'Chưa có sản phẩm yêu thích',
+              'Chưa có xe yêu thích nào',
               style: TextStyle(
-                color: Colors.grey[400],
+                color: Colors.white,
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
-              'Hãy thêm những chiếc xe bạn yêu thích',
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              'Hãy thêm xe vào danh sách yêu thích',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
             ),
           ],
         ),
@@ -199,7 +159,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             'carPrice': car['price'] ?? 'Liên hệ',
             'carDescription':
                 'Xe ${car['name'] ?? 'yêu thích'} với thiết kế hiện đại và trang bị cao cấp. Đã được thêm vào danh sách yêu thích.',
-            'carImages': <String>[
+            'carImages': [
               car['image'] ?? 'assets/images/products/car1.jpg',
               'assets/images/products/car2.jpg',
               'assets/images/products/car3.jpg',
@@ -220,7 +180,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Car Image with heart icon
             Stack(
               children: [
                 Container(
@@ -254,7 +213,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                     ),
                   ),
                 ),
-                // Heart icon
                 Positioned(
                   top: 12,
                   right: 12,
@@ -275,18 +233,38 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                     ),
                   ),
                 ),
+                if (car['isNew'] == true)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'NEW',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-
-            // Car Info
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Car name
                   Text(
-                    car['name'] ?? 'Unknown Car',
+                    car['name'] ?? 'Xe yêu thích',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -294,17 +272,13 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-
-                  // Brand
                   Text(
-                    car['brand'] ?? 'Unknown Brand',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    car['brand'] ?? car['subtitle'] ?? '',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
                   ),
                   const SizedBox(height: 12),
-
-                  // Price
                   Text(
-                    car['price'] ?? '0đ',
+                    car['price'] ?? 'Liên hệ',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -312,8 +286,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-
-                  // Price note
                   Text(
                     car['priceNote'] ?? '',
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
@@ -350,7 +322,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           children: [
             _buildNavItem(Icons.home_rounded, 0),
             _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2), // Active
+            _buildNavItem(Icons.favorite_rounded, 2),
             _buildNavItem(Icons.person_rounded, 3),
           ],
         ),
@@ -367,113 +339,39 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           _activeNavIndex = index;
         });
 
-        // Navigate to different screens
         if (index == 0) {
-          // Navigate to HomeScreen
           Navigator.pushReplacementNamed(
             context,
-            '/home',
-            arguments: widget.phoneNumber,
+            '/homescreen',
+            arguments: {'phoneNumber': widget.phoneNumber},
           );
         } else if (index == 1) {
-          // Navigate to NewCar
           Navigator.pushReplacementNamed(
             context,
             '/newcar',
-            arguments: widget.phoneNumber,
+            arguments: {'phoneNumber': widget.phoneNumber},
           );
         } else if (index == 3) {
-          // Navigate to Profile
           Navigator.pushReplacementNamed(
             context,
             '/profile',
-            arguments: widget.phoneNumber,
+            arguments: {'phoneNumber': widget.phoneNumber},
           );
         }
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
+      child: Container(
+        width: 50,
+        height: 50,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: isActive
-              ? const LinearGradient(
-                  colors: [Color(0xFF3b82c8), Color(0xFF1e5a9e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF3b82c8).withOpacity(0.6),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
+          color: isActive ? Colors.orange : Colors.transparent,
         ),
-        child: Center(
-          child: AnimatedScale(
-            scale: isActive ? 1.1 : 1.0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            child: Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.white54,
-              size: isActive ? 26 : 24,
-            ),
-          ),
+        child: Icon(
+          icon,
+          color: isActive ? Colors.white : Colors.grey[600],
+          size: 24,
         ),
       ),
-    );
-  }
-}
-
-// Model cho car yêu thích
-class FavoriteCarModel {
-  final String id;
-  final String name;
-  final String brand;
-  final String price;
-  final String priceNote;
-  final String image;
-  final bool isFavorited;
-
-  FavoriteCarModel({
-    required this.id,
-    required this.name,
-    required this.brand,
-    required this.price,
-    required this.priceNote,
-    required this.image,
-    this.isFavorited = false,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'brand': brand,
-      'price': price,
-      'priceNote': priceNote,
-      'image': image,
-      'isFavorited': isFavorited,
-    };
-  }
-
-  factory FavoriteCarModel.fromMap(Map<String, dynamic> map) {
-    return FavoriteCarModel(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      brand: map['brand'] ?? '',
-      price: map['price'] ?? '',
-      priceNote: map['priceNote'] ?? '',
-      image: map['image'] ?? '',
-      isFavorited: map['isFavorited'] ?? false,
     );
   }
 }

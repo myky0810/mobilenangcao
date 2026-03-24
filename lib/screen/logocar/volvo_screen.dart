@@ -23,6 +23,15 @@ class _VolvoScreenState extends State<VolvoScreen> {
       'priceNote': 'Lăn bánh từ 2.6 tỷ',
       'image': 'assets/images/products/car1.jpg',
       'rating': 7.0,
+      'reviewCount': 142,
+      'isNew': true,
+      'description':
+          'Volvo XC60 kết hợp động cơ hybrid mạnh mẽ với thiết kế Scandinavian tinh tế. Hệ thống an toàn hàng đầu thế giới, nội thất cao cấp và khả năng vận hành êm ái. Phù hợp khách hàng ưa chuộng sự sang trọng và bảo vệ môi trường.',
+      'gallery': <String>[
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     },
     {
       'id': 'volvo_2',
@@ -32,6 +41,15 @@ class _VolvoScreenState extends State<VolvoScreen> {
       'priceNote': 'Lăn bánh từ 2.1 tỷ',
       'image': 'assets/images/products/car2.jpg',
       'rating': 7.0,
+      'reviewCount': 118,
+      'isNew': false,
+      'description':
+          'XC40 là SUV compact năng động với thiết kế trẻ trung, công nghệ thông minh và khả năng vận hành linh hoạt trong đô thị. Nội thất hiện đại, tiện ích thông minh và hệ thống an toàn Volvo đặc trưng.',
+      'gallery': <String>[
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     },
     {
       'id': 'volvo_3',
@@ -41,6 +59,15 @@ class _VolvoScreenState extends State<VolvoScreen> {
       'priceNote': 'Lăn bánh từ 3.0 tỷ',
       'image': 'assets/images/products/car3.jpg',
       'rating': 7.0,
+      'reviewCount': 96,
+      'isNew': false,
+      'description':
+          'S90 là sedan hạng sang mang đậm phong cách Bắc Âu: thiết kế thanh lịch, nội thất minimalist cao cấp và công nghệ an toàn tiên tiến. Lựa chọn hoàn hảo cho doanh nhân thành đạt.',
+      'gallery': <String>[
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     },
   ];
 
@@ -135,144 +162,185 @@ class _VolvoScreenState extends State<VolvoScreen> {
   Widget _buildCarCard(Map<String, dynamic> car) {
     final bool isFavorite = _favoriteIds.contains(car['id']);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Car Image with heart icon
-          Stack(
-            children: [
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car['name'],
+            'carBrand': car['brand'],
+            'carImage': car['image'],
+            'carPrice': car['price'],
+            'carDescription': car['description'] ?? '',
+            'carImages': car['gallery'] ?? [car['image']],
+            'rating': car['rating'],
+            'reviewCount': car['reviewCount'] ?? 80,
+            'isNew': car['isNew'] == true,
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Car Image with heart icon
+            Stack(
+              children: [
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    color: Colors.grey[900],
                   ),
-                  color: Colors.grey[900],
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Image.asset(
+                      car['image'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[800],
+                          child: const Center(
+                            child: Icon(
+                              Icons.directions_car,
+                              color: Colors.white30,
+                              size: 60,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
+                // Heart icon
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () => _toggleFavorite(car),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.6),
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.white,
+                        size: 22,
+                      ),
+                    ),
                   ),
-                  child: Image.asset(
-                    car['image'],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[800],
-                        child: const Center(
-                          child: Icon(
-                            Icons.directions_car,
-                            color: Colors.white30,
-                            size: 60,
+                ),
+                // NEW tag
+                if (car['isNew'] == true)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'NEW',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                // Rating
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${car['rating']}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              // Heart icon
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => _toggleFavorite(car),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.6),
-                    ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ),
-              // Rating
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${car['rating']}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.star,
+                          color: Colors.orange,
+                          size: 12,
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(
-                        Icons.star,
-                        color: Colors.orange,
-                        size: 12,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Car Info
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Car name
-                Text(
-                  car['name'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Price
-                Text(
-                  car['price'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                
-                // Price note
-                Text(
-                  car['priceNote'],
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+
+            // Car Info
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Car name
+                  Text(
+                    car['name'],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Price
+                  Text(
+                    car['price'],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  
+                  // Price note
+                  Text(
+                    car['priceNote'],
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

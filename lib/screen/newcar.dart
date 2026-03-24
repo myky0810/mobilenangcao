@@ -253,27 +253,69 @@ class _NewCarScreenState extends State<NewCarScreen> {
   }
 
   Widget _buildCarCard(CarModel car) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Car name
-          Text(
-            car.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car.name,
+            'carBrand': car.name.split(' ')[0], // Lấy brand từ tên xe (TOYOTA, MAZDA, etc.)
+            'carImage': car.image,
+            'carPrice': car.price,
+            'carDescription': 'Xe ${car.name} với động cơ ${car.engine}, kích thước ${car.dimensions}. Thiết kế hiện đại, trang bị cao cấp và công nghệ tiên tiến.',
+            'carImages': <String>[car.image, 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+            'rating': 4.6,
+            'reviewCount': 120,
+            'isNew': true, // Tất cả xe ở trang NewCar đều có NEW tag
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // NEW tag
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'NEW',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Car name
+                Expanded(
+                  child: Text(
+                    car.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
           Row(
             children: [
@@ -355,7 +397,7 @@ class _NewCarScreenState extends State<NewCarScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildSpecRow(String text) {

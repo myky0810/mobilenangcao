@@ -23,6 +23,15 @@ class _MercedesScreenState extends State<MercedesScreen> {
       'priceNote': 'Lăn bánh từ 1.8 tỷ',
       'image': 'assets/images/products/car1.jpg',
       'rating': 7.0,
+      'reviewCount': 140,
+      'isNew': true,
+      'description':
+          'Mercedes C 200 Avantgarde mang phong cách sang trọng trẻ trung, vận hành mượt và nội thất chuẩn “luxury”. Màn hình giải trí hiện đại, chất liệu hoàn thiện cao cấp và các gói hỗ trợ lái giúp di chuyển trong phố lẫn đường dài đều nhàn nhã. Đây là lựa chọn cân bằng giữa đẳng cấp thương hiệu và tính thực dụng.',
+      'gallery': <String>[
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     },
     {
       'id': 'mercedes_2',
@@ -32,6 +41,15 @@ class _MercedesScreenState extends State<MercedesScreen> {
       'priceNote': 'Lăn bánh từ 2.4 tỷ',
       'image': 'assets/images/products/car2.jpg',
       'rating': 7.0,
+      'reviewCount': 98,
+      'isNew': false,
+      'description':
+          'Mercedes E 180 hướng đến trải nghiệm êm ái, yên tĩnh và lịch lãm. Hệ thống treo tối ưu cho sự thoải mái, khoang lái rộng rãi, nhiều tiện ích thông minh. Lý tưởng cho khách hàng ưu tiên sự sang trọng tinh tế và cảm giác lái nhẹ nhàng, ổn định.',
+      'gallery': <String>[
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     },
     {
       'id': 'mercedes_3',
@@ -41,6 +59,15 @@ class _MercedesScreenState extends State<MercedesScreen> {
       'priceNote': 'Lăn bánh từ 2.6 tỷ',
       'image': 'assets/images/products/car3.jpg',
       'rating': 7.0,
+      'reviewCount': 112,
+      'isNew': false,
+      'description':
+          'E 200 Exclusive nổi bật với phong cách “Executive”: lịch lãm, tiện nghi và cách âm tốt. Nội thất tỉ mỉ, ghế ngồi thoải mái cho cả hàng ghế sau, phù hợp cho doanh nhân hoặc gia đình thường xuyên di chuyển. Khả năng vận hành cân bằng giữa êm ái và sự chắc chắn ở tốc độ cao.',
+      'gallery': <String>[
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     },
   ];
 
@@ -135,13 +162,33 @@ class _MercedesScreenState extends State<MercedesScreen> {
   Widget _buildCarCard(Map<String, dynamic> car) {
     final bool isFavorite = _favoriteIds.contains(car['id']);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car['name'],
+            'carBrand': car['brand'],
+            'carImage': car['image'],
+            'carPrice': car['price'],
+      'carDescription': (car['description'] as String?) ?? '',
+      'carImages': (car['gallery'] as List<String>?) ??
+        <String>[car['image'] as String],
+            'rating': (car['rating'] as num).toDouble(),
+      'reviewCount': (car['reviewCount'] as int?) ?? 80,
+            'isNew': car['isNew'] == true,
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Car Image with heart icon
@@ -273,6 +320,7 @@ class _MercedesScreenState extends State<MercedesScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

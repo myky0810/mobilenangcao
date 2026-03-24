@@ -23,6 +23,15 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
       'priceNote': 'Lăn bánh từ 1.5 tỷ',
       'image': 'assets/images/products/car1.jpg',
       'rating': 7.5,
+      'reviewCount': 155,
+      'isNew': true,
+      'description':
+          'Toyota Camry 2.5Q nổi tiếng với sự bền bỉ, vận hành êm và cách âm tốt. Nội thất rộng rãi, tiện nghi đầy đủ, phù hợp cho gia đình hoặc khách hàng cần một chiếc sedan sang trọng, ổn định và giữ giá.',
+      'gallery': <String>[
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     },
     {
       'id': 'toyota_2',
@@ -32,6 +41,15 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
       'priceNote': 'Lăn bánh từ 1.6 tỷ',
       'image': 'assets/images/products/car2.jpg',
       'rating': 7.8,
+      'reviewCount': 132,
+      'isNew': false,
+      'description':
+          'Fortuner Legender mang dáng SUV mạnh mẽ, gầm cao linh hoạt, phù hợp nhiều địa hình. Không gian 7 chỗ rộng, thực dụng, bền bỉ và chi phí vận hành tối ưu. Đây là lựa chọn quen thuộc cho gia đình hay đi xa.',
+      'gallery': <String>[
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     },
     {
       'id': 'toyota_3',
@@ -41,6 +59,15 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
       'priceNote': 'Lăn bánh từ 4.5 tỷ',
       'image': 'assets/images/products/car3.jpg',
       'rating': 8.0,
+      'reviewCount': 88,
+      'isNew': false,
+      'description':
+          'Land Cruiser là biểu tượng SUV địa hình cao cấp: khung gầm chắc chắn, độ tin cậy cao, nội thất rộng rãi và khả năng off-road ấn tượng. Phù hợp khách hàng muốn một chiếc xe bền, sang và sẵn sàng chinh phục mọi cung đường.',
+      'gallery': <String>[
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+      ],
     },
   ];
 
@@ -135,15 +162,35 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
   Widget _buildCarCard(Map<String, dynamic> car) {
     final bool isFavorite = _favoriteIds.contains(car['id']);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car['name'],
+            'carBrand': car['brand'],
+            'carImage': car['image'],
+            'carPrice': car['price'],
+            'carDescription': (car['description'] as String?) ?? '',
+            'carImages': (car['gallery'] as List<String>?) ??
+                <String>[car['image'] as String],
+            'rating': (car['rating'] as num).toDouble(),
+            'reviewCount': (car['reviewCount'] as int?) ?? 80,
+            'isNew': car['isNew'] == true,
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Car Image with heart icon
           Stack(
             children: [
@@ -230,6 +277,27 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
                   ),
                 ),
               ),
+              // NEW tag
+              if (car['isNew'] == true)
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'NEW',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
 
@@ -274,7 +342,7 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildBottomNav() {

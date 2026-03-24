@@ -23,6 +23,15 @@ class _BMWScreenState extends State<BMWScreen> {
       'priceNote': 'Lăn bánh từ 2.8 tỷ',
       'image': 'assets/images/products/car1.jpg',
       'rating': 7.0,
+      'reviewCount': 128,
+      'isNew': true,
+      'description':
+          'BMW M3 là mẫu sedan hiệu năng cao mang ADN xe đua M Performance. Thiết kế khí động học, hệ thống treo tinh chỉnh cho cảm giác lái chính xác và ổn định ở tốc độ cao. Khoang lái tập trung người lái, vật liệu cao cấp và hệ thống giải trí hiện đại giúp trải nghiệm hàng ngày vẫn thoải mái nhưng luôn sẵn sàng bùng nổ khi bạn tăng ga.',
+      'gallery': <String>[
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     },
     {
       'id': 'bmw_2',
@@ -32,6 +41,15 @@ class _BMWScreenState extends State<BMWScreen> {
       'priceNote': 'Lăn bánh từ 3.4 tỷ',
       'image': 'assets/images/products/car2.jpg',
       'rating': 7.0,
+      'reviewCount': 96,
+      'isNew': false,
+      'description':
+          'BMW M4 coupe đem lại trải nghiệm thể thao thuần chất với trọng tâm thấp, thân xe cứng vững và phản hồi vô-lăng trực tiếp. Nội thất tối giản nhưng sang trọng, ghế ôm sát và cụm đồng hồ thể thao. Phù hợp cho người thích cảm giác lái mạnh mẽ nhưng vẫn muốn sự tinh tế trong từng chi tiết hoàn thiện.',
+      'gallery': <String>[
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car1.jpg',
+        'assets/images/products/car3.jpg',
+      ],
     },
     {
       'id': 'bmw_3',
@@ -41,6 +59,15 @@ class _BMWScreenState extends State<BMWScreen> {
       'priceNote': 'Lăn bánh từ 3.2 tỷ',
       'image': 'assets/images/products/car3.jpg',
       'rating': 7.0,
+      'reviewCount': 72,
+      'isNew': false,
+      'description':
+          'BMW 4 Series Convertible là lựa chọn cho phong cách sống năng động: mui xếp linh hoạt, cảm giác lái cân bằng và khả năng cách âm tốt khi đóng mui. Khoang lái hiện đại, nhiều công nghệ hỗ trợ lái và tiện nghi cao cấp. Thích hợp cho các chuyến đi dạo phố cuối tuần hoặc du lịch đường dài đầy cảm hứng.',
+      'gallery': <String>[
+        'assets/images/products/car3.jpg',
+        'assets/images/products/car2.jpg',
+        'assets/images/products/car1.jpg',
+      ],
     },
   ];
 
@@ -135,13 +162,33 @@ class _BMWScreenState extends State<BMWScreen> {
   Widget _buildCarCard(Map<String, dynamic> car) {
     final bool isFavorite = _favoriteIds.contains(car['id']);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car['name'],
+            'carBrand': car['brand'],
+            'carImage': car['image'],
+            'carPrice': car['price'],
+      'carDescription': (car['description'] as String?) ?? '',
+      'carImages': (car['gallery'] as List<String>?) ??
+        <String>[car['image'] as String],
+      'rating': (car['rating'] as num).toDouble(),
+      'reviewCount': (car['reviewCount'] as int?) ?? 80,
+      'isNew': car['isNew'] == true,
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Car Image with heart icon
@@ -273,6 +320,7 @@ class _BMWScreenState extends State<BMWScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

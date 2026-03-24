@@ -187,15 +187,38 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   }
 
   Widget _buildFavoriteCarCard(Map<String, dynamic> car) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car['name'] ?? 'Xe yêu thích',
+            'carBrand': car['brand'] ?? car['subtitle'] ?? 'Unknown',
+            'carImage': car['image'] ?? 'assets/images/products/car1.jpg',
+            'carPrice': car['price'] ?? 'Liên hệ',
+            'carDescription': 'Xe ${car['name'] ?? 'yêu thích'} với thiết kế hiện đại và trang bị cao cấp. Đã được thêm vào danh sách yêu thích.',
+            'carImages': <String>[
+              car['image'] ?? 'assets/images/products/car1.jpg',
+              'assets/images/products/car2.jpg',
+              'assets/images/products/car3.jpg'
+            ],
+            'rating': (car['rating'] as num?)?.toDouble() ?? 4.5,
+            'reviewCount': car['reviewCount'] ?? 95,
+            'isNew': car['isNew'] ?? false,
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Car Image with heart icon
           Stack(
             children: [
@@ -299,7 +322,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildBottomNav() {

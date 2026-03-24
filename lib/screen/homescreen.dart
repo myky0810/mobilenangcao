@@ -136,39 +136,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    
+
     // Khởi tạo animation controllers
     _bannerAnimationController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     );
-    
+
     _slideAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     // Khởi tạo animations
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _bannerAnimationController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideAnimationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _bannerAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _slideAnimationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     // Bắt đầu animation
     _bannerAnimationController.forward();
     _slideAnimationController.forward();
-    
+
     // Auto chuyển banner sau mỗi 5 giây
     _startBannerTimer();
   }
@@ -179,13 +178,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         setState(() {
           _currentBannerIndex = (_currentBannerIndex + 1) % _banners.length;
         });
-        
+
         // Restart animations
         _bannerAnimationController.reset();
         _slideAnimationController.reset();
         _bannerAnimationController.forward();
         _slideAnimationController.forward();
-        
+
         // Continue timer
         _startBannerTimer();
       }
@@ -216,12 +215,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16), // Giảm từ 24 -> 16
-
                     // Banner hiện đại 2026
                     _buildModernBanner(),
 
                     const SizedBox(height: 20), // Giảm từ 24 -> 20
-
                     // Car brands
                     _buildBrandsGrid(),
 
@@ -353,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final screenHeight = MediaQuery.of(context).size.height;
     // Responsive height: giảm xuống để tránh overflow hoàn toàn
     final bannerHeight = screenHeight < 700 ? 140.0 : 160.0;
-    
+
     return Column(
       children: [
         // Banner chính với animation
@@ -403,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       },
                     ),
                   ),
-                  
+
                   // Glowing accent - giảm kích thước
                   Positioned(
                     top: -30, // Giảm từ -50
@@ -431,7 +428,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       padding: const EdgeInsets.all(16), // Giảm padding còn 16
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Dàn đều thay vì center
+                        mainAxisAlignment: MainAxisAlignment
+                            .spaceBetween, // Dàn đều thay vì center
                         children: [
                           // Top section - Badge và title
                           Column(
@@ -440,15 +438,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               // Badge với animation
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 600),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [currentBanner.accentColor, currentBanner.accentColor.withOpacity(0.8)],
+                                    colors: [
+                                      currentBanner.accentColor,
+                                      currentBanner.accentColor.withOpacity(
+                                        0.8,
+                                      ),
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: currentBanner.accentColor.withOpacity(0.3),
+                                      color: currentBanner.accentColor
+                                          .withOpacity(0.3),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -464,9 +471,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                 ),
                               ),
-                              
+
                               const SizedBox(height: 8),
-                              
+
                               // Main title với animation
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 500),
@@ -486,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          
+
                           // Bottom section - Subtitle và button
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,7 +513,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 400),
+                                      duration: const Duration(
+                                        milliseconds: 400,
+                                      ),
                                       child: Text(
                                         currentBanner.subtitle,
                                         key: ValueKey(currentBanner.subtitle),
@@ -522,24 +531,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   ),
                                 ],
                               ),
-                              
+
                               const SizedBox(height: 6),
-                              
-                              // Action button với hover effect  
+
+                              // Action button với hover effect
                               GestureDetector(
                                 onTap: () {
                                   // Handle banner tap - navigate to relevant screen
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Opened ${currentBanner.title.replaceAll('\n', ' ')}'),
-                                      backgroundColor: currentBanner.accentColor,
+                                      content: Text(
+                                        'Opened ${currentBanner.title.replaceAll('\n', ' ')}',
+                                      ),
+                                      backgroundColor:
+                                          currentBanner.accentColor,
                                       duration: const Duration(seconds: 2),
                                     ),
                                   );
                                 },
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
@@ -584,7 +599,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       animation: _bannerAnimationController,
                       builder: (context, child) {
                         return Transform.scale(
-                          scale: 1.0 + (_bannerAnimationController.value * 0.05), // Giảm effect
+                          scale:
+                              1.0 +
+                              (_bannerAnimationController.value *
+                                  0.05), // Giảm effect
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 600),
                             width: 48, // Giảm từ 60
@@ -592,11 +610,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
-                                colors: [currentBanner.accentColor, currentBanner.accentColor.withOpacity(0.8)],
+                                colors: [
+                                  currentBanner.accentColor,
+                                  currentBanner.accentColor.withOpacity(0.8),
+                                ],
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: currentBanner.accentColor.withOpacity(0.3),
+                                  color: currentBanner.accentColor.withOpacity(
+                                    0.3,
+                                  ),
                                   blurRadius: 10, // Giảm từ 15
                                   offset: const Offset(0, 3), // Giảm từ 5
                                 ),
@@ -617,9 +640,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 8), // Giảm từ 12 -> 8
-        
         // Banner indicators (dots) - compact version
         Container(
           height: 20, // Fix chiều cao của dots container
@@ -638,9 +660,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
-                  width: index == _currentBannerIndex ? 16 : 6, // Giảm kích thước
+                  width: index == _currentBannerIndex
+                      ? 16
+                      : 6, // Giảm kích thước
                   height: 6, // Giảm chiều cao
-                  margin: const EdgeInsets.symmetric(horizontal: 2), // Giảm margin
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                  ), // Giảm margin
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(3),
                     color: index == _currentBannerIndex
@@ -839,124 +865,165 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildCarCard(CarItem car, int index) {
     final isFavorite = _favorites.contains(index);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1a1a1a),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Car image with favorite
-          Stack(
-            children: [
-              Container(
-                height: 180,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  color: const Color(0xFF252525),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: Image.asset(
-                    car.image,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.directions_car,
-                          color: Colors.grey[700],
-                          size: 80,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () async {
-                    try {
-                      final carData = _cars[index].toMap();
-                      carData['id'] = index.toString(); // Thêm id
-
-                      if (isFavorite) {
-                        _favorites.remove(index);
-                        await FavoriteService.removeFromFavorites(
-                          index.toString(),
-                        );
-                      } else {
-                        _favorites.add(index);
-                        await FavoriteService.addToFavorites(carData);
-                      }
-                      setState(() {});
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Lỗi khi cập nhật yêu thích: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: 0.6),
-                    ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Car info
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car.name,
+            'carBrand': car.subtitle,
+            'carImage': car.image,
+            'carPrice': car.price,
+            'carDescription': 'Xe ${car.name} từ ${car.subtitle} với chất lượng cao và trang bị hiện đại.',
+            'carImages': [car.image, 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
+            'rating': 4.5,
+            'reviewCount': 95,
+            'isNew': index == 0, // Car đầu tiên sẽ có NEW tag
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1a1a1a),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Car image with favorite
+            Stack(
               children: [
-                Text(
-                  car.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    color: const Color(0xFF252525),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    child: Image.asset(
+                      car.image,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.directions_car,
+                            color: Colors.grey[700],
+                            size: 80,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  car.subtitle,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  car.price,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () async {
+                      try {
+                        final carData = _cars[index].toMap();
+                        carData['id'] = index.toString(); // Thêm id
+
+                        if (isFavorite) {
+                          _favorites.remove(index);
+                          await FavoriteService.removeFromFavorites(
+                            index.toString(),
+                          );
+                        } else {
+                          _favorites.add(index);
+                          await FavoriteService.addToFavorites(carData);
+                        }
+                        setState(() {});
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Lỗi khi cập nhật yêu thích: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.6),
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.white,
+                        size: 22,
+                      ),
+                    ),
                   ),
                 ),
+                // NEW tag for first car
+                if (index == 0)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'NEW',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-          ),
-        ],
+
+            // Car info
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    car.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    car.subtitle,
+                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    car.price,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1144,13 +1211,13 @@ class ModernPatternPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final path = Path();
-    
+
     // Tạo pattern geometric hiện đại với animation
     for (int i = 0; i < 6; i++) {
       for (int j = 0; j < 4; j++) {
         final x = (size.width / 6) * i;
         final y = (size.height / 4) * j;
-        
+
         // Hexagon pattern với animation
         final scale = 0.5 + (animationValue * 0.5);
         path.moveTo(x + 15 * scale, y);
@@ -1162,22 +1229,18 @@ class ModernPatternPainter extends CustomPainter {
         path.close();
       }
     }
-    
+
     canvas.drawPath(path, paint);
-    
+
     // Thêm animated dots pattern
     final dotPaint = Paint()
       ..color = accentColor.withOpacity(0.1 * animationValue);
-      
+
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 5; j++) {
         final x = (size.width / 8) * i + 10;
         final y = (size.height / 5) * j + 10;
-        canvas.drawCircle(
-          Offset(x, y), 
-          2 * animationValue, 
-          dotPaint,
-        );
+        canvas.drawCircle(Offset(x, y), 2 * animationValue, dotPaint);
       }
     }
   }

@@ -21,6 +21,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       priceNote: 'Lăn bánh từ 1.5 tỷ',
       image: 'assets/images/products/car1.jpg',
       rating: 4.7,
+      reviewCount: 145,
+      isNew: false,
+      description: 'Hyundai Santa Fe SUV 7 chỗ cao cấp với thiết kế mạnh mẽ, động cơ Turbo mạnh mẽ và trang bị an toàn hiện đại. Lựa chọn lý tưởng cho gia đình lớn và những chuyến du lịch dài.',
+      gallery: ['assets/images/products/car1.jpg', 'assets/images/products/car2.jpg', 'assets/images/products/car3.jpg'],
     ),
     HyundaiCar(
       id: 'hyundai_2',
@@ -29,6 +33,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       priceNote: 'Lăn bánh từ 900k',
       image: 'assets/images/products/car2.jpg',
       rating: 4.6,
+      reviewCount: 128,
+      isNew: true,
+      description: 'Hyundai Tucson thế hệ mới với thiết kế táo bạo, công nghệ SmartSense và nội thất sang trọng. SUV compact hoàn hảo cho cuộc sống đô thị năng động.',
+      gallery: ['assets/images/products/car2.jpg', 'assets/images/products/car3.jpg', 'assets/images/products/car1.jpg'],
     ),
     HyundaiCar(
       id: 'hyundai_3',
@@ -37,6 +45,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       priceNote: 'Lăn bánh từ 600k',
       image: 'assets/images/products/car3.jpg',
       rating: 4.4,
+      reviewCount: 94,
+      isNew: false,
+      description: 'Hyundai Accent sedan hạng B thông minh với thiết kế trẻ trung, vận hành tiết kiệm nhiên liệu và giá thành phù hợp. Lựa chọn thông minh cho khách hàng lần đầu mua xe.',
+      gallery: ['assets/images/products/car3.jpg', 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
     ),
     HyundaiCar(
       id: 'hyundai_4',
@@ -45,6 +57,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       priceNote: 'Lăn bánh từ 790k',
       image: 'assets/images/products/car1.jpg',
       rating: 4.5,
+      reviewCount: 112,
+      isNew: false,
+      description: 'Hyundai Elantra sedan hạng C với thiết kế coupe thể thao, động cơ mạnh mẽ và trang bị công nghệ hiện đại. Phù hợp cho những ai yêu thích sự năng động và phong cách.',
+      gallery: ['assets/images/products/car1.jpg', 'assets/images/products/car2.jpg', 'assets/images/products/car3.jpg'],
     ),
     HyundaiCar(
       id: 'hyundai_5',
@@ -53,6 +69,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       priceNote: 'Lăn bánh từ 770k',
       image: 'assets/images/products/car2.jpg',
       rating: 4.3,
+      reviewCount: 87,
+      isNew: false,
+      description: 'Hyundai Kona crossover nhỏ gọn với thiết kế cá tính, vận hành linh hoạt trong đô thị và tiết kiệm nhiên liệu. SUV đô thị hoàn hảo cho giới trẻ hiện đại.',
+      gallery: ['assets/images/products/car2.jpg', 'assets/images/products/car3.jpg', 'assets/images/products/car1.jpg'],
     ),
     HyundaiCar(
       id: 'hyundai_6',
@@ -61,6 +81,10 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       priceNote: 'Lăn bánh từ 750k',
       image: 'assets/images/products/car3.jpg',
       rating: 4.5,
+      reviewCount: 106,
+      isNew: false,
+      description: 'Hyundai Creta SUV 5 chỗ với thiết kế hiện đại, khoang cabin rộng rãi và trang bị tiện nghi đầy đủ. Lựa chọn cân bằng giữa tính thực dụng và phong cách.',
+      gallery: ['assets/images/products/car3.jpg', 'assets/images/products/car1.jpg', 'assets/images/products/car2.jpg'],
     ),
   ];
 
@@ -162,140 +186,173 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
   Widget _buildCarCard(HyundaiCar car) {
     final isFavorited = _favorites.contains(car.id);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Car Image with heart icon
-          Stack(
-            children: [
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  color: Colors.grey[900],
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                  child: Image.asset(
-                    car.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[800],
-                        child: const Center(
-                          child: Icon(
-                            Icons.directions_car,
-                            color: Colors.white30,
-                            size: 60,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              // Heart icon
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => _toggleFavorite(car),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.6),
-                    ),
-                    child: Icon(
-                      isFavorited ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorited ? Colors.red : Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
-              ),
-              // Rating
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/detailcar',
+          arguments: {
+            'carName': car.name,
+            'carBrand': 'Hyundai',
+            'carImage': car.image,
+            'carPrice': car.price,
+            'carDescription': car.description,
+            'carImages': car.gallery.isNotEmpty ? car.gallery : [car.image],
+            'rating': car.rating,
+            'reviewCount': car.reviewCount,
+            'isNew': car.isNew,
+            'phoneNumber': widget.phoneNumber,
+          },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 200,
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    color: Colors.grey[900],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        car.rating.toString(),
-                        style: const TextStyle(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Image.asset(
+                      car.image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[800],
+                          child: const Center(
+                            child: Icon(
+                              Icons.directions_car,
+                              color: Colors.white30,
+                              size: 60,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                // Heart icon
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap: () => _toggleFavorite(car),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.6),
+                      ),
+                      child: Icon(
+                        isFavorited ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorited ? Colors.red : Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+                // NEW tag
+                if (car.isNew)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'NEW',
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ),
-
-          // Car Info
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Car name
-                Text(
-                  car.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                // Rating
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          car.rating.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-
-                // Price
-                Text(
-                  car.price,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Price note
-                Text(
-                  car.priceNote,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    car.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    car.price,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    car.priceNote,
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -309,6 +366,10 @@ class HyundaiCar {
   final String priceNote;
   final String image;
   final double rating;
+  final int reviewCount;
+  final bool isNew;
+  final String description;
+  final List<String> gallery;
 
   HyundaiCar({
     required this.id,
@@ -317,5 +378,9 @@ class HyundaiCar {
     required this.priceNote,
     required this.image,
     required this.rating,
+    this.reviewCount = 80,
+    this.isNew = false,
+    this.description = '',
+    this.gallery = const [],
   });
 }

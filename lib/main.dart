@@ -15,6 +15,7 @@ import 'package:doan_cuoiki/screen/infomation.dart';
 import 'package:doan_cuoiki/screen/changepass.dart';
 import 'package:doan_cuoiki/screen/newcar.dart';
 import 'package:doan_cuoiki/screen/favorite.dart';
+import 'package:doan_cuoiki/screen/detailcar.dart';
 import 'package:doan_cuoiki/screen/logocar/mercedes_screen.dart';
 import 'package:doan_cuoiki/screen/logocar/bmw_screen.dart';
 import 'package:doan_cuoiki/screen/logocar/volvo_screen.dart';
@@ -109,6 +110,21 @@ class MyApp extends StatelessWidget {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return FavoriteScreen(phoneNumber: phoneNumber);
+        },
+        '/detailcar': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return DetailCarScreen(
+            carName: args['carName'] as String,
+            carBrand: args['carBrand'] as String,
+            carImage: args['carImage'] as String,
+            carPrice: args['carPrice'] as String,
+            carDescription: args['carDescription'] as String,
+            carImages: args['carImages'] as List<String>,
+            rating: args['rating'] as double,
+            reviewCount: args['reviewCount'] as int,
+            isNew: args['isNew'] as bool,
+            phoneNumber: args['phoneNumber'] as String?,
+          );
         },
         '/mercedes': (context) {
           final phoneNumber =

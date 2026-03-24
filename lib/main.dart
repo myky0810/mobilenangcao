@@ -14,6 +14,14 @@ import 'package:doan_cuoiki/screen/changeinfo.dart';
 import 'package:doan_cuoiki/screen/infomation.dart';
 import 'package:doan_cuoiki/screen/changepass.dart';
 import 'package:doan_cuoiki/screen/newcar.dart';
+import 'package:doan_cuoiki/screen/favorite.dart';
+import 'package:doan_cuoiki/screen/logocar/mercedes_screen.dart';
+import 'package:doan_cuoiki/screen/logocar/bmw_screen.dart';
+import 'package:doan_cuoiki/screen/logocar/volvo_screen.dart';
+import 'package:doan_cuoiki/screen/logocar/tesla_screen.dart';
+import 'package:doan_cuoiki/screen/logocar/toyota_screen.dart';
+import 'package:doan_cuoiki/screen/logocar/mazda_screen.dart';
+import 'package:doan_cuoiki/screen/logocar/hyundai_screen.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
@@ -96,6 +104,46 @@ class MyApp extends StatelessWidget {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return NewCarScreen(phoneNumber: phoneNumber);
+        },
+        '/favorite': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return FavoriteScreen(phoneNumber: phoneNumber);
+        },
+        '/mercedes': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return MercedesScreen(phoneNumber: phoneNumber);
+        },
+        '/bmw': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return BMWScreen(phoneNumber: phoneNumber);
+        },
+        '/volvo': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return VolvoScreen(phoneNumber: phoneNumber);
+        },
+        '/tesla': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return TeslaScreen(phoneNumber: phoneNumber);
+        },
+        '/toyota': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return ToyotaScreen(phoneNumber: phoneNumber);
+        },
+        '/mazda': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return MazdaScreen(phoneNumber: phoneNumber);
+        },
+        '/hyundai': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return HyundaiScreen(phoneNumber: phoneNumber);
         },
       },
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../data/firebase_helper.dart';
+import '../services/favorite_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -12,9 +13,13 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final int _currentBannerIndex = 0;
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _selectedBrandIndex = 0; // Mercedes được chọn mặc định
+  int _currentBannerIndex = 0; // Để theo dõi banner hiện tại
+  late AnimationController _bannerAnimationController;
+  late AnimationController _slideAnimationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   final List<CarBrand> _brands = [
     CarBrand(
@@ -29,6 +34,46 @@ class _HomeScreenState extends State<HomeScreen> {
     CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
     CarBrand(name: 'Huyndai', assetPath: 'assets/images/icons8-hyundai-48.png'),
     CarBrand(name: 'Thêm', icon: Icons.more_horiz),
+  ];
+
+  // Banner data cho animation
+  final List<BannerData> _banners = [
+    BannerData(
+      badge: '🚗 CAR EXPO 2026',
+      title: 'Future\nDriving',
+      subtitle: 'AI-Powered Smart Cars',
+      buttonText: 'Khám phá ngay',
+      gradientColors: [Color(0xFF0D1117), Color(0xFF161B22), Color(0xFF21262D)],
+      accentColor: Color(0xFF3b82f6),
+      subtitleColor: Color(0xFF10b981),
+    ),
+    BannerData(
+      badge: '⚡ ELECTRIC 2026',
+      title: 'Green\nRevolution',
+      subtitle: 'Zero Emission Cars',
+      buttonText: 'Tìm hiểu thêm',
+      gradientColors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
+      accentColor: Color(0xFF10b981),
+      subtitleColor: Color(0xFF06d6a0),
+    ),
+    BannerData(
+      badge: '🏎️ LUXURY 2026',
+      title: 'Ultimate\nLuxury',
+      subtitle: 'Premium Experience',
+      buttonText: 'Xem ngay',
+      gradientColors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF4C1D95)],
+      accentColor: Color(0xFF8B5CF6),
+      subtitleColor: Color(0xFFF59E0B),
+    ),
+    BannerData(
+      badge: '🚙 SUV 2026',
+      title: 'Adventure\nReady',
+      subtitle: 'Off-Road Champions',
+      buttonText: 'Khởi hành',
+      gradientColors: [Color(0xFF7C2D12), Color(0xFF9A3412), Color(0xFFEA580C)],
+      accentColor: Color(0xFFEA580C),
+      subtitleColor: Color(0xFF22C55E),
+    ),
   ];
 
   final List<CarItem> _cars = [
@@ -89,6 +134,72 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    
+    // Khởi tạo animation controllers
+    _bannerAnimationController = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    
+    _slideAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    // Khởi tạo animations
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _bannerAnimationController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    // Bắt đầu animation
+    _bannerAnimationController.forward();
+    _slideAnimationController.forward();
+    
+    // Auto chuyển banner sau mỗi 5 giây
+    _startBannerTimer();
+  }
+
+  void _startBannerTimer() {
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _currentBannerIndex = (_currentBannerIndex + 1) % _banners.length;
+        });
+        
+        // Restart animations
+        _bannerAnimationController.reset();
+        _slideAnimationController.reset();
+        _bannerAnimationController.forward();
+        _slideAnimationController.forward();
+        
+        // Continue timer
+        _startBannerTimer();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _bannerAnimationController.dispose();
+    _slideAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF333333),
@@ -104,17 +215,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 16), // Giảm từ 24 -> 16
 
-                    // Search bar
-                    _buildSearchBar(),
+                    // Banner hiện đại 2026
+                    _buildModernBanner(),
 
-                    const SizedBox(height: 20),
-
-                    // Banner với dots
-                    _buildBannerWithDots(),
-
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20), // Giảm từ 24 -> 20
 
                     // Car brands
                     _buildBrandsGrid(),
@@ -241,151 +347,310 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      height: 48,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1a1a1a),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          const Icon(Icons.search, color: Colors.white38, size: 22),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'Tìm kiếm',
-              style: TextStyle(color: Colors.white38, fontSize: 15),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: const Icon(Icons.mic_none, color: Colors.white38, size: 22),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBannerWithDots() {
+  // Banner hiện đại 2026 với animation
+  Widget _buildModernBanner() {
+    final currentBanner = _banners[_currentBannerIndex];
+    final screenHeight = MediaQuery.of(context).size.height;
+    // Responsive height: giảm xuống để tránh overflow hoàn toàn
+    final bannerHeight = screenHeight < 700 ? 140.0 : 160.0;
+    
     return Column(
       children: [
-        // Banner
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          height: 180,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [const Color(0xFF1e5a9e), const Color(0xFF3b82c8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        // Banner chính với animation
+        SlideTransition(
+          position: _slideAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              height: bannerHeight, // Dynamic height
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: currentBanner.gradientColors,
+                  stops: const [0.0, 0.6, 1.0],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                    spreadRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: currentBanner.accentColor.withOpacity(0.1),
+                    blurRadius: 30,
+                    offset: const Offset(0, 0),
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Animated background pattern
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: _bannerAnimationController,
+                      builder: (context, child) {
+                        return CustomPaint(
+                          painter: ModernPatternPainter(
+                            animationValue: _bannerAnimationController.value,
+                            accentColor: currentBanner.accentColor,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  // Glowing accent - giảm kích thước
+                  Positioned(
+                    top: -30, // Giảm từ -50
+                    right: -30, // Giảm từ -50
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 800),
+                      width: 100, // Giảm từ 150
+                      height: 100, // Giảm từ 150
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            currentBanner.accentColor.withOpacity(0.2),
+                            currentBanner.accentColor.withOpacity(0.1),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Content
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16), // Giảm padding còn 16
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Dàn đều thay vì center
+                        children: [
+                          // Top section - Badge và title
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Badge với animation
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 600),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [currentBanner.accentColor, currentBanner.accentColor.withOpacity(0.8)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: currentBanner.accentColor.withOpacity(0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  currentBanner.badge,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 8),
+                              
+                              // Main title với animation
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 500),
+                                child: Text(
+                                  currentBanner.title,
+                                  key: ValueKey(currentBanner.title),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24, // Giảm xuống 24
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          // Bottom section - Subtitle và button
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Subtitle with animated indicator
+                              Row(
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 600),
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: currentBanner.subtitleColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 400),
+                                      child: Text(
+                                        currentBanner.subtitle,
+                                        key: ValueKey(currentBanner.subtitle),
+                                        style: TextStyle(
+                                          color: currentBanner.subtitleColor,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              
+                              const SizedBox(height: 6),
+                              
+                              // Action button với hover effect  
+                              GestureDetector(
+                                onTap: () {
+                                  // Handle banner tap - navigate to relevant screen
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Opened ${currentBanner.title.replaceAll('\n', ' ')}'),
+                                      backgroundColor: currentBanner.accentColor,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        currentBanner.buttonText,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(
+                                        Icons.arrow_forward,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Floating car icon với pulse animation - giảm kích thước
+                  Positioned(
+                    right: 16, // Giảm từ 20
+                    top: 16, // Giảm từ 20
+                    child: AnimatedBuilder(
+                      animation: _bannerAnimationController,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: 1.0 + (_bannerAnimationController.value * 0.05), // Giảm effect
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 600),
+                            width: 48, // Giảm từ 60
+                            height: 48, // Giảm từ 60
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [currentBanner.accentColor, currentBanner.accentColor.withOpacity(0.8)],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: currentBanner.accentColor.withOpacity(0.3),
+                                  blurRadius: 10, // Giảm từ 15
+                                  offset: const Offset(0, 3), // Giảm từ 5
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.electric_car_rounded,
+                              color: Colors.white,
+                              size: 22, // Giảm từ 28
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Stack(
-            children: [
-              // Text content
-              Positioned(
-                left: 20,
-                top: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'Ưu đãi điện thoại',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      '20%',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Ưu đãi trong tuần',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      width: 200,
-                      child: Text(
-                        'Nhận ngay ưu đãi giảm giá xe mới, chỉ áp dụng trong tuần này.',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 11,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Car image
-              Positioned(
-                right: -30,
-                bottom: 10,
-                child: Image.asset(
-                  'assets/images/products/car1.jpg',
-                  width: 200,
-                  height: 140,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.directions_car,
-                      color: Colors.white30,
-                      size: 100,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
         ),
-
-        const SizedBox(height: 12),
-
-        // Dots pagination
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(7, (index) {
-            return Container(
-              width: index == _currentBannerIndex ? 8 : 6,
-              height: 6,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: index == _currentBannerIndex
-                    ? Colors.white
-                    : Colors.white24,
-              ),
-            );
-          }),
+        
+        const SizedBox(height: 8), // Giảm từ 12 -> 8
+        
+        // Banner indicators (dots) - compact version
+        Container(
+          height: 20, // Fix chiều cao của dots container
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_banners.length, (index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentBannerIndex = index;
+                  });
+                  _bannerAnimationController.reset();
+                  _slideAnimationController.reset();
+                  _bannerAnimationController.forward();
+                  _slideAnimationController.forward();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: index == _currentBannerIndex ? 16 : 6, // Giảm kích thước
+                  height: 6, // Giảm chiều cao
+                  margin: const EdgeInsets.symmetric(horizontal: 2), // Giảm margin
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(3),
+                    color: index == _currentBannerIndex
+                        ? _banners[_currentBannerIndex].accentColor
+                        : Colors.white24,
+                  ),
+                ),
+              );
+            }),
+          ),
         ),
       ],
     );
@@ -450,6 +715,36 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _selectedBrandIndex = index;
         });
+
+        // Navigate to brand specific pages
+        if (brand.name == 'Mercedes') {
+          Navigator.pushNamed(
+            context,
+            '/mercedes',
+            arguments: widget.phoneNumber,
+          );
+        } else if (brand.name == 'BMW') {
+          Navigator.pushNamed(context, '/bmw', arguments: widget.phoneNumber);
+        } else if (brand.name == 'Volvo') {
+          Navigator.pushNamed(context, '/volvo', arguments: widget.phoneNumber);
+        } else if (brand.name == 'Tesla') {
+          Navigator.pushNamed(context, '/tesla', arguments: widget.phoneNumber);
+        } else if (brand.name == 'Toyota') {
+          Navigator.pushNamed(
+            context,
+            '/toyota',
+            arguments: widget.phoneNumber,
+          );
+        } else if (brand.name == 'Mazda') {
+          Navigator.pushNamed(context, '/mazda', arguments: widget.phoneNumber);
+        } else if (brand.name == 'Huyndai') {
+          Navigator.pushNamed(
+            context,
+            '/hyundai',
+            arguments: widget.phoneNumber,
+          );
+        }
+        // Có thể thêm các hãng khác sau
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -588,14 +883,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 12,
                 right: 12,
                 child: GestureDetector(
-                  onTap: () {
-                    setState(() {
+                  onTap: () async {
+                    try {
+                      final carData = _cars[index].toMap();
+                      carData['id'] = index.toString(); // Thêm id
+
                       if (isFavorite) {
                         _favorites.remove(index);
+                        await FavoriteService.removeFromFavorites(
+                          index.toString(),
+                        );
                       } else {
                         _favorites.add(index);
+                        await FavoriteService.addToFavorites(carData);
                       }
-                    });
+                      setState(() {});
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Lỗi khi cập nhật yêu thích: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   },
                   child: Container(
                     width: 40,
@@ -700,6 +1010,13 @@ class _HomeScreenState extends State<HomeScreen> {
             '/newcar',
             arguments: widget.phoneNumber,
           );
+        } else if (index == 2) {
+          // Navigate to favorite screen (favorite icon)
+          Navigator.pushNamed(
+            context,
+            '/favorite',
+            arguments: widget.phoneNumber,
+          );
         } else if (index == 3) {
           // Navigate to profile screen (person icon)
           Navigator.pushReplacementNamed(
@@ -794,5 +1111,98 @@ class CarItem {
     required this.price,
     required this.subtitle,
     required this.image,
+  });
+
+  // Thêm phương thức toMap
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'price': price,
+      'brand': subtitle, // Dùng subtitle làm brand
+      'priceNote': 'Lăn bánh từ ${price}',
+      'image': image,
+      'isFavorited': true,
+    };
+  }
+}
+
+// Custom Painter cho background pattern hiện đại
+class ModernPatternPainter extends CustomPainter {
+  final double animationValue;
+  final Color accentColor;
+
+  ModernPatternPainter({
+    required this.animationValue,
+    required this.accentColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.05 * animationValue)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    
+    // Tạo pattern geometric hiện đại với animation
+    for (int i = 0; i < 6; i++) {
+      for (int j = 0; j < 4; j++) {
+        final x = (size.width / 6) * i;
+        final y = (size.height / 4) * j;
+        
+        // Hexagon pattern với animation
+        final scale = 0.5 + (animationValue * 0.5);
+        path.moveTo(x + 15 * scale, y);
+        path.lineTo(x + 25 * scale, y + 5 * scale);
+        path.lineTo(x + 25 * scale, y + 15 * scale);
+        path.lineTo(x + 15 * scale, y + 20 * scale);
+        path.lineTo(x + 5 * scale, y + 15 * scale);
+        path.lineTo(x + 5 * scale, y + 5 * scale);
+        path.close();
+      }
+    }
+    
+    canvas.drawPath(path, paint);
+    
+    // Thêm animated dots pattern
+    final dotPaint = Paint()
+      ..color = accentColor.withOpacity(0.1 * animationValue);
+      
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 5; j++) {
+        final x = (size.width / 8) * i + 10;
+        final y = (size.height / 5) * j + 10;
+        canvas.drawCircle(
+          Offset(x, y), 
+          2 * animationValue, 
+          dotPaint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Banner Data Model
+class BannerData {
+  final String badge;
+  final String title;
+  final String subtitle;
+  final String buttonText;
+  final List<Color> gradientColors;
+  final Color accentColor;
+  final Color subtitleColor;
+
+  BannerData({
+    required this.badge,
+    required this.title,
+    required this.subtitle,
+    required this.buttonText,
+    required this.gradientColors,
+    required this.accentColor,
+    required this.subtitleColor,
   });
 }

@@ -421,6 +421,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             '/newcar',
             arguments: widget.phoneNumber,
           );
+        } else if (index == 2) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/favorite',
+            arguments: widget.phoneNumber,
+          );
         }
       },
       child: AnimatedContainer(

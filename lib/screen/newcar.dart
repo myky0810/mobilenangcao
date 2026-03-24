@@ -412,6 +412,13 @@ class _NewCarScreenState extends State<NewCarScreen> {
             '/home',
             arguments: widget.phoneNumber,
           );
+        } else if (index == 2) {
+          // Navigate to favorite screen
+          Navigator.pushReplacementNamed(
+            context,
+            '/favorite',
+            arguments: widget.phoneNumber,
+          );
         } else if (index == 3) {
           // Navigate to profile screen
           Navigator.pushReplacementNamed(

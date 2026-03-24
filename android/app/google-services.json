@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "820149808039",
+    "firebase_url": "https://doancuoiki-10573-default-rtdb.firebaseio.com",
+    "project_id": "doancuoiki-10573",
+    "storage_bucket": "doancuoiki-10573.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:820149808039:android:8295fc710ea7538dce2482",
+        "android_client_info": {
+          "package_name": "com.example.doan_cuoiki"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "820149808039-c1tkrk2e000n1a2ctfoci3bm5blvt7q8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.doan_cuoiki",
+            "certificate_hash": "85540a90a9a797e75d670a2f7328cf3faf2a855f"
+          }
+        },
+        {
+          "client_id": "820149808039-q6rnmehoqdnmimkguglit667rt7qfsjc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeHam8-4QK4z0yw-FpW1mawLPImHbJxRs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "820149808039-q6rnmehoqdnmimkguglit667rt7qfsjc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "820149808039-1asvc4pgf2a6l0jvft3o0lfvnp19s9b3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.doanCuoiki"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

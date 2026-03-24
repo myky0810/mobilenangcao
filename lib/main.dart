@@ -13,6 +13,7 @@ import 'package:doan_cuoiki/screen/profile.dart';
 import 'package:doan_cuoiki/screen/changeinfo.dart';
 import 'package:doan_cuoiki/screen/infomation.dart';
 import 'package:doan_cuoiki/screen/changepass.dart';
+import 'package:doan_cuoiki/screen/newcar.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
@@ -90,6 +91,11 @@ class MyApp extends StatelessWidget {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String;
           return ForgotOtpScreen(phoneNumber: phoneNumber);
+        },
+        '/newcar': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return NewCarScreen(phoneNumber: phoneNumber);
         },
       },
     );

@@ -391,7 +391,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.search_rounded, 1),
+            _buildNavItem(Icons.directions_car_rounded, 1),
             _buildNavItem(Icons.favorite_rounded, 2),
             _buildNavItem(Icons.person_rounded, 3),
           ],
@@ -413,6 +413,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Navigator.pushReplacementNamed(
             context,
             '/home',
+            arguments: widget.phoneNumber,
+          );
+        } else if (index == 1) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/newcar',
             arguments: widget.phoneNumber,
           );
         }

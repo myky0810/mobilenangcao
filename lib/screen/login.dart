@@ -362,24 +362,36 @@ class _LoginEmailState extends State<LoginEmail>
     setState(() => _isGoogleLoading = true);
 
     try {
+      // Đăng xuất trước để hiện danh sách tài khoản
+      await GoogleSignIn().signOut();
+
+      // Sign in with Google - sẽ hiện danh sách tài khoản
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
+        // User cancelled
         if (!mounted) return;
         setState(() => _isGoogleLoading = false);
         return;
       }
 
+      // Get authentication details
       final googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
+      // Sign in to Firebase
       final userCredential = await FirebaseAuth.instance.signInWithCredential(
         credential,
       );
       final user = userCredential.user;
-      final email = (user?.email ?? googleUser.email).trim();
+
+      if (user == null) {
+        throw Exception('Failed to get user from Firebase');
+      }
+
+      final email = (user.email ?? googleUser.email).trim();
       if (email.isEmpty) {
         throw FirebaseAuthException(
           code: 'missing-email',
@@ -387,11 +399,12 @@ class _LoginEmailState extends State<LoginEmail>
         );
       }
 
-      final displayName = (user?.displayName ?? googleUser.displayName ?? '')
+      final displayName = (user.displayName ?? googleUser.displayName ?? '')
           .trim();
-      final photoUrl = (user?.photoURL)?.trim();
-      final uid = (user?.uid ?? '').trim();
+      final photoUrl = user.photoURL?.trim();
+      final uid = user.uid.trim();
 
+      // Save to Firestore
       await FirebaseFirestore.instance.collection('users').doc(email).set({
         'provider': 'google',
         'googleUid': uid,
@@ -404,6 +417,8 @@ class _LoginEmailState extends State<LoginEmail>
 
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
+
+      // Navigate to home screen
       Navigator.pushNamedAndRemoveUntil(
         context,
         '/home',
@@ -414,13 +429,21 @@ class _LoginEmailState extends State<LoginEmail>
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Đăng nhập Google thất bại')),
+        SnackBar(
+          content: Text(e.message ?? 'Đăng nhập Google thất bại'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng nhập Google thất bại')),
+        SnackBar(
+          content: Text('Đăng nhập Google thất bại: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
   }

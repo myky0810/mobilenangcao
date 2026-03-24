@@ -673,7 +673,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.search_rounded, 1),
+            _buildNavItem(Icons.directions_car_rounded, 1),
             _buildNavItem(Icons.favorite_rounded, 2),
             _buildNavItem(Icons.person_rounded, 3),
           ],
@@ -692,8 +692,16 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _activeNavIndex = index;
         });
-        // Navigate to profile screen when person icon is tapped
-        if (index == 3) {
+        // Navigate to different screens based on icon
+        if (index == 1) {
+          // Navigate to NewCar screen (search icon)
+          Navigator.pushNamed(
+            context,
+            '/newcar',
+            arguments: widget.phoneNumber,
+          );
+        } else if (index == 3) {
+          // Navigate to profile screen (person icon)
           Navigator.pushReplacementNamed(
             context,
             '/profile',

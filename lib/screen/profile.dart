@@ -14,7 +14,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _activeNavIndex = 3;
+  int _activeNavIndex = 3; // Profile index 3
   String? _displayName;
 
   DocumentReference<Map<String, dynamic>>? _userDocRef() {

@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/firebase_helper.dart';
+import 'infomation.dart';
 
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key, this.phoneNumber});
@@ -24,6 +25,19 @@ class _InfoScreenState extends State<InfoScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _streetController = TextEditingController();
   bool _isSaving = false;
+
+  // Variables to track changes
+  bool _hasChanges = false;
+  String? _originalName;
+  String? _originalPhone;
+  String? _originalEmail;
+  String? _originalStreet;
+  String? _originalGender;
+  DateTime? _originalDate;
+  Province? _originalProvince;
+  District? _originalDistrict;
+  Ward? _originalWard;
+  String? _originalAvatarUrl;
 
   Uint8List? _avatarBytes;
   String? _avatarUrl;
@@ -165,9 +179,167 @@ class _InfoScreenState extends State<InfoScreen> {
         _selectedProvince = province;
         _selectedDistrict = district;
         _selectedWard = ward;
+
+        // Save original values để compare changes
+        _originalName = effectiveName;
+        _originalEmail = email;
+        _originalStreet = street;
+        _originalGender = gender ?? 'Nam';
+        _originalDate = dobDate;
+        _originalProvince = province;
+        _originalDistrict = district;
+        _originalWard = ward;
+        _originalAvatarUrl = _avatarUrl;
+        _originalPhone = _formatPhoneNumber(widget.phoneNumber);
+        _hasChanges = false; // Reset changes flag
       });
+
+      // Add listeners to track changes
+      _addChangeListeners();
     } catch (_) {
       // Keep UI usable even if load fails.
+    }
+  }
+
+  // Add listeners to track changes
+  void _addChangeListeners() {
+    _nameController.addListener(_checkForChanges);
+    _emailController.addListener(_checkForChanges);
+    _streetController.addListener(_checkForChanges);
+  }
+
+  // Check if any field has been modified
+  void _checkForChanges() {
+    if (!mounted) return;
+    
+    final hasChanged = 
+      _nameController.text.trim() != (_originalName ?? '') ||
+      _emailController.text.trim() != (_originalEmail ?? '') ||
+      _streetController.text.trim() != (_originalStreet ?? '') ||
+      _selectedGender != _originalGender ||
+      _selectedDate != _originalDate ||
+      _selectedProvince != _originalProvince ||
+      _selectedDistrict != _originalDistrict ||
+      _selectedWard != _originalWard ||
+      _avatarUrl != _originalAvatarUrl ||
+      _avatarBytes != null; // New avatar selected
+    
+    if (hasChanged != _hasChanges) {
+      setState(() {
+        _hasChanges = hasChanged;
+      });
+    }
+  }
+
+  // Show confirmation dialog before leaving
+  Future<bool> _showExitConfirmationDialog() async {
+    if (!_hasChanges) return true; // No changes, allow exit
+    
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          contentPadding: const EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Xác nhận',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Bạn có muốn lưu những thay đổi đã thực hiện không?',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop('cancel'), // Cancel - stay on page
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          side: const BorderSide(color: Colors.grey, width: 1),
+                        ),
+                      ),
+                      child: const Text(
+                        'Hủy',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop('save'), // Save and exit
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: const Text(
+                        'Đồng ý',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result == null || result == 'cancel') {
+      return false; // User canceled - stay on page
+    } else if (result == 'save') {
+      // User wants to save - save changes then exit
+      await _saveChanges();
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Handle back button press
+  Future<void> _handleBackPress() async {
+    final shouldExit = await _showExitConfirmationDialog();
+    if (shouldExit && mounted) {
+      // Navigate back to infomation.dart
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InfomationScreen(phoneNumber: widget.phoneNumber),
+        ),
+      );
     }
   }
 
@@ -210,8 +382,31 @@ class _InfoScreenState extends State<InfoScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
+      // Reset change detection after successful save
+      _originalName = name;
+      _originalPhone = _phoneController.text.trim();
+      _originalEmail = email;
+      _originalStreet = street;
+      _originalGender = _selectedGender;
+      _originalDate = _selectedDate;
+      _originalProvince = province;
+      _originalDistrict = district;
+      _originalWard = ward;
+      _originalAvatarUrl = _avatarUrl;
+      
+      setState(() {
+        _hasChanges = false;
+      });
+
       if (!mounted) return;
-      Navigator.pop(context, {'saved': true, 'name': name});
+      
+      // Navigate back to infomation.dart instead of just popping
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InfomationScreen(phoneNumber: widget.phoneNumber),
+        ),
+      );
     } on FirebaseException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -453,6 +648,7 @@ class _InfoScreenState extends State<InfoScreen> {
       _selectedDistrict = null;
       _selectedWard = null;
     });
+    _checkForChanges();
   }
 
   Future<void> _pickDistrict() async {
@@ -492,6 +688,7 @@ class _InfoScreenState extends State<InfoScreen> {
       _selectedDistrict = selected;
       _selectedWard = null;
     });
+    _checkForChanges();
   }
 
   Future<void> _pickWard() async {
@@ -539,6 +736,7 @@ class _InfoScreenState extends State<InfoScreen> {
     setState(() {
       _selectedWard = selected;
     });
+    _checkForChanges();
   }
 
   @override
@@ -596,6 +794,7 @@ class _InfoScreenState extends State<InfoScreen> {
       setState(() {
         _avatarBytes = bytes;
       });
+      _checkForChanges();
 
       await _uploadAvatarToFirebaseStorage(
         bytes: bytes,
@@ -630,6 +829,7 @@ class _InfoScreenState extends State<InfoScreen> {
       setState(() {
         _avatarBytes = bytes;
       });
+      _checkForChanges();
 
       await _uploadAvatarToFirebaseStorage(
         bytes: bytes,
@@ -1000,6 +1200,7 @@ class _InfoScreenState extends State<InfoScreen> {
       setState(() {
         _selectedDate = confirmed;
       });
+      _checkForChanges();
     }
   }
 
@@ -1016,9 +1217,16 @@ class _InfoScreenState extends State<InfoScreen> {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF333333),
-      body: Column(
+    return PopScope(
+      canPop: false, // Prevent default pop behavior
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          await _handleBackPress();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF333333),
+        body: Column(
         children: [
           // Header cùng màu #333333
           Container(
@@ -1033,7 +1241,7 @@ class _InfoScreenState extends State<InfoScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _handleBackPress,
                 ),
                 const SizedBox(width: 8),
                 const Text(
@@ -1222,6 +1430,7 @@ class _InfoScreenState extends State<InfoScreen> {
                       setState(() {
                         _selectedGender = value;
                       });
+                      _checkForChanges();
                     },
                     child: Row(
                       children: [
@@ -1231,6 +1440,7 @@ class _InfoScreenState extends State<InfoScreen> {
                               setState(() {
                                 _selectedGender = 'Nam';
                               });
+                              _checkForChanges();
                             },
                             child: Row(
                               children: [
@@ -1257,6 +1467,7 @@ class _InfoScreenState extends State<InfoScreen> {
                               setState(() {
                                 _selectedGender = 'Nữ';
                               });
+                              _checkForChanges();
                             },
                             child: Row(
                               children: [
@@ -1479,6 +1690,7 @@ class _InfoScreenState extends State<InfoScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

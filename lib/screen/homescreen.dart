@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../data/firebase_helper.dart';
 import '../services/favorite_service.dart';
+import '../widgets/notification_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -325,19 +326,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          // Notification icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF1a1a1a),
-            ),
-            child: const Icon(
-              Icons.notifications_outlined,
-              color: Colors.white,
-              size: 20,
-            ),
+          // Notification icon with badge
+          SimpleNotificationIcon(
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/notification',
+                arguments: widget.phoneNumber,
+              );
+            },
+            iconColor: Colors.white,
+            iconSize: 20,
           ),
         ],
       ),
@@ -1079,21 +1078,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         });
         // Navigate to different screens based on icon
         if (index == 1) {
-          // Navigate to NewCar screen (search icon)
-          Navigator.pushNamed(
+          // Navigate to NewCar screen
+          Navigator.pushReplacementNamed(
             context,
             '/newcar',
             arguments: widget.phoneNumber,
           );
         } else if (index == 2) {
-          // Navigate to favorite screen (favorite icon)
-          Navigator.pushNamed(
+          // Navigate to favorite screen
+          Navigator.pushReplacementNamed(
             context,
             '/favorite',
             arguments: widget.phoneNumber,
           );
         } else if (index == 3) {
-          // Navigate to profile screen (person icon)
+          // Navigate to profile screen
           Navigator.pushReplacementNamed(
             context,
             '/profile',

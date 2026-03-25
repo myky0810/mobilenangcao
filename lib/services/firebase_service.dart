@@ -16,14 +16,11 @@ class FirebaseService {
     required Map<String, dynamic> userData,
   }) async {
     try {
-      await _usersCollection.doc(userId).set(
-        {
-          ...userData,
-          'updatedAt': FieldValue.serverTimestamp(),
-          'createdAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+      await _usersCollection.doc(userId).set({
+        ...userData,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       print('Error saving user data: $e');
       rethrow;
@@ -170,10 +167,7 @@ class FirebaseService {
     required String photoURL,
   }) async {
     try {
-      await updateUserData(
-        userId: userId,
-        data: {'photoURL': photoURL},
-      );
+      await updateUserData(userId: userId, data: {'photoURL': photoURL});
     } catch (e) {
       print('Error updating profile photo: $e');
       rethrow;
@@ -186,10 +180,7 @@ class FirebaseService {
     required String name,
   }) async {
     try {
-      await updateUserData(
-        userId: userId,
-        data: {'name': name},
-      );
+      await updateUserData(userId: userId, data: {'name': name});
     } catch (e) {
       print('Error updating display name: $e');
       rethrow;

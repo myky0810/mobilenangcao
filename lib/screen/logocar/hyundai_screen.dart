@@ -12,6 +12,7 @@ class HyundaiScreen extends StatefulWidget {
 
 class _HyundaiScreenState extends State<HyundaiScreen> {
   Set<String> _favorites = {};
+  int _activeNavIndex = 0;
 
   final List<HyundaiCar> _hyundaiCars = [
     HyundaiCar(
@@ -179,6 +180,7 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
       backgroundColor: const Color(0xFF333333),
       appBar: _buildAppBar(),
       body: _buildBody(),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -385,6 +387,76 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color(0xFF333333),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavItem(Icons.home, 0),
+          _buildNavItem(Icons.local_offer_rounded, 1),
+          _buildNavItem(Icons.directions_car, 2),
+          _buildNavItem(Icons.favorite_border, 3),
+          _buildNavItem(Icons.person_outline, 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int index) {
+    bool isActive = _activeNavIndex == index;
+    return GestureDetector(
+      onTap: () {
+        if (index == 0) {
+          Navigator.pushReplacementNamed(context, '/home', arguments: widget.phoneNumber);
+        } else if (index == 1) {
+          Navigator.pushReplacementNamed(context, '/endow', arguments: widget.phoneNumber);
+        } else if (index == 2) {
+          Navigator.pushReplacementNamed(context, '/newcar', arguments: widget.phoneNumber);
+        } else if (index == 3) {
+          Navigator.pushReplacementNamed(context, '/favorite', arguments: widget.phoneNumber);
+        } else if (index == 4) {
+          Navigator.pushReplacementNamed(context, '/profile', arguments: widget.phoneNumber);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: isActive ? const LinearGradient(
+            colors: [Colors.orange, Colors.deepOrange],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ) : null,
+          boxShadow: isActive ? [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: isActive ? Colors.white : Colors.grey[500],
+          size: 24,
         ),
       ),
     );

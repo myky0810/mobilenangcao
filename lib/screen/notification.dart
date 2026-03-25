@@ -71,8 +71,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
             )
           : _notifications.isEmpty
-              ? _buildEmptyState()
-              : _buildNotificationList(),
+          ? _buildEmptyState()
+          : _buildNotificationList(),
     );
   }
 
@@ -98,10 +98,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           const SizedBox(height: 8),
           Text(
             'Các thông báo mới sẽ xuất hiện ở đây',
-            style: TextStyle(
-              color: Colors.grey.withOpacity(0.5),
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 14),
           ),
         ],
       ),
@@ -130,10 +127,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 27, 42, 59),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -148,7 +142,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: _getNotificationColor(notification.type).withOpacity(0.2),
+                  color: _getNotificationColor(
+                    notification.type,
+                  ).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: Icon(
@@ -212,7 +208,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                         if (notification.discountPrice != null)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(6),
@@ -286,7 +285,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   void _showNotificationDetail(NotificationModel notification) {
     // Mark as read by creating a new instance
     final updatedNotification = notification.copyWith(isRead: true);
-    
+
     // Update in the list
     setState(() {
       final index = _notifications.indexWhere((n) => n.id == notification.id);
@@ -372,10 +371,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Đóng',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Đóng', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

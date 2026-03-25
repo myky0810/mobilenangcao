@@ -37,7 +37,9 @@ class NotificationModel {
       originalPrice: json['originalPrice'],
       discountPrice: json['discountPrice'],
       discountPercent: json['discountPercent'],
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
+      ),
       isRead: json['isRead'] ?? false,
       imageUrl: json['imageUrl'],
     );

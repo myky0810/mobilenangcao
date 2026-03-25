@@ -423,15 +423,35 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
     return GestureDetector(
       onTap: () {
         if (index == 0) {
-          Navigator.pushReplacementNamed(context, '/home', arguments: widget.phoneNumber);
+          Navigator.pushReplacementNamed(
+            context,
+            '/home',
+            arguments: widget.phoneNumber,
+          );
         } else if (index == 1) {
-          Navigator.pushReplacementNamed(context, '/endow', arguments: widget.phoneNumber);
+          Navigator.pushReplacementNamed(
+            context,
+            '/endow',
+            arguments: widget.phoneNumber,
+          );
         } else if (index == 2) {
-          Navigator.pushReplacementNamed(context, '/newcar', arguments: widget.phoneNumber);
+          Navigator.pushReplacementNamed(
+            context,
+            '/newcar',
+            arguments: widget.phoneNumber,
+          );
         } else if (index == 3) {
-          Navigator.pushReplacementNamed(context, '/favorite', arguments: widget.phoneNumber);
+          Navigator.pushReplacementNamed(
+            context,
+            '/favorite',
+            arguments: widget.phoneNumber,
+          );
         } else if (index == 4) {
-          Navigator.pushReplacementNamed(context, '/profile', arguments: widget.phoneNumber);
+          Navigator.pushReplacementNamed(
+            context,
+            '/profile',
+            arguments: widget.phoneNumber,
+          );
         }
       },
       child: AnimatedContainer(
@@ -440,18 +460,22 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          gradient: isActive ? const LinearGradient(
-            colors: [Colors.orange, Colors.deepOrange],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ) : null,
-          boxShadow: isActive ? [
-            BoxShadow(
-              color: Colors.orange.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: [Colors.orange, Colors.deepOrange],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.orange.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Icon(
           icon,

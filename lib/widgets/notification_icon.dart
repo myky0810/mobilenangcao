@@ -56,7 +56,9 @@ class _NotificationIconState extends State<NotificationIcon> {
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00E676), // Màu xanh lá như trong hình
+                        color: const Color(
+                          0xFF00E676,
+                        ), // Màu xanh lá như trong hình
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -72,7 +74,9 @@ class _NotificationIconState extends State<NotificationIcon> {
                       ),
                       child: Center(
                         child: Text(
-                          _notificationManager.unreadCount > 99 ? '99+' : _notificationManager.unreadCount.toString(),
+                          _notificationManager.unreadCount > 99
+                              ? '99+'
+                              : _notificationManager.unreadCount.toString(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -155,7 +159,9 @@ class _SimpleNotificationIconState extends State<SimpleNotificationIcon> {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF00E676), // Màu xanh lá như trong hình
+                          color: const Color(
+                            0xFF00E676,
+                          ), // Màu xanh lá như trong hình
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(

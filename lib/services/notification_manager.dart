@@ -17,10 +17,10 @@ class NotificationManager extends ChangeNotifier {
     try {
       final notifications = await _notificationService.getAllNotifications();
       final unreadList = notifications.where((n) => !n.isRead).toList();
-      
+
       _hasUnread = unreadList.isNotEmpty;
       _unreadCount = unreadList.length;
-      
+
       notifyListeners();
     } catch (e) {
       _hasUnread = false;

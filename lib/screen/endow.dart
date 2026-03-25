@@ -62,9 +62,9 @@ class _EndowScreenState extends State<EndowScreen> {
       elevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.pushReplacementNamed(
-          context, 
-          '/home', 
-          arguments: widget.phoneNumber
+          context,
+          '/home',
+          arguments: widget.phoneNumber,
         ),
         icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
       ),
@@ -115,10 +115,7 @@ class _EndowScreenState extends State<EndowScreen> {
         children: [
           CircularProgressIndicator(color: Colors.orange),
           SizedBox(height: 16),
-          Text(
-            'Đang tải ưu đãi...',
-            style: TextStyle(color: Colors.white),
-          ),
+          Text('Đang tải ưu đãi...', style: TextStyle(color: Colors.white)),
         ],
       ),
     );
@@ -155,15 +152,15 @@ class _EndowScreenState extends State<EndowScreen> {
           ..._notificationsByDate.entries.map((entry) {
             final sectionTitle = entry.key;
             final notifications = entry.value;
-            
+
             if (notifications.isEmpty) return const SizedBox.shrink();
-            
+
             return Column(
               children: [
                 _buildSectionHeader(sectionTitle),
-                ...notifications.map((notification) => 
-                  _buildNotificationItem(notification)
-                ).toList(),
+                ...notifications
+                    .map((notification) => _buildNotificationItem(notification))
+                    .toList(),
               ],
             );
           }).toList(),
@@ -224,7 +221,11 @@ class _EndowScreenState extends State<EndowScreen> {
               color: const Color(0xFF333333),
               child: Row(
                 children: [
-                  const Icon(Icons.local_fire_department, color: Colors.orange, size: 24),
+                  const Icon(
+                    Icons.local_fire_department,
+                    color: Colors.orange,
+                    size: 24,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Ưu đãi nóng hổi 🔥',
@@ -315,10 +316,7 @@ class _EndowScreenState extends State<EndowScreen> {
                 if (notification.carModel != null)
                   Text(
                     notification.carModel!,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 const Spacer(),
                 Row(
@@ -355,7 +353,9 @@ class _EndowScreenState extends State<EndowScreen> {
 
   Widget _buildNotificationItem(NotificationModel notification) {
     return Container(
-      color: notification.isRead ? const Color(0xFF333333) : const Color(0xFF3a3a3a),
+      color: notification.isRead
+          ? const Color(0xFF333333)
+          : const Color(0xFF3a3a3a),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -430,7 +430,10 @@ class _EndowScreenState extends State<EndowScreen> {
                         children: [
                           if (notification.carModel != null) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.grey[700],
                                 borderRadius: BorderRadius.circular(10),
@@ -633,7 +636,10 @@ class _EndowScreenState extends State<EndowScreen> {
             const SizedBox(height: 20),
             ListTile(
               leading: const Icon(Icons.visibility, color: Colors.blue),
-              title: const Text('Xem chi tiết', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Xem chi tiết',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _showNotificationDetails(notification);
@@ -641,7 +647,9 @@ class _EndowScreenState extends State<EndowScreen> {
             ),
             ListTile(
               leading: Icon(
-                notification.isRead ? Icons.mark_as_unread : Icons.mark_email_read,
+                notification.isRead
+                    ? Icons.mark_as_unread
+                    : Icons.mark_email_read,
                 color: Colors.orange,
               ),
               title: Text(
@@ -655,7 +663,10 @@ class _EndowScreenState extends State<EndowScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Xóa thông báo', style: TextStyle(color: Colors.white)),
+              title: const Text(
+                'Xóa thông báo',
+                style: TextStyle(color: Colors.white),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _notificationService.deleteNotification(notification.id);
@@ -682,7 +693,11 @@ class _EndowScreenState extends State<EndowScreen> {
             children: [
               Row(
                 children: [
-                  Icon(notification.getIcon(), color: notification.getColor(), size: 24),
+                  Icon(
+                    notification.getIcon(),
+                    color: notification.getColor(),
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -722,18 +737,37 @@ class _EndowScreenState extends State<EndowScreen> {
                     children: [
                       const Text(
                         'Thông tin xe',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      Text('Model: ${notification.carModel}', style: const TextStyle(color: Colors.white70)),
+                      Text(
+                        'Model: ${notification.carModel}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
                       if (notification.originalPrice != null)
-                        Text('Giá gốc: ${notification.originalPrice}', style: const TextStyle(color: Colors.white70)),
+                        Text(
+                          'Giá gốc: ${notification.originalPrice}',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                       if (notification.discountPrice != null)
-                        Text('Giá ưu đãi: ${notification.discountPrice}', 
-                             style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Giá ưu đãi: ${notification.discountPrice}',
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       if (notification.discountPercent != null)
-                        Text('Giảm: ${notification.discountPercent}', 
-                             style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Giảm: ${notification.discountPercent}',
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -755,9 +789,14 @@ class _EndowScreenState extends State<EndowScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                     ),
-                    child: const Text('Xem chi tiết', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Xem chi tiết',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),

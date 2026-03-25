@@ -3,7 +3,8 @@ import 'dart:math';
 import '../models/notification.dart';
 
 class NotificationApiService {
-  static final NotificationApiService _instance = NotificationApiService._internal();
+  static final NotificationApiService _instance =
+      NotificationApiService._internal();
   factory NotificationApiService() => _instance;
   NotificationApiService._internal();
 
@@ -12,8 +13,10 @@ class NotificationApiService {
   bool _isInitialized = false;
 
   // Stream controller để real-time updates
-  final _notificationStreamController = StreamController<List<NotificationModel>>.broadcast();
-  Stream<List<NotificationModel>> get notificationStream => _notificationStreamController.stream;
+  final _notificationStreamController =
+      StreamController<List<NotificationModel>>.broadcast();
+  Stream<List<NotificationModel>> get notificationStream =>
+      _notificationStreamController.stream;
 
   // Khởi tạo dữ liệu mẫu
   Future<void> initialize() async {
@@ -30,17 +33,18 @@ class NotificationApiService {
   // Lấy tất cả thông báo
   Future<List<NotificationModel>> getAllNotifications() async {
     await initialize();
-    return List.from(_notifications)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return List.from(_notifications)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   // Lấy thông báo theo ngày
   Future<Map<String, List<NotificationModel>>> getNotificationsByDate() async {
     await initialize();
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    
+
     Map<String, List<NotificationModel>> result = {
       'Hôm nay': [],
       'Hôm qua': [],
@@ -76,7 +80,11 @@ class NotificationApiService {
     await initialize();
     return _notifications
         .where((n) => n.type == 'promotion' && n.discountPercent != null)
-        .where((n) => int.tryParse(n.discountPercent?.replaceAll('%', '') ?? '0')! >= 20)
+        .where(
+          (n) =>
+              int.tryParse(n.discountPercent?.replaceAll('%', '') ?? '0')! >=
+              20,
+        )
         .take(5)
         .toList();
   }
@@ -124,7 +132,8 @@ class NotificationApiService {
       NotificationModel(
         id: 'notif_1',
         title: '🔥 FLASH SALE Mercedes E-Class',
-        description: 'Giảm ngay 300 triệu cho Mercedes E-Class 2024. Chỉ còn 2 ngày!',
+        description:
+            'Giảm ngay 300 triệu cho Mercedes E-Class 2024. Chỉ còn 2 ngày!',
         type: 'promotion',
         carModel: 'Mercedes E-Class 2024',
         originalPrice: '2.850.000.000đ',
@@ -137,7 +146,8 @@ class NotificationApiService {
       NotificationModel(
         id: 'notif_2',
         title: '💰 Giá xe BMW X5 giảm mạnh',
-        description: 'BMW X5 2024 giảm giá còn 3.2 tỷ, tiết kiệm 400 triệu so với giá niêm yết',
+        description:
+            'BMW X5 2024 giảm giá còn 3.2 tỷ, tiết kiệm 400 triệu so với giá niêm yết',
         type: 'price',
         carModel: 'BMW X5 2024',
         originalPrice: '3.600.000.000đ',
@@ -150,7 +160,8 @@ class NotificationApiService {
       NotificationModel(
         id: 'notif_3',
         title: '🎁 Khuyến mãi Tesla Model 3',
-        description: 'Mua Tesla Model 3 tặng gói sạc điện 1 năm + bảo hiểm thân vỏ',
+        description:
+            'Mua Tesla Model 3 tặng gói sạc điện 1 năm + bảo hiểm thân vỏ',
         type: 'promotion',
         carModel: 'Tesla Model 3',
         originalPrice: '1.499.000.000đ',
@@ -161,11 +172,12 @@ class NotificationApiService {
         imageUrl: 'assets/images/products/car3.jpg',
       ),
 
-      // Thông báo hôm qua  
+      // Thông báo hôm qua
       NotificationModel(
         id: 'notif_4',
         title: '⚡ Toyota Camry - Ưu đãi cuối năm',
-        description: 'Giảm ngay 150 triệu + tặng phụ kiện chính hãng trị giá 50 triệu',
+        description:
+            'Giảm ngay 150 triệu + tặng phụ kiện chính hãng trị giá 50 triệu',
         type: 'discount',
         carModel: 'Toyota Camry 2024',
         originalPrice: '1.220.000.000đ',
@@ -178,7 +190,8 @@ class NotificationApiService {
       NotificationModel(
         id: 'notif_5',
         title: '🏆 Mazda CX-5 - Deal của ngày',
-        description: 'Mazda CX-5 2024 với giá ưu đãi chỉ 850 triệu, hỗ trợ trả góp 0%',
+        description:
+            'Mazda CX-5 2024 với giá ưu đãi chỉ 850 triệu, hỗ trợ trả góp 0%',
         type: 'promotion',
         carModel: 'Mazda CX-5 2024',
         originalPrice: '920.000.000đ',
@@ -193,7 +206,8 @@ class NotificationApiService {
       NotificationModel(
         id: 'notif_6',
         title: '📢 Hyundai Santa Fe - Giá sốc',
-        description: 'Hyundai Santa Fe giảm 200 triệu, chỉ còn 1.1 tỷ. Số lượng có hạn!',
+        description:
+            'Hyundai Santa Fe giảm 200 triệu, chỉ còn 1.1 tỷ. Số lượng có hạn!',
         type: 'price',
         carModel: 'Hyundai Santa Fe 2024',
         originalPrice: '1.300.000.000đ',
@@ -206,7 +220,8 @@ class NotificationApiService {
       NotificationModel(
         id: 'notif_7',
         title: '🚗 Volvo XC90 - Khuyến mãi đặc biệt',
-        description: 'Ưu đãi lên đến 500 triệu cho Volvo XC90, tặng kèm bảo dành 5 năm',
+        description:
+            'Ưu đãi lên đến 500 triệu cho Volvo XC90, tặng kèm bảo dành 5 năm',
         type: 'promotion',
         carModel: 'Volvo XC90 2024',
         originalPrice: '4.200.000.000đ',
@@ -229,12 +244,24 @@ class NotificationApiService {
   // Thêm thông báo ngẫu nhiên (giả lập từ admin)
   void _addRandomNotification() {
     final random = Random();
-    final carModels = ['BMW X3', 'Mercedes C-Class', 'Tesla Model Y', 'Toyota Corolla Cross', 'Mazda3', 'Hyundai Tucson'];
-    final titles = ['🔥 Giảm giá sốc', '⚡ Ưu đãi đặc biệt', '💰 Deal hấp dẫn', '🎁 Khuyến mãi hot'];
-    
+    final carModels = [
+      'BMW X3',
+      'Mercedes C-Class',
+      'Tesla Model Y',
+      'Toyota Corolla Cross',
+      'Mazda3',
+      'Hyundai Tucson',
+    ];
+    final titles = [
+      '🔥 Giảm giá sốc',
+      '⚡ Ưu đãi đặc biệt',
+      '💰 Deal hấp dẫn',
+      '🎁 Khuyến mãi hot',
+    ];
+
     final carModel = carModels[random.nextInt(carModels.length)];
     final title = titles[random.nextInt(titles.length)];
-    
+
     final notification = NotificationModel(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
       title: '$title $carModel',

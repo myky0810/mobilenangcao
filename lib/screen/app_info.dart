@@ -56,10 +56,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               height: 120,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFFFF6B35),
-                    Color(0xFFFF8E53),
-                  ],
+                  colors: [Color(0xFFFF6B35), Color(0xFFFF8E53)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -78,9 +75,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                 color: Colors.white,
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             Text(
               _packageInfo?.appName ?? 'Luxury Car Rental',
               style: const TextStyle(
@@ -90,9 +87,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             Text(
               'Ứng dụng thuê xe sang trọng',
               style: TextStyle(
@@ -101,34 +98,34 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // App Info Cards
             _buildInfoCard(
               'Phiên bản',
               _packageInfo?.version ?? '1.0.0',
               Icons.system_update_alt,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             _buildInfoCard(
               'Build Number',
               _packageInfo?.buildNumber ?? '1',
               Icons.build_circle,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             _buildInfoCard(
               'Package Name',
               _packageInfo?.packageName ?? 'com.example.doanCuoiki',
               Icons.apps,
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // What's New Section
             Container(
               width: double.infinity,
@@ -169,34 +166,34 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   _buildUpdateItem(
                     '🔥 Firebase Phone Authentication',
                     'Xác thực số điện thoại với OTP thực tế',
                   ),
-                  
+
                   _buildUpdateItem(
                     '🎨 Dark Theme UI',
                     'Giao diện tối hiện đại và sang trọng',
                   ),
-                  
+
                   _buildUpdateItem(
                     '📱 Redesigned BookCar Screen',
                     'Màn hình đặt xe được thiết kế lại hoàn toàn',
                   ),
-                  
+
                   _buildUpdateItem(
                     '🚗 Enhanced Car Details',
                     'Thông tin xe chi tiết với video giới thiệu',
                   ),
-                  
+
                   _buildUpdateItem(
                     '🔧 Performance Improvements',
                     'Cải thiện hiệu suất và sửa lỗi',
                   ),
-                  
+
                   _buildUpdateItem(
                     '📝 Better Error Handling',
                     'Xử lý lỗi tốt hơn và thông báo rõ ràng',
@@ -204,9 +201,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 30),
-            
+
             // Developer Info
             Container(
               width: double.infinity,
@@ -226,19 +223,16 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                       color: Colors.orange,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   const Text(
                     'Developed by',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
-                  
+
                   const SizedBox(height: 4),
-                  
+
                   const Text(
                     'Mobile Development Team',
                     style: TextStyle(
@@ -247,9 +241,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     'Phiên bản cập nhật: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                     style: TextStyle(
@@ -260,34 +254,26 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 30),
-            
+
             // Contact & Support
             Row(
               children: [
                 Expanded(
-                  child: _buildActionButton(
-                    'Báo lỗi',
-                    Icons.bug_report,
-                    () {
-                      _showSupportDialog(context, 'Báo lỗi');
-                    },
-                  ),
+                  child: _buildActionButton('Báo lỗi', Icons.bug_report, () {
+                    _showSupportDialog(context, 'Báo lỗi');
+                  }),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildActionButton(
-                    'Hỗ trợ',
-                    Icons.help_outline,
-                    () {
-                      _showSupportDialog(context, 'Hỗ trợ');
-                    },
-                  ),
+                  child: _buildActionButton('Hỗ trợ', Icons.help_outline, () {
+                    _showSupportDialog(context, 'Hỗ trợ');
+                  }),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 40),
           ],
         ),
@@ -302,10 +288,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 28, 42, 58),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
       ),
       child: Row(
         children: [
@@ -315,11 +298,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               color: Colors.orange.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: Colors.orange,
-              size: 20,
-            ),
+            child: Icon(icon, color: Colors.orange, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -394,7 +373,11 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     );
   }
 
-  Widget _buildActionButton(String text, IconData icon, VoidCallback onPressed) {
+  Widget _buildActionButton(
+    String text,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
@@ -403,10 +386,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(
-            color: Colors.orange.withOpacity(0.3),
-            width: 1,
-          ),
+          side: BorderSide(color: Colors.orange.withOpacity(0.3), width: 1),
         ),
         elevation: 0,
       ),
@@ -417,10 +397,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -432,9 +409,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color.fromARGB(255, 28, 42, 58),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: Row(
           children: [
             Icon(
@@ -442,10 +417,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               color: Colors.orange,
             ),
             const SizedBox(width: 8),
-            Text(
-              type,
-              style: const TextStyle(color: Colors.white),
-            ),
+            Text(type, style: const TextStyle(color: Colors.white)),
           ],
         ),
         content: Column(
@@ -453,7 +425,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              type == 'Báo lỗi' 
+              type == 'Báo lỗi'
                   ? 'Để báo lỗi, vui lòng liên hệ với chúng tôi qua:'
                   : 'Để được hỗ trợ, vui lòng liên hệ qua:',
               style: TextStyle(
@@ -462,7 +434,11 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildContactItem('Email', 'support@luxurycarrental.com', Icons.email),
+            _buildContactItem(
+              'Email',
+              'support@luxurycarrental.com',
+              Icons.email,
+            ),
             const SizedBox(height: 8),
             _buildContactItem('Phone', '+84 123 456 789', Icons.phone),
             const SizedBox(height: 8),
@@ -472,10 +448,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Đóng',
-              style: TextStyle(color: Colors.orange),
-            ),
+            child: const Text('Đóng', style: TextStyle(color: Colors.orange)),
           ),
         ],
       ),
@@ -499,10 +472,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
         ),
         child: Row(
           children: [

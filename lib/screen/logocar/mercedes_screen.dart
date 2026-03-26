@@ -344,10 +344,9 @@ class _MercedesScreenState extends State<MercedesScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.local_offer_rounded, 1), // Icon Ưu đãi
-            _buildNavItem(Icons.directions_car_rounded, 2),
-            _buildNavItem(Icons.favorite_rounded, 3),
-            _buildNavItem(Icons.person_rounded, 4),
+            _buildNavItem(Icons.directions_car_rounded, 1),
+            _buildNavItem(Icons.favorite_rounded, 2),
+            _buildNavItem(Icons.person_rounded, 3),
           ],
         ),
       ),
@@ -373,22 +372,16 @@ class _MercedesScreenState extends State<MercedesScreen> {
         } else if (index == 1) {
           Navigator.pushReplacementNamed(
             context,
-            '/endow',
+            '/newcar',
             arguments: widget.phoneNumber,
           );
         } else if (index == 2) {
           Navigator.pushReplacementNamed(
             context,
-            '/newcar',
-            arguments: widget.phoneNumber,
-          );
-        } else if (index == 3) {
-          Navigator.pushReplacementNamed(
-            context,
             '/favorite',
             arguments: widget.phoneNumber,
           );
-        } else if (index == 4) {
+        } else if (index == 3) {
           Navigator.pushReplacementNamed(
             context,
             '/profile',

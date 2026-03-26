@@ -29,15 +29,14 @@ class NotificationManager extends ChangeNotifier {
     }
   }
 
-  void markAsRead(String notificationId) {
-    // This would normally update the backend/database
-    // For now, we'll just refresh the count
-    checkUnreadNotifications();
+  Future<void> markAsRead(String notificationId) async {
+    // Persist then refresh count
+    await _notificationService.markAsRead(notificationId);
+    await checkUnreadNotifications();
   }
 
-  void markAllAsRead() {
-    _hasUnread = false;
-    _unreadCount = 0;
-    notifyListeners();
+  Future<void> markAllAsRead() async {
+    await _notificationService.markAllAsRead();
+    await checkUnreadNotifications();
   }
 }

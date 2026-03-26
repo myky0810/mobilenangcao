@@ -31,6 +31,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         _notifications = notifications;
         _isLoading = false;
       });
+
+      // Keep the app-wide badge in sync with whatever we just loaded
+      await _notificationManager.checkUnreadNotifications();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -282,21 +285,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  void _showNotificationDetail(NotificationModel notification) {
-    // Mark as read by creating a new instance
-    final updatedNotification = notification.copyWith(isRead: true);
-
-    // Update in the list
-    setState(() {
-      final index = _notifications.indexWhere((n) => n.id == notification.id);
-      if (index != -1) {
-        _notifications[index] = updatedNotification;
-      }
-    });
-
-    // Update notification manager
-    _notificationManager.markAsRead(notification.id);
-    _notificationManager.checkUnreadNotifications();
+  Future<void> _showNotificationDetail(NotificationModel notification) async {
+    // Persist read-state so refresh won't show the red dot again
+    if (!notification.isRead) {
+      await _notificationManager.markAsRead(notification.id);
+      await _loadNotifications();
+    }
 
     showDialog(
       context: context,

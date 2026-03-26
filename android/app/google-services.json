@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "820149808039-ln9hf5eje5jj6eckvl22k6t97v6o4ak4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.doan_cuoiki",
+            "certificate_hash": "b07a1fcf12b868d7ae14759b3b4336b7cad4195e"
+          }
+        },
+        {
           "client_id": "820149808039-q6rnmehoqdnmimkguglit667rt7qfsjc.apps.googleusercontent.com",
           "client_type": 3
         }

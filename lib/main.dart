@@ -10,12 +10,13 @@ import 'package:doan_cuoiki/screen/forgototp.dart';
 import 'package:doan_cuoiki/screen/loginhaspass.dart';
 import 'package:doan_cuoiki/screen/homescreen.dart';
 import 'package:doan_cuoiki/screen/profile.dart';
-import 'package:doan_cuoiki/screen/changeinfo.dart';
 import 'package:doan_cuoiki/screen/infomation.dart';
+import 'package:doan_cuoiki/screen/info.dart';
 import 'package:doan_cuoiki/screen/changepass.dart';
 import 'package:doan_cuoiki/screen/newcar.dart';
 import 'package:doan_cuoiki/screen/favorite.dart';
 import 'package:doan_cuoiki/screen/detailcar.dart';
+import 'package:doan_cuoiki/screen/bookcar.dart';
 import 'package:doan_cuoiki/screen/logocar/mercedes_screen.dart';
 import 'package:doan_cuoiki/screen/logocar/bmw_screen.dart';
 import 'package:doan_cuoiki/screen/logocar/volvo_screen.dart';
@@ -88,8 +89,15 @@ class MyApp extends StatelessWidget {
         },
         '/register': (context) => RegisterScreen(),
         '/otp': (context) {
-          final phoneNumber =
-              ModalRoute.of(context)!.settings.arguments as String;
+          final args = ModalRoute.of(context)!.settings.arguments;
+          String phoneNumber;
+
+          if (args is Map) {
+            phoneNumber = args['phoneNumber'] as String;
+          } else {
+            phoneNumber = args as String;
+          }
+
           return OTPScreen(phoneNumber: phoneNumber);
         },
         '/createpass': (context) {
@@ -128,6 +136,19 @@ class MyApp extends StatelessWidget {
             reviewCount: args['reviewCount'] as int,
             isNew: args['isNew'] as bool,
             phoneNumber: args['phoneNumber'] as String?,
+          );
+        },
+        '/bookcar': (context) {
+          final args =
+              (ModalRoute.of(context)!.settings.arguments as Map?) ??
+              const <String, dynamic>{};
+          return BookCarScreen(
+            carData: {
+              'name': args['carName'] ?? '',
+              'brand': args['carBrand'] ?? '',
+              'image': args['carImage'] ?? '',
+              'phoneNumber': args['phoneNumber'],
+            },
           );
         },
         '/mercedes': (context) {

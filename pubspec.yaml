@@ -28,6 +28,10 @@ dependencies:
 
   google_sign_in: ^6.3.0
 
+  # Video demo in car detail
+  video_player: ^2.9.2
+  chewie: ^1.8.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -40,3 +44,4 @@ flutter:
     - assets/images/RR.jpg
     - assets/images/products/
     - assets/files/
+    - assets/videos/

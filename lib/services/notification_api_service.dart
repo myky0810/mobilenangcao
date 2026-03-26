@@ -110,6 +110,24 @@ class NotificationApiService {
     }
   }
 
+  // Đánh dấu tất cả đã đọc
+  Future<void> markAllAsRead() async {
+    await initialize();
+
+    bool changed = false;
+    for (var i = 0; i < _notifications.length; i++) {
+      final n = _notifications[i];
+      if (!n.isRead) {
+        _notifications[i] = n.copyWith(isRead: true);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      _notificationStreamController.add(_notifications);
+    }
+  }
+
   // Số thông báo chưa đọc
   Future<int> getUnreadCount() async {
     await initialize();

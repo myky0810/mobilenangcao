@@ -333,14 +333,7 @@ class _InfoScreenState extends State<InfoScreen> {
   Future<void> _handleBackPress() async {
     final shouldExit = await _showExitConfirmationDialog();
     if (shouldExit && mounted) {
-      // Navigate back to infomation.dart
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              InfomationScreen(phoneNumber: widget.phoneNumber),
-        ),
-      );
+      Navigator.pop(context);
     }
   }
 

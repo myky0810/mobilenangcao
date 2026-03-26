@@ -409,10 +409,9 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildNavItem(Icons.home, 0),
-          _buildNavItem(Icons.local_offer_rounded, 1),
-          _buildNavItem(Icons.directions_car, 2),
-          _buildNavItem(Icons.favorite_border, 3),
-          _buildNavItem(Icons.person_outline, 4),
+          _buildNavItem(Icons.directions_car, 1),
+          _buildNavItem(Icons.favorite_border, 2),
+          _buildNavItem(Icons.person_outline, 3),
         ],
       ),
     );
@@ -431,22 +430,16 @@ class _HyundaiScreenState extends State<HyundaiScreen> {
         } else if (index == 1) {
           Navigator.pushReplacementNamed(
             context,
-            '/endow',
+            '/newcar',
             arguments: widget.phoneNumber,
           );
         } else if (index == 2) {
           Navigator.pushReplacementNamed(
             context,
-            '/newcar',
-            arguments: widget.phoneNumber,
-          );
-        } else if (index == 3) {
-          Navigator.pushReplacementNamed(
-            context,
             '/favorite',
             arguments: widget.phoneNumber,
           );
-        } else if (index == 4) {
+        } else if (index == 3) {
           Navigator.pushReplacementNamed(
             context,
             '/profile',

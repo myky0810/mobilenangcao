@@ -301,7 +301,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             _buildMenuItem(
                               icon: Icons.info_outline,
                               title: 'Thông tin ứng dụng',
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.pushNamed(context, '/appinfo');
+                              },
                               showArrow: true,
                             ),
                             const Divider(

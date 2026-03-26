@@ -26,6 +26,7 @@ import 'package:doan_cuoiki/screen/logocar/mazda_screen.dart';
 import 'package:doan_cuoiki/screen/logocar/hyundai_screen.dart';
 import 'package:doan_cuoiki/screen/endow.dart';
 import 'package:doan_cuoiki/screen/notification.dart';
+import 'package:doan_cuoiki/screen/app_info.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
@@ -196,6 +197,7 @@ class MyApp extends StatelessWidget {
               ModalRoute.of(context)!.settings.arguments as String?;
           return NotificationScreen(phoneNumber: phoneNumber);
         },
+        '/appinfo': (context) => const AppInfoScreen(),
       },
     );
   }

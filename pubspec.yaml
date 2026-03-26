@@ -28,6 +28,9 @@ dependencies:
 
   google_sign_in: ^6.3.0
 
+  # App info
+  package_info_plus: ^8.1.0
+
   # Video demo in car detail
   video_player: ^2.9.2
   chewie: ^1.8.5

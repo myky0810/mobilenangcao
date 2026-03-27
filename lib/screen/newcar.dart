@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/car_image_slider.dart';
 
 class NewCarScreen extends StatefulWidget {
   const NewCarScreen({super.key, this.phoneNumber});
@@ -23,36 +24,76 @@ class _NewCarScreenState extends State<NewCarScreen> {
 
   final List<CarModel> _cars = [
     CarModel(
-      name: 'MAZDA2',
+      name: 'BMW 3 Series 2019',
       seats: '5 chỗ',
-      dimensions: '4340 x 1695 x 1470',
-      engine: 'Skyactiv-G 1.5L',
-      price: '415.000.000 đ',
-      image: 'assets/images/products/car1.jpg',
+      dimensions: '4713 x 1827 x 1442',
+      engine: 'TwinPower Turbo 2.0L',
+      price: '1.899.000.000 đ',
+      image: 'assets/images/products/BMW-3-Series-2019-1280-199cd3c9a9e4186bdafdb6442254df99de.jpg',
+      category: 'Sedan',
     ),
     CarModel(
-      name: 'MAZDA2 SPORT',
-      seats: '5 chỗ',
-      dimensions: '4065 x 1695 x 1515',
-      engine: 'Skyactiv-G 1.5L',
-      price: '492.000.000 đ',
-      image: 'assets/images/products/car2.jpg',
+      name: 'Tesla Model Y 2025',
+      seats: '5-7 chỗ',
+      dimensions: '4751 x 1921 x 1624',
+      engine: 'Dual Motor Electric AWD',
+      price: '1.899.000.000 đ',
+      image: 'assets/images/products/Tesla-Model_Y-2025-1280-2a8d0491e827a5f41c36744d8006f50ad3.jpg',
+      category: 'SUV',
     ),
     CarModel(
-      name: 'MAZDA CX-3',
-      seats: '5 chỗ',
-      dimensions: '4275 x 1765 x 1535',
-      engine: 'Skyactiv-G 2.0L',
-      price: '589.000.000 đ',
-      image: 'assets/images/products/car3.jpg',
+      name: 'Toyota Land Cruiser 2021',
+      seats: '8 chỗ',
+      dimensions: '4985 x 1980 x 1925',
+      engine: 'V6 Diesel 3.3L Twin-Turbo',
+      price: '4.030.000.000 đ',
+      image: 'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
+      category: 'SUV',
     ),
     CarModel(
-      name: 'MAZDA CX-5',
+      name: 'Mercedes-Benz GLC Coupe 2024',
       seats: '5 chỗ',
-      dimensions: '4575 x 1842 x 1685',
-      engine: 'Skyactiv-G 2.5L',
-      price: '749.000.000 đ',
-      image: 'assets/images/products/car4.jpg',
+      dimensions: '4756 x 1890 x 1604',
+      engine: 'Mild-Hybrid 2.0L Turbo',
+      price: '3.299.000.000 đ',
+      image: 'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-3d89595d79f2fdc414118a494015c6d489.jpg',
+      category: 'SUV',
+    ),
+    CarModel(
+      name: 'Tesla Cybertruck 2025',
+      seats: '5 chỗ',
+      dimensions: '5682 x 2199 x 1790',
+      engine: 'Tri Motor Electric AWD',
+      price: '2.091.538.525 đ',
+      image: 'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
+      category: 'Bán tải',
+    ),
+    CarModel(
+      name: 'BMW X7 2023',
+      seats: '6-7 chỗ',
+      dimensions: '5151 x 2000 x 1805',
+      engine: 'TwinPower Turbo V8 4.4L',
+      price: '7.799.000.000 đ',
+      image: 'assets/images/products/BMW-X7-2023-1280-1980c2431b01e69530f98bf3202efb03d2.jpg',
+      category: 'SUV',
+    ),
+    CarModel(
+      name: 'Volvo S90 2020',
+      seats: '5 chỗ',
+      dimensions: '4963 x 1890 x 1443',
+      engine: 'T8 PHEV AWD 390hp',
+      price: '2.690.000.000 đ',
+      image: 'assets/images/products/Volvo-S90-2020-1280-2f45f4e51bdb672a5d9d6842006b5ec994.jpg',
+      category: 'Sedan',
+    ),
+    CarModel(
+      name: 'Toyota Tacoma Trailhunter 2024',
+      seats: '5 chỗ',
+      dimensions: '5765 x 1905 x 1905',
+      engine: 'i-FORCE MAX 2.4L Hybrid',
+      price: '1.899.000.000 đ',
+      image: 'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-adf51b971f224f050d44af15e08feaf8d0.jpg',
+      category: 'Bán tải',
     ),
   ];
 
@@ -269,8 +310,6 @@ class _NewCarScreenState extends State<NewCarScreen> {
                 'Xe ${car.name} với động cơ ${car.engine}, kích thước ${car.dimensions}. Thiết kế hiện đại, trang bị cao cấp và công nghệ tiên tiến.',
             'carImages': <String>[
               car.image,
-              'assets/images/products/car1.jpg',
-              'assets/images/products/car2.jpg',
             ],
             'rating': 4.6,
             'reviewCount': 120,
@@ -327,41 +366,19 @@ class _NewCarScreenState extends State<NewCarScreen> {
 
             const SizedBox(height: 16),
 
+            // Car image gallery slider
+            CarImageSlider(
+              images: [car.image],
+              height: 160,
+              borderRadius: BorderRadius.circular(12),
+            ),
+
+            const SizedBox(height: 16),
+
             Row(
               children: [
-                // Car image
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.black,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        car.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white24,
-                              size: 50,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
                 // Car specs
                 Expanded(
-                  flex: 3,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -530,6 +547,7 @@ class CarModel {
   final String engine;
   final String price;
   final String image;
+  final String category;
 
   CarModel({
     required this.name,
@@ -538,5 +556,6 @@ class CarModel {
     required this.engine,
     required this.price,
     required this.image,
+    this.category = 'Tất cả',
   });
 }

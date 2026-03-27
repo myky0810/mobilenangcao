@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/favorite_service.dart';
+import '../../widgets/car_image_slider.dart';
 
 class MercedesScreen extends StatefulWidget {
   const MercedesScreen({super.key, this.phoneNumber});
@@ -17,56 +18,88 @@ class _MercedesScreenState extends State<MercedesScreen> {
   final List<Map<String, dynamic>> _mercedesCars = [
     {
       'id': 'mercedes_1',
-      'name': 'C 200 Avantgarde (VI)',
+      'name': 'Mercedes-Benz AMG GT Coupe 2024',
       'brand': 'Mercedes',
-      'price': '1.599.000.000đ',
-      'priceNote': 'Lăn bánh từ 1.8 tỷ',
-      'image': 'assets/images/products/car1.jpg',
-      'rating': 7.0,
-      'reviewCount': 140,
+      'price': '8.500.000.000đ',
+      'priceNote': 'Lăn bánh từ 9.2 tỷ',
+      'image': 'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
+      'rating': 9.5,
+      'reviewCount': 210,
       'isNew': true,
       'description':
-          'Mercedes C 200 Avantgarde mang phong cách sang trọng trẻ trung, vận hành mượt và nội thất chuẩn “luxury”. Màn hình giải trí hiện đại, chất liệu hoàn thiện cao cấp và các gói hỗ trợ lái giúp di chuyển trong phố lẫn đường dài đều nhàn nhã. Đây là lựa chọn cân bằng giữa đẳng cấp thương hiệu và tính thực dụng.',
+          'Mercedes-Benz AMG GT Coupe 2024 là siêu xe thể thao đỉnh cao với động cơ V8 twin-turbo 4.0L, sản sinh 577 mã lực. Thiết kế thuần thể thao với nội thất AMG Performance cao cấp, hệ thống treo thích ứng và chế độ lái đa dạng giúp xe chinh phục mọi cung đường.',
       'gallery': <String>[
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-0af94a1f278f934636c462f62623fc4b76.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-421ec0ae85aedddd995507af718580eb0f.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-69b33067617647b278192eaa4d4cf713cb.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-8bd412930d690a0d314d4a59497b92606a.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-Rear.91ad5a3f.jpg',
+        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-Side_Profile.91ad5a3f.jpg',
       ],
     },
     {
       'id': 'mercedes_2',
-      'name': 'New E 180 (VI)',
+      'name': 'Mercedes-Benz G63 AMG 2025',
       'brand': 'Mercedes',
-      'price': '2.090.000.000đ',
-      'priceNote': 'Lăn bánh từ 2.4 tỷ',
-      'image': 'assets/images/products/car2.jpg',
-      'rating': 7.0,
-      'reviewCount': 98,
+      'price': '11.900.000.000đ',
+      'priceNote': 'Lăn bánh từ 13 tỷ',
+      'image': 'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-038bcbee2f3dd71d41f1185ec519c69811.jpg',
+      'rating': 9.8,
+      'reviewCount': 185,
       'isNew': false,
       'description':
-          'Mercedes E 180 hướng đến trải nghiệm êm ái, yên tĩnh và lịch lãm. Hệ thống treo tối ưu cho sự thoải mái, khoang lái rộng rãi, nhiều tiện ích thông minh. Lý tưởng cho khách hàng ưu tiên sự sang trọng tinh tế và cảm giác lái nhẹ nhàng, ổn định.',
+          'Mercedes-Benz G63 AMG 2025 - biểu tượng SUV hạng sang với động cơ V8 biturbo 4.0L, 585 mã lực. Khung gầm cứng cáp kết hợp nội thất siêu sang, hệ thống khóa vi sai điện tử 3 trục cho phép chinh phục mọi địa hình. Đây là biểu tượng của sức mạnh và đẳng cấp.',
       'gallery': <String>[
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
+        'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-038bcbee2f3dd71d41f1185ec519c69811.jpg',
+        'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-1ddc9ab31d0d53254e3a3a3e4438d93308.jpg',
+        'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-72c6d26197b4b244f3677a97514e19e04e.jpg',
+        'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-769aa742caf3f44036ee9931eb310892b3.jpg',
+        'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-b2e6d172ce6819c7ea13d9b476511448cf.jpg',
+        'assets/images/products/Mercedes-Benz-G63_AMG-2025-Front.0b7c7887.jpg',
       ],
     },
     {
       'id': 'mercedes_3',
-      'name': 'New E 200 Exclusive (VI)',
+      'name': 'Mercedes-Benz GLC Coupe 2024',
       'brand': 'Mercedes',
-      'price': '2.290.000.000đ',
-      'priceNote': 'Lăn bánh từ 2.6 tỷ',
-      'image': 'assets/images/products/car3.jpg',
-      'rating': 7.0,
-      'reviewCount': 112,
+      'price': '3.299.000.000đ',
+      'priceNote': 'Lăn bánh từ 3.7 tỷ',
+      'image': 'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-3d89595d79f2fdc414118a494015c6d489.jpg',
+      'rating': 8.8,
+      'reviewCount': 156,
       'isNew': false,
       'description':
-          'E 200 Exclusive nổi bật với phong cách “Executive”: lịch lãm, tiện nghi và cách âm tốt. Nội thất tỉ mỉ, ghế ngồi thoải mái cho cả hàng ghế sau, phù hợp cho doanh nhân hoặc gia đình thường xuyên di chuyển. Khả năng vận hành cân bằng giữa êm ái và sự chắc chắn ở tốc độ cao.',
+          'Mercedes-Benz GLC Coupe 2024 – SUV Coupe sang trọng kết hợp phong cách thể thao và tính thực dụng. Nội thất MBUX thế hệ mới với màn hình 11.9 inch, ghế leather cao cấp và hệ thống âm thanh Burmester. Động cơ mild-hybrid tiết kiệm nhiên liệu mà vẫn đảm bảo vận hành mạnh mẽ.',
       'gallery': <String>[
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
+        'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-3d89595d79f2fdc414118a494015c6d489.jpg',
+        'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-63e36b654c72694284f49bc4a81b901da4.jpg',
+        'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-6bc76a472d634a29a2dd9880e5c2828b1b.jpg',
+        'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-7ad6bd42ca87a97a7d108de74775485b99.jpg',
+        'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-1280-93626637264fd0b80cfb3cad73550130ea.jpg',
+        'assets/images/products/Mercedes-Benz-GLC_Coupe-2024-Front.9d58c872.jpg',
+      ],
+    },
+    {
+      'id': 'mercedes_4',
+      'name': 'Mercedes-Benz S-Class Maybach 2027',
+      'brand': 'Mercedes',
+      'price': '19.800.000.000đ',
+      'priceNote': 'Lăn bánh từ 22 tỷ',
+      'image': 'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-15bf9ddb7f519fa58e9c6f2320574c02a2.jpg',
+      'rating': 10.0,
+      'reviewCount': 98,
+      'isNew': true,
+      'description':
+          'Mercedes-Maybach S-Class 2027 là đỉnh cao của đẳng cấp và xa xỉ. Khoang hành khách rộng rãi với ghế massage, màn hình giải trí riêng, hệ thống treo chủ động E-Active Body Control và âm thanh Burmester 4D. Đây là xe limousine hạng sang dành cho những ai muốn trải nghiệm sự hoàn hảo tuyệt đối.',
+      'gallery': <String>[
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-15bf9ddb7f519fa58e9c6f2320574c02a2.jpg',
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-2f8b520f893056338912b56af08cf38838.jpg',
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-3160f741148982f4bf0f60bbb124192071.jpg',
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-4761c7b617fd0d3a40e1e134d0c6b41395.jpg',
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-92cf8c6006e10525f260e14771f327143b.jpg',
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-b533dd88b1bad9f4d4dfedf3300bfb7967.jpg',
+        'assets/images/products/Mercedes-Benz-S-Class_Maybach-2027-1280-d8b4ddef32f544094f5defc900bd335e39.jpg',
       ],
     },
   ];
@@ -192,39 +225,12 @@ class _MercedesScreenState extends State<MercedesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Car Image with heart icon
+            // Car gallery slider
             Stack(
               children: [
-                Container(
+                CarImageSlider(
+                  images: (car['gallery'] as List<String>?) ?? [car['image'] as String],
                   height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: Colors.grey[900],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      car['image'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white30,
-                              size: 60,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ),
                 // Heart icon
                 Positioned(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/favorite_service.dart';
+import '../../widgets/car_image_slider.dart';
 
 class TeslaScreen extends StatefulWidget {
   const TeslaScreen({super.key, this.phoneNumber});
@@ -17,74 +18,87 @@ class _TeslaScreenState extends State<TeslaScreen> {
   final List<Map<String, dynamic>> _teslaCars = [
     {
       'id': 'tesla_cybertruck',
-      'name': 'Cybertruck',
+      'name': 'Tesla Cybertruck 2025',
       'brand': 'Tesla',
       'price': '2.091.538.525đ',
       'priceNote': 'Lăn bánh từ 2.5 tỷ',
-      'image': 'assets/images/products/cybertruck_1.jpg',
-      'rating': 4.8,
+      'image':
+          'assets/images/products/Tesla-Cybertruck-2025-1280-16e1b7f3835967587c752ccbc071af69c5.jpg',
+      'rating': 9.2,
       'reviewCount': 240,
       'isNew': true,
       'description':
-          'Cybertruck là mẫu bán tải điện với thiết kế đột phá, thân xe cứng vững và khả năng vận hành mạnh mẽ. Khoang cabin tối giản theo phong cách tương lai, nhiều công nghệ hỗ trợ lái và kết nối. Phù hợp cho người thích sự khác biệt, hiệu năng và trải nghiệm “future driving”.',
+          'Tesla Cybertruck 2025 là mẫu bán tải điện cách mạng với thân xe thép không gỉ đột phá. Phạm vi lên đến 500km/lần sạc, tăng tốc 0-100km/h chỉ 2.9 giây và sức kéo lên đến 11.3 tấn. Buồng lái tương lai với màn hình 18.5 inch và công nghệ Autopilot tiên tiến.',
       'gallery': <String>[
-        'assets/images/products/cybertruck_1.jpg',
-        'assets/images/products/cybertruck_2.jpg',
-        'assets/images/products/cybertruck_3.jpg',
+        'assets/images/products/Tesla-Cybertruck-2025-1280-16e1b7f3835967587c752ccbc071af69c5.jpg',
+        'assets/images/products/Tesla-Cybertruck-2025-1280-4c154b2d57ac41a915b7ad60624ed73dc1.jpg',
+        'assets/images/products/Tesla-Cybertruck-2025-1280-67757d6a7424872b2630bb000107939a2f.jpg',
+        'assets/images/products/Tesla-Cybertruck-2025-1280-74abae0a38fbfbc768688f443081944f8f.jpg',
+        'assets/images/products/Tesla-Cybertruck-2025-1280-7ca3be8dc288bd177f33cdb0d03ecaa027.jpg',
+        'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
       ],
     },
     {
       'id': 'tesla_1',
-      'name': 'Model S Plaid',
+      'name': 'Tesla Model 3 2024',
       'brand': 'Tesla',
-      'price': '3.200.000.000đ',
-      'priceNote': 'Lăn bánh từ 3.6 tỷ',
-      'image': 'assets/images/products/car1.jpg',
-      'rating': 8.5,
+      'price': '1.599.000.000đ',
+      'priceNote': 'Lăn bánh từ 1.8 tỷ',
+      'image':
+          'assets/images/products/Tesla-Model_3-2024-1280-3f2af9ab7a564be8488ad85f205963fdf3.jpg',
+      'rating': 8.8,
       'reviewCount': 160,
       'isNew': false,
       'description':
-          'Model S Plaid là sedan điện hiệu năng cao: tăng tốc ấn tượng, vận hành êm và gần như không tiếng ồn. Hệ thống giải trí trung tâm, khả năng cập nhật phần mềm và các tính năng an toàn tạo nên trải nghiệm “smart car” đúng nghĩa.',
+          'Tesla Model 3 2024 – sedan điện hạng sang bán chạy nhất thế giới. Thiết kế mới hoàn toàn với nội thất trôi nổi sang trọng, màn hình 15.4 inch trung tâm, phầm mềm cập nhật OTA và phạm vi di chuyển lên đến 629km.',
       'gallery': <String>[
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
+        'assets/images/products/Tesla-Model_3-2024-1280-3f2af9ab7a564be8488ad85f205963fdf3.jpg',
+        'assets/images/products/Tesla-Model_3-2024-1280-7020760cdd5c40f8fc3cb613b07644362f.jpg',
+        'assets/images/products/Tesla-Model_3-2024-1280-a164cce1c500599270877d58b0dd6248ec.jpg',
+        'assets/images/products/Tesla-Model_3-2024-1280-bbdbe6148d9e2a2853f72e6db073c8525b.jpg',
+        'assets/images/products/Tesla-Model_3-2024-1280-e60d1b86b83f8a74d1bd388b50d9995b91.jpg',
+        'assets/images/products/Tesla-Model_3-2024-1280-f4e2f306a7b7e7b9b962b3efb0d46167bb.jpg',
       ],
     },
     {
       'id': 'tesla_2',
-      'name': 'Model Y',
+      'name': 'Tesla Model Y 2025',
       'brand': 'Tesla',
-      'price': '2.599.000.000đ',
-      'priceNote': 'Lăn bánh từ 2.9 tỷ',
-      'image': 'assets/images/products/car2.jpg',
-      'rating': 8.0,
+      'price': '1.899.000.000đ',
+      'priceNote': 'Lăn bánh từ 2.1 tỷ',
+      'image':
+          'assets/images/products/Tesla-Model_Y-2025-1280-2a8d0491e827a5f41c36744d8006f50ad3.jpg',
+      'rating': 9.0,
       'reviewCount': 132,
       'isNew': false,
       'description':
-          'Model Y là SUV điện đa dụng: không gian rộng, tầm nhìn tốt và chi phí vận hành tối ưu. Hệ thống hỗ trợ lái và khả năng tăng tốc mượt giúp đi phố lẫn đi xa đều thoải mái.',
+          'Tesla Model Y 2025 là SUV điện bán chạy số 1 toàn cầu. Không gian 5/7 chỗ linh hoạt, khoảng sáng gầm tốt, phạm vi 533km/lần sạc, tăng tốc ấn tượng và hệ thống Autopilot hiện đại giúp mọi chuyến đi đều an toàn và thú vị.',
       'gallery': <String>[
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
+        'assets/images/products/Tesla-Model_Y-2025-1280-2a8d0491e827a5f41c36744d8006f50ad3.jpg',
+        'assets/images/products/Tesla-Model_Y-2025-1280-64ba33f4b38f781a64a0272a506f43cb78.jpg',
+        'assets/images/products/Tesla-Model_Y-2025-1280-8a4835fad6014a5880615b12f016fbcb75.jpg',
+        'assets/images/products/Tesla-Model_Y-2025-1280-ab5d6a99cf44c76d3b2f2057001641a144.jpg',
+        'assets/images/products/Tesla-Model_Y-2025-1280-d948a430156bb417fbef28d8708f70b499.jpg',
+        'assets/images/products/Tesla-Model_Y-2025-Front_Three-Quarter.af8e4bcb.jpg',
       ],
     },
     {
       'id': 'tesla_3',
-      'name': 'Model X',
+      'name': 'Tesla Model Y Performance 2026',
       'brand': 'Tesla',
-      'price': '3.890.000.000đ',
-      'priceNote': 'Lăn bánh từ 4.3 tỷ',
-      'image': 'assets/images/products/car3.jpg',
-      'rating': 8.2,
+      'price': '2.499.000.000đ',
+      'priceNote': 'Lăn bánh từ 2.8 tỷ',
+      'image':
+          'assets/images/products/Tesla-Model_Y_Performance-2026-1280-30d6907df0e364e47154761690e6267dfc.jpg',
+      'rating': 9.5,
       'reviewCount': 118,
-      'isNew': false,
+      'isNew': true,
       'description':
-          'Model X nổi bật với không gian rộng rãi và thiết kế cửa đặc trưng, phù hợp gia đình. Hệ thống điện cho khả năng tăng tốc tức thì, vận hành ổn định và nhiều công nghệ thông minh.',
+          'Tesla Model Y Performance 2026 – phiên bản hiệu năng cao của Model Y với động cơ kép AWD, tăng tốc 0-100km/h chỉ 3.5 giây. Phanh hiệu suất cao, vành 21 inch thể thao và tất cả tiện ích cao cấp của Model Y.',
       'gallery': <String>[
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
+        'assets/images/products/Tesla-Model_Y_Performance-2026-1280-30d6907df0e364e47154761690e6267dfc.jpg',
+        'assets/images/products/Tesla-Model_Y_Performance-2026-1280-605c58d5eefcdb8d97ac1fe520128b8cb2.jpg',
+        'assets/images/products/Tesla-Model_Y_Performance-2026-1280-860ca1d81f9c8482c37873ef803c2ba63d.jpg',
       ],
     },
   ];
@@ -210,38 +224,14 @@ class _TeslaScreenState extends State<TeslaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Car gallery slider
             Stack(
               children: [
-                Container(
+                CarImageSlider(
+                  images:
+                      (car['gallery'] as List<String>?) ??
+                      [car['image'] as String],
                   height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: Colors.grey[900],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      car['image'] as String,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: Icon(
-                              Icons.electric_car,
-                              color: Colors.white30,
-                              size: 60,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ),
                 Positioned(
                   top: 12,

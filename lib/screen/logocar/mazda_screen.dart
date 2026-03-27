@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/favorite_service.dart';
+import '../../widgets/car_image_slider.dart';
 
 class MazdaScreen extends StatefulWidget {
   const MazdaScreen({super.key, this.phoneNumber});
@@ -246,39 +247,12 @@ class _MazdaScreenState extends State<MazdaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Car Image with heart icon
+            // Car gallery slider
             Stack(
               children: [
-                Container(
+                CarImageSlider(
+                  images: car.gallery.isNotEmpty ? car.gallery : [car.image],
                   height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: Colors.grey[900],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      car.image,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white30,
-                              size: 60,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ),
                 // Heart icon
                 Positioned(
@@ -402,33 +376,42 @@ class _MazdaScreenState extends State<MazdaScreen> {
 
   Widget _buildBottomNav() {
     return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        color: const Color(0xFF333333),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, 0),
-          _buildNavItem(Icons.directions_car, 1),
-          _buildNavItem(Icons.favorite_border, 2),
-          _buildNavItem(Icons.person_outline, 3),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: const BoxDecoration(color: Colors.transparent),
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1a1a1a),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, -3),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home_rounded, 0),
+            _buildNavItem(Icons.directions_car_rounded, 1),
+            _buildNavItem(Icons.favorite_rounded, 2),
+            _buildNavItem(Icons.person_rounded, 3),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildNavItem(IconData icon, int index) {
-    bool isActive = _activeNavIndex == index;
+    final isActive = _activeNavIndex == index;
     return GestureDetector(
       onTap: () {
+        setState(() {
+          _activeNavIndex = index;
+        });
         if (index == 0) {
           Navigator.pushReplacementNamed(
             context,
@@ -458,30 +441,39 @@ class _MazdaScreenState extends State<MazdaScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        width: isActive ? 56 : 50,
+        height: isActive ? 56 : 50,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          shape: BoxShape.circle,
           gradient: isActive
               ? const LinearGradient(
-                  colors: [Colors.orange, Colors.deepOrange],
+                  colors: [Color(0xFF3b82c8), Color(0xFF1e5a9e)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
               : null,
+          color: isActive ? null : Colors.transparent,
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: Colors.orange.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: const Color(0xFF3b82c8).withOpacity(0.6),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ]
-              : null,
+              : [],
         ),
-        child: Icon(
-          icon,
-          color: isActive ? Colors.white : Colors.grey[500],
-          size: 24,
+        child: Center(
+          child: AnimatedScale(
+            scale: isActive ? 1.1 : 1.0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            child: Icon(
+              icon,
+              color: isActive ? Colors.white : Colors.white54,
+              size: isActive ? 26 : 24,
+            ),
+          ),
         ),
       ),
     );

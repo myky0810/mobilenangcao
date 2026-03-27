@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/favorite_service.dart';
+import '../../widgets/car_image_slider.dart';
 
 class ToyotaScreen extends StatefulWidget {
   const ToyotaScreen({super.key, this.phoneNumber});
@@ -17,56 +18,89 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
   final List<Map<String, dynamic>> _toyotaCars = [
     {
       'id': 'toyota_1',
-      'name': 'Camry 2.5Q',
+      'name': 'Toyota Camry 2021',
       'brand': 'Toyota',
       'price': '1.320.000.000đ',
       'priceNote': 'Lăn bánh từ 1.5 tỷ',
-      'image': 'assets/images/products/car1.jpg',
-      'rating': 7.5,
+      'image': 'assets/images/products/Toyota-Camry-2021-1280-064ad2cc20466b8915c514999074418bde.jpg',
+      'rating': 8.5,
       'reviewCount': 155,
       'isNew': true,
       'description':
-          'Toyota Camry 2.5Q nổi tiếng với sự bền bỉ, vận hành êm và cách âm tốt. Nội thất rộng rãi, tiện nghi đầy đủ, phù hợp cho gia đình hoặc khách hàng cần một chiếc sedan sang trọng, ổn định và giữ giá.',
+          'Toyota Camry 2021 nổi tiếng với sự bền bỉ, vận hành êm và cách âm xuất sắc. Thiết kế Dynamic Force Engine 2.5L, nội thất rộng rãi tiện nghi đầy đủ, hệ thống an toàn Toyota Safety Sense. Lựa chọn lý tưởng cho gia đình và doanh nhân.',
       'gallery': <String>[
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
+        'assets/images/products/Toyota-Camry-2021-1280-064ad2cc20466b8915c514999074418bde.jpg',
+        'assets/images/products/Toyota-Camry-2021-1280-32243d6b4b7278beb0aab08ce0d373d49f.jpg',
+        'assets/images/products/Toyota-Camry-2021-1280-7103cc843047ebe56d6a7d6fb095c35419.jpg',
+        'assets/images/products/Toyota-Camry-2021-1280-8671f0b512ac1f70c2a1bc4c60c8d28092.jpg',
+        'assets/images/products/Toyota-Camry-2021-1280-8d5933ff56455450044ab1183050f61fae.jpg',
+        'assets/images/products/Toyota-Camry-2021-1280-cc5fc213cb86e36bea6be48360ab721695.jpg',
       ],
     },
     {
       'id': 'toyota_2',
-      'name': 'Fortuner Legender',
+      'name': 'Toyota Avalon 2019',
       'brand': 'Toyota',
-      'price': '1.426.000.000đ',
-      'priceNote': 'Lăn bánh từ 1.6 tỷ',
-      'image': 'assets/images/products/car2.jpg',
-      'rating': 7.8,
+      'price': '1.580.000.000đ',
+      'priceNote': 'Lăn bánh từ 1.8 tỷ',
+      'image': 'assets/images/products/Toyota-Avalon-2019-1280-20fbb15d19ae58440ccb4e41c3cfef6a36.jpg',
+      'rating': 8.2,
       'reviewCount': 132,
       'isNew': false,
       'description':
-          'Fortuner Legender mang dáng SUV mạnh mẽ, gầm cao linh hoạt, phù hợp nhiều địa hình. Không gian 7 chỗ rộng, thực dụng, bền bỉ và chi phí vận hành tối ưu. Đây là lựa chọn quen thuộc cho gia đình hay đi xa.',
+          'Toyota Avalon 2019 là sedan flagship cao cấp của Toyota với thiết kế sang trọng độc đáo. Động cơ V6 3.5L mạnh mẽ, không gian nội thất rộng rãi hạng sang, âm thanh JBL 14 loa và các tính năng an toàn tiên tiến.',
       'gallery': <String>[
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-20fbb15d19ae58440ccb4e41c3cfef6a36.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-3b41933023cc364c5afb1b8a006b538f89.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-85fc19c80d671e7c49928514a16fbf542e.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-a3ad76434fc21e6b2b0be27df24764ce95.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-ca35fb60156b3fcad14a028c30351f11a3.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-d627c2e659b137bba505ad71c105f84c80.jpg',
+        'assets/images/products/Toyota-Avalon-2019-1280-f9661a2f029868e4eab7e14a82a01db926.jpg',
       ],
     },
     {
       'id': 'toyota_3',
-      'name': 'Land Cruiser',
+      'name': 'Toyota Land Cruiser 2021',
       'brand': 'Toyota',
       'price': '4.030.000.000đ',
       'priceNote': 'Lăn bánh từ 4.5 tỷ',
-      'image': 'assets/images/products/car3.jpg',
-      'rating': 8.0,
+      'image': 'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
+      'rating': 9.3,
       'reviewCount': 88,
       'isNew': false,
       'description':
-          'Land Cruiser là biểu tượng SUV địa hình cao cấp: khung gầm chắc chắn, độ tin cậy cao, nội thất rộng rãi và khả năng off-road ấn tượng. Phù hợp khách hàng muốn một chiếc xe bền, sang và sẵn sàng chinh phục mọi cung đường.',
+          'Toyota Land Cruiser 2021 – biểu tượng SUV địa hình cao cấp số 1 thế giới. Động cơ dầu V6 3.3L twin-turbo, khung gầm GA-F platform thế hệ mới, khả năng off-road huyền thoại và nội thất 8 chỗ sang trọng. Phù hợp cho cả đô thị lẫn địa hình khắc nghiệt.',
       'gallery': <String>[
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-4efc18483995a822f3ece39367d5d155ed.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-58ff0f9258d235b970aa7e53956b659206.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-65c2c3d0838faad869e880c9a7595acf5e.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-ad9dfa54745f3df21a0d2914f429c8f94e.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-b36fb92915e4d339ab24b315f0d78e9d67.jpg',
+        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-f3049447d164609d97e40ac527c2d83b53.jpg',
+      ],
+    },
+    {
+      'id': 'toyota_4',
+      'name': 'Toyota Tacoma Trailhunter 2024',
+      'brand': 'Toyota',
+      'price': '1.899.000.000đ',
+      'priceNote': 'Lăn bánh từ 2.1 tỷ',
+      'image': 'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-adf51b971f224f050d44af15e08feaf8d0.jpg',
+      'rating': 8.8,
+      'reviewCount': 76,
+      'isNew': true,
+      'description':
+          'Toyota Tacoma Trailhunter 2024 – phiên bản bán tải off-road cực đỉnh. Trang bị mặc định bộ lift nâng gầm, lốp BFGoodrich, đèn ARB và nhiều phụ kiện off-road cao cấp. Phù hợp cho những ai yêu thích khám phá thiên nhiên và địa hình khó.',
+      'gallery': <String>[
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-adf51b971f224f050d44af15e08feaf8d0.jpg',
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-53c66cccf9e58cc440c7508ff175738e03.jpg',
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-99133bdfbb1f4d71cef5c8d261d7e27f9e.jpg',
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-b22a0a7dc532e8f54149c694e16463678f.jpg',
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-d4380c95e39cfdd7218ea909c12de66bc4.jpg',
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-d7a09e06dc673115a0358a3e61faf95221.jpg',
+        'assets/images/products/Toyota-Tacoma_Trailhunter-2024-1280-df47e0962b8953060319f5271286c50713.jpg',
       ],
     },
   ];
@@ -192,39 +226,12 @@ class _ToyotaScreenState extends State<ToyotaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Car Image with heart icon
+            // Car gallery slider
             Stack(
               children: [
-                Container(
+                CarImageSlider(
+                  images: (car['gallery'] as List<String>?) ?? [car['image'] as String],
                   height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: Colors.grey[900],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      car['image'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white30,
-                              size: 60,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ),
                 // Heart icon
                 Positioned(

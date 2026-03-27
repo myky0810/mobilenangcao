@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/favorite_service.dart';
+import '../../widgets/car_image_slider.dart';
 
 class VolvoScreen extends StatefulWidget {
   const VolvoScreen({super.key, this.phoneNumber});
@@ -17,56 +18,90 @@ class _VolvoScreenState extends State<VolvoScreen> {
   final List<Map<String, dynamic>> _volvoCars = [
     {
       'id': 'volvo_1',
-      'name': 'XC60',
+      'name': 'Volvo XC40 Recharge 2023',
       'brand': 'Volvo',
       'price': '2.299.000.000đ',
       'priceNote': 'Lăn bánh từ 2.6 tỷ',
-      'image': 'assets/images/products/car1.jpg',
-      'rating': 7.0,
+      'image': 'assets/images/products/Volvo-XC40_Recharge-2023-1280-20af6e11057d63aefa0b99ee4160b33035.jpg',
+      'rating': 9.0,
       'reviewCount': 142,
       'isNew': true,
       'description':
-          'Volvo XC60 kết hợp động cơ hybrid mạnh mẽ với thiết kế Scandinavian tinh tế. Hệ thống an toàn hàng đầu thế giới, nội thất cao cấp và khả năng vận hành êm ái. Phù hợp khách hàng ưa chuộng sự sang trọng và bảo vệ môi trường.',
+          'Volvo XC40 Recharge 2023 là SUV điện thuần túy với phạm vi 418km/lần sạc, tăng tốc 0-100km/h chỉ 4.9 giây. Thiết kế Scandinavian tinh tế, hệ thống an toàn Pilot Assist và Google Automotive Services tích hợp sẵn.',
       'gallery': <String>[
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
+        'assets/images/products/Volvo-XC40_Recharge-2023-1280-20af6e11057d63aefa0b99ee4160b33035.jpg',
+        'assets/images/products/Volvo-XC40_Recharge-2023-1280-a1bc2d0f31a3b46f38358216c1433f3db7.jpg',
+        'assets/images/products/Volvo-XC40_Recharge-2023-1280-b6905ce9a2140e12548e37cb80356aad56.jpg',
+        'assets/images/products/Volvo-XC40_Recharge-2023-1280-f66f58657eb01ed912e96b3bb0c48ff9d9.jpg',
+        'assets/images/products/Volvo-XC40_Recharge-2023-1280-fb46f4e9c4d896858fbba5c1206c609ddf.jpg',
+        'assets/images/products/Volvo-XC40_Recharge-2023-wallpaper.jpg',
       ],
     },
     {
       'id': 'volvo_2',
-      'name': 'XC40',
+      'name': 'Volvo S90 2020',
       'brand': 'Volvo',
-      'price': '1.820.000.000đ',
-      'priceNote': 'Lăn bánh từ 2.1 tỷ',
-      'image': 'assets/images/products/car2.jpg',
-      'rating': 7.0,
+      'price': '2.690.000.000đ',
+      'priceNote': 'Lăn bánh từ 3.0 tỷ',
+      'image': 'assets/images/products/Volvo-S90-2020-1280-2f45f4e51bdb672a5d9d6842006b5ec994.jpg',
+      'rating': 9.2,
       'reviewCount': 118,
       'isNew': false,
       'description':
-          'XC40 là SUV compact năng động với thiết kế trẻ trung, công nghệ thông minh và khả năng vận hành linh hoạt trong đô thị. Nội thất hiện đại, tiện ích thông minh và hệ thống an toàn Volvo đặc trưng.',
+          'Volvo S90 2020 – sedan hạng sang đỉnh cao mang tinh thần Bắc Âu. Nội thất Open Sky với kính panorama, ghế da Nappa cao cấp, âm thanh Bowers & Wilkins và hệ thống treo khí nén tạo nên chuyến đi hoàn hảo.',
       'gallery': <String>[
-        'assets/images/products/car2.jpg',
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
+        'assets/images/products/Volvo-S90-2020-1280-2f45f4e51bdb672a5d9d6842006b5ec994.jpg',
+        'assets/images/products/Volvo-S90-2020-1280-3699f617653f2ffb367790c930c623f440.jpg',
+        'assets/images/products/Volvo-S90-2020-1280-4aa133bb07986a22ae36641b4238d7175c.jpg',
+        'assets/images/products/Volvo-S90-2020-1280-58f915deda511ead40e9ad80a285f5dc6e.jpg',
+        'assets/images/products/Volvo-S90-2020-Engine_Bay.72037744.jpg',
+        'assets/images/products/Volvo-S90-2020-Front.72037744.jpg',
+        'assets/images/products/Volvo-S90-2020-Interior.72037744.jpg',
+        'assets/images/products/Volvo-S90-2020-Side_Profile.72037744.jpg',
       ],
     },
     {
       'id': 'volvo_3',
-      'name': 'S90',
+      'name': 'Volvo S60 T8 Polestar 2019',
       'brand': 'Volvo',
-      'price': '2.690.000.000đ',
-      'priceNote': 'Lăn bánh từ 3.0 tỷ',
-      'image': 'assets/images/products/car3.jpg',
-      'rating': 7.0,
+      'price': '1.999.000.000đ',
+      'priceNote': 'Lăn bánh từ 2.2 tỷ',
+      'image': 'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-5b69199ac83c5b4b010562dd62cf7d8702.jpg',
+      'rating': 9.0,
       'reviewCount': 96,
       'isNew': false,
       'description':
-          'S90 là sedan hạng sang mang đậm phong cách Bắc Âu: thiết kế thanh lịch, nội thất minimalist cao cấp và công nghệ an toàn tiên tiến. Lựa chọn hoàn hảo cho doanh nhân thành đạt.',
+          'Volvo S60 Polestar Engineered 2019 là phiên bản hiệu năng cao do Polestar tinh chỉnh. Hệ dẫn động T8 AWD PHEV 415 mã lực, tăng tốc 0-100km/h chỉ 4.4 giây. Bộ giảm chấn Öhlins điều chỉnh được và vành BBS nhẹ.',
       'gallery': <String>[
-        'assets/images/products/car3.jpg',
-        'assets/images/products/car1.jpg',
-        'assets/images/products/car2.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-5b69199ac83c5b4b010562dd62cf7d8702.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-79da1111d2bceb723da5124a32c8c39eb5.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-836fd600b9a4200e3f081038f224e319c7.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-a313cb768a865f5c018f8bd93246532641.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-adab432b074d396a2fd74cef16cafb5e14.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-c1b7444c9fe2dc46a440f34652c10e543c.jpg',
+        'assets/images/products/Volvo-S60_T8_Polestar_Engineered-2019-1280-f211ce945dd3c7d1c53776b893e6787356.jpg',
+      ],
+    },
+    {
+      'id': 'volvo_4',
+      'name': 'Volvo V60 Cross Country 2019',
+      'brand': 'Volvo',
+      'price': '1.820.000.000đ',
+      'priceNote': 'Lăn bánh từ 2.1 tỷ',
+      'image': 'assets/images/products/Volvo-V60_Cross_Country-2019-1280-12d164eef5d199d0ebf101b5625d52cab8.jpg',
+      'rating': 8.5,
+      'reviewCount': 80,
+      'isNew': false,
+      'description':
+          'Volvo V60 Cross Country 2019 kết hợp sự thanh lịch của wagon với khả năng off-road nhẹ: gầm cao, AWD tiêu chuẩn và nhiều tính năng off-road. Không gian chứa đồ rộng rãi, nội thất tiện nghi cao cấp và hệ thống an toàn Volvo đặc trưng.',
+      'gallery': <String>[
+        'assets/images/products/Volvo-V60_Cross_Country-2019-1280-12d164eef5d199d0ebf101b5625d52cab8.jpg',
+        'assets/images/products/Volvo-V60_Cross_Country-2019-1280-68f8eb3c18e7cea6b67bedfd80e02b7aee.jpg',
+        'assets/images/products/Volvo-V60_Cross_Country-2019-1280-6bf24848a571d26e58649af5b146b457ec.jpg',
+        'assets/images/products/Volvo-V60_Cross_Country-2019-1280-75a1470e8dd9c22550478f39338480b654.jpg',
+        'assets/images/products/Volvo-V60_Cross_Country-2019-1280-c017aca45316971b6dbf9cca632ba9270a.jpg',
+        'assets/images/products/Volvo-V60_Cross_Country-2019-1280-c6ac5bc87b4149d5670cfad6d25eccef52.jpg',
+        'assets/images/products/Volvo-V60_Cross_Country-2019-Interior.03f0a97b.jpg',
       ],
     },
   ];
@@ -190,39 +225,12 @@ class _VolvoScreenState extends State<VolvoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Car Image with heart icon
+            // Car gallery slider
             Stack(
               children: [
-                Container(
+                CarImageSlider(
+                  images: (car['gallery'] as List<String>?) ?? [car['image'] as String],
                   height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: Colors.grey[900],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      car['image'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white30,
-                              size: 60,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                 ),
                 // Heart icon
                 Positioned(

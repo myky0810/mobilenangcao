@@ -26,6 +26,7 @@ class _MapScreenState extends State<MapScreen> {
   bool _isRequestingLocation = true;
   bool _isLoadingShowrooms = false;
   bool _isLoadingRoute = false;
+  bool _locationPermissionGranted = false;
 
   /// Các tuyến từ OSRM (tối đa 3): tuyến chính + phụ.
   List<Map<String, dynamic>> _routeOptions = [];
@@ -47,19 +48,33 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      // Kiểm tra GPS có bật không
+      bool serviceEnabled;
+      try {
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      } catch (_) {
+        serviceEnabled = false;
+      }
+
       if (!serviceEnabled) {
         if (!mounted) return;
         setState(() {
           _locationError = 'Vui lòng bật GPS để xác định showroom gần nhất';
           _isRequestingLocation = false;
+          _locationPermissionGranted = false;
         });
         return;
       }
 
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+      // Kiểm tra / xin quyền
+      LocationPermission permission;
+      try {
+        permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+      } catch (_) {
+        permission = LocationPermission.denied;
       }
 
       if (permission == LocationPermission.denied ||
@@ -69,14 +84,47 @@ class _MapScreenState extends State<MapScreen> {
           _locationError =
               'Không có quyền truy cập vị trí. Vui lòng cấp quyền trong cài đặt.';
           _isRequestingLocation = false;
+          _locationPermissionGranted = false;
         });
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 15),
-      );
+      // Đánh dấu đã có quyền (để bật myLocationEnabled an toàn)
+      if (mounted) {
+        setState(() {
+          _locationPermissionGranted = true;
+        });
+      }
+
+      // Lấy vị trí hiện tại
+      Position position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 15),
+          ),
+        );
+      } catch (_) {
+        // Fallback: thử dùng vị trí cuối cùng
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (!mounted) return;
+        if (lastKnown != null) {
+          setState(() {
+            _currentPosition = lastKnown;
+            _isRequestingLocation = false;
+            _locationError = 'Đang dùng vị trí gần nhất của thiết bị';
+          });
+          await _loadNearbyShowroomsFromApi();
+        } else {
+          setState(() {
+            _locationError =
+                'Không thể lấy vị trí hiện tại. Đang hiển thị bản đồ mặc định.';
+            _isRequestingLocation = false;
+          });
+        }
+        return;
+      }
 
       if (!mounted) return;
       setState(() {
@@ -86,22 +134,13 @@ class _MapScreenState extends State<MapScreen> {
       });
 
       await _loadNearbyShowroomsFromApi();
-    } catch (_) {
-      final lastKnown = await Geolocator.getLastKnownPosition();
+    } catch (e) {
       if (!mounted) return;
-      if (lastKnown != null) {
-        setState(() {
-          _currentPosition = lastKnown;
-          _isRequestingLocation = false;
-          _locationError = 'Đang dùng vị trí gần nhất của thiết bị';
-        });
-        await _loadNearbyShowroomsFromApi();
-        return;
-      }
       setState(() {
         _locationError =
-            'Không thể lấy vị trí hiện tại. Đang hiển thị bản đồ mặc định.';
+            'Lỗi xác định vị trí. Đang hiển thị bản đồ mặc định.';
         _isRequestingLocation = false;
+        _locationPermissionGranted = false;
       });
     }
   }
@@ -181,8 +220,10 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       final latestPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 12),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 12),
+        ),
       );
       if (!mounted) return;
       setState(() {
@@ -299,8 +340,9 @@ class _MapScreenState extends State<MapScreen> {
 
   Map<String, dynamic>? _findNearestShowroomByPosition() {
     if (_nearestShowrooms.isNotEmpty) return _nearestShowrooms.first;
-    if (_showrooms.isNotEmpty && _currentPosition != null)
+    if (_showrooms.isNotEmpty && _currentPosition != null) {
       return _showrooms.first;
+    }
     return null;
   }
 
@@ -552,7 +594,7 @@ class _MapScreenState extends State<MapScreen> {
               zoom: 13,
             ),
             mapType: MapType.normal,
-            myLocationEnabled: true,
+            myLocationEnabled: _locationPermissionGranted,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: true,
             zoomGesturesEnabled: true,

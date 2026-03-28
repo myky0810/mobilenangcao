@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/otp_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,10 +15,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   late Animation<double> _fadeAnim;
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // Development mode: true = không dùng Firebase, false = dùng Firebase thật
-  static const bool kUseDevelopmentMode = false;
 
   @override
   void initState() {
@@ -271,99 +266,20 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     final fullPhoneNumber = '+84$phoneText';
 
-    // Development Mode: Fake OTP để test nhanh
-    if (kUseDevelopmentMode) {
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-
-        // Navigate to OTP screen with fake data
-        Navigator.pushNamed(
-          context,
-          '/otp',
-          arguments: {
-            'phoneNumber': fullPhoneNumber,
-            'verificationId': 'dev_mode_verification_id',
-            'resendToken': null,
-            'isDevelopmentMode': true,
-          },
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('📱 DEV MODE: Mã OTP test là "123456"'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-      return;
-    }
-
-    // Production Mode: Firebase thật
     try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: fullPhoneNumber,
-        timeout: const Duration(seconds: 60),
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-verification (Android only)
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Xác thực tự động thành công')),
-            );
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          if (mounted) {
-            setState(() => _isLoading = false);
-            String errorMessage = 'Firebase chưa được cấu hình đúng';
+      // Gửi OTP qua Firestore (miễn phí, không cần cấu hình Firebase Phone Auth)
+      final otpCode = await OTPService.sendOTP(fullPhoneNumber);
 
-            if (e.code == 'invalid-phone-number') {
-              errorMessage = 'Số điện thoại không hợp lệ';
-            } else if (e.code == 'too-many-requests') {
-              errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau';
-            } else if (e.code == 'quota-exceeded') {
-              errorMessage = 'Đã vượt quá giới hạn gửi SMS';
-            } else if (e.code == 'app-not-authorized') {
-              errorMessage = 'App chưa được authorize. Cần cấu hình Firebase';
-            }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(errorMessage),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          // SMS code has been sent
-          if (mounted) {
-            setState(() => _isLoading = false);
-
-            Navigator.pushNamed(
-              context,
-              '/otp',
-              arguments: {
-                'phoneNumber': fullPhoneNumber,
-                'verificationId': verificationId,
-                'resendToken': resendToken,
-              },
-            );
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Mã OTP đã được gửi đến số điện thoại của bạn'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          debugPrint('Auto retrieval timeout: $verificationId');
+      // Chuyển thẳng sang trang OTP, truyền otpCode để hiện thông báo bên đó
+      Navigator.pushNamed(
+        context,
+        '/otp',
+        arguments: {
+          'phoneNumber': fullPhoneNumber,
+          'otpCode': otpCode,
         },
       );
     } catch (e) {
@@ -371,11 +287,9 @@ class _RegisterScreenState extends State<RegisterScreen>
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Firebase lỗi: ${e.toString()}\n💡 Chuyển sang DEV MODE',
-            ),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 4),
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

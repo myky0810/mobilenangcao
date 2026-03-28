@@ -60,31 +60,37 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
     final confirmPassword = _confirmPasswordController.text.trim();
 
     if (password.isEmpty || confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
+      _showModernSnackBar(
+        icon: Icons.warning_amber_rounded,
+        message: 'Vui lòng nhập đầy đủ thông tin',
+        color: Colors.orange,
       );
       return;
     }
 
     if (!_hasMinLength || !_hasUpperAndLower || !_hasSpecialChar) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu chưa đáp ứng đầy đủ yêu cầu')),
+      _showModernSnackBar(
+        icon: Icons.warning_amber_rounded,
+        message: 'Mật khẩu chưa đáp ứng đầy đủ yêu cầu',
+        color: Colors.orange,
       );
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu xác nhận không khớp')),
+      _showModernSnackBar(
+        icon: Icons.error_rounded,
+        message: 'Mật khẩu xác nhận không khớp',
+        color: Colors.redAccent,
       );
       return;
     }
 
     if (widget.phoneNumber == null || widget.phoneNumber!.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thiếu số điện thoại. Vui lòng đăng kí lại'),
-        ),
+      _showModernSnackBar(
+        icon: Icons.error_rounded,
+        message: 'Thiếu số điện thoại. Vui lòng đăng kí lại',
+        color: Colors.redAccent,
       );
       return;
     }
@@ -99,32 +105,12 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      // Hiển thị thông báo nhỏ bo tròn (như hình bạn gửi)
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            duration: const Duration(seconds: 2),
-            margin: const EdgeInsets.fromLTRB(80, 0, 80, 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            content: const Center(
-              heightFactor: 1,
-              child: Text(
-                'Tạo tài khoản thành công',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        );
+      // Hiển thị thông báo thành công
+      _showModernSnackBar(
+        icon: Icons.check_circle_rounded,
+        message: 'Tạo tài khoản thành công!',
+        color: Colors.green,
+      );
 
       // Sau khi hiện thông báo thì quay về trang đăng nhập
       Future.delayed(const Duration(milliseconds: 1600), () {
@@ -139,16 +125,76 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
     } on FirebaseException catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Đăng kí thất bại')));
+      _showModernSnackBar(
+        icon: Icons.error_rounded,
+        message: e.message ?? 'Đăng kí thất bại',
+        color: Colors.redAccent,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Đăng kí thất bại')));
+      _showModernSnackBar(
+        icon: Icons.error_rounded,
+        message: 'Đăng kí thất bại',
+        color: Colors.redAccent,
+      );
     }
+  }
+
+  /// Hiển thị thông báo hiện đại với bo tròn, icon, nền gradient
+  void _showModernSnackBar({
+    required IconData icon,
+    required String message,
+    required Color color,
+    int durationSeconds = 3,
+  }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          duration: Duration(seconds: durationSeconds),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          padding: EdgeInsets.zero,
+          content: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.9),
+                  color.withValues(alpha: 0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
   }
 
   @override

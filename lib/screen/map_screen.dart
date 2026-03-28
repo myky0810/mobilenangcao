@@ -66,7 +66,8 @@ class _MapScreenState extends State<MapScreen> {
           permission == LocationPermission.deniedForever) {
         if (!mounted) return;
         setState(() {
-          _locationError = 'Không có quyền truy cập vị trí. Vui lòng cấp quyền trong cài đặt.';
+          _locationError =
+              'Không có quyền truy cập vị trí. Vui lòng cấp quyền trong cài đặt.';
           _isRequestingLocation = false;
         });
         return;
@@ -98,7 +99,8 @@ class _MapScreenState extends State<MapScreen> {
         return;
       }
       setState(() {
-        _locationError = 'Không thể lấy vị trí hiện tại. Đang hiển thị bản đồ mặc định.';
+        _locationError =
+            'Không thể lấy vị trí hiện tại. Đang hiển thị bản đồ mặc định.';
         _isRequestingLocation = false;
       });
     }
@@ -148,7 +150,9 @@ class _MapScreenState extends State<MapScreen> {
         _locationError = null;
       }
       _updateNearestShowrooms();
-      _selectedShowroom = _nearestShowrooms.isNotEmpty ? _nearestShowrooms.first : null;
+      _selectedShowroom = _nearestShowrooms.isNotEmpty
+          ? _nearestShowrooms.first
+          : null;
       _setShowroomMarkers();
       await _loadRouteToSelectedShowroom();
       await _moveCameraToNearestShowroom();
@@ -273,17 +277,19 @@ class _MapScreenState extends State<MapScreen> {
   void _updateNearestShowrooms() {
     if (_currentPosition == null || _showrooms.isEmpty) return;
 
-    final sorted = _showrooms.map((showroom) {
-      final distance = Geolocator.distanceBetween(
-        _currentPosition!.latitude,
-        _currentPosition!.longitude,
-        showroom['lat'] as double,
-        showroom['lng'] as double,
-      );
-      return {'showroom': showroom, 'distance': distance};
-    }).toList()
-      ..sort((a, b) =>
-          (a['distance'] as double).compareTo(b['distance'] as double));
+    final sorted =
+        _showrooms.map((showroom) {
+          final distance = Geolocator.distanceBetween(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            showroom['lat'] as double,
+            showroom['lng'] as double,
+          );
+          return {'showroom': showroom, 'distance': distance};
+        }).toList()..sort(
+          (a, b) =>
+              (a['distance'] as double).compareTo(b['distance'] as double),
+        );
 
     _nearestShowrooms = sorted
         .take(3)
@@ -293,7 +299,8 @@ class _MapScreenState extends State<MapScreen> {
 
   Map<String, dynamic>? _findNearestShowroomByPosition() {
     if (_nearestShowrooms.isNotEmpty) return _nearestShowrooms.first;
-    if (_showrooms.isNotEmpty && _currentPosition != null) return _showrooms.first;
+    if (_showrooms.isNotEmpty && _currentPosition != null)
+      return _showrooms.first;
     return null;
   }
 
@@ -441,9 +448,7 @@ class _MapScreenState extends State<MapScreen> {
     final name = Uri.encodeComponent(showroom['name'] as String? ?? '');
 
     // Thử mở Google Maps app trước, nếu không có thì mở trên browser
-    final googleMapsUri = Uri.parse(
-      'google.navigation:q=$lat,$lng&mode=d',
-    );
+    final googleMapsUri = Uri.parse('google.navigation:q=$lat,$lng&mode=d');
 
     // URL web fallback
     final webUri = Uri.parse(
@@ -501,8 +506,8 @@ class _MapScreenState extends State<MapScreen> {
     final initialPosition = _currentPosition != null
         ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
         : (target != null
-            ? LatLng(target['lat'] as double, target['lng'] as double)
-            : _defaultPosition);
+              ? LatLng(target['lat'] as double, target['lng'] as double)
+              : _defaultPosition);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -531,7 +536,9 @@ class _MapScreenState extends State<MapScreen> {
             ),
           IconButton(
             tooltip: 'Làm mới showroom',
-            onPressed: (_isLoadingShowrooms || _isLoadingRoute) ? null : _refreshShowrooms,
+            onPressed: (_isLoadingShowrooms || _isLoadingRoute)
+                ? null
+                : _refreshShowrooms,
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -581,7 +588,10 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   Container(
                     margin: const EdgeInsets.all(12),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.75),
                       borderRadius: BorderRadius.circular(12),
@@ -644,14 +654,21 @@ class _MapScreenState extends State<MapScreen> {
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.shade700.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, color: Colors.white, size: 18),
+                      const Icon(
+                        Icons.info_outline,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -664,7 +681,11 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       GestureDetector(
                         onTap: () => setState(() => _locationError = null),
-                        child: const Icon(Icons.close, color: Colors.white70, size: 18),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
                       ),
                     ],
                   ),
@@ -810,7 +831,9 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF3B82C8).withValues(alpha: 0.25)
+                                  ? const Color(
+                                      0xFF3B82C8,
+                                    ).withValues(alpha: 0.25)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
@@ -912,7 +935,10 @@ class _MapScreenState extends State<MapScreen> {
                       padding: const EdgeInsets.only(left: 24),
                       child: Text(
                         target['address'] as String,
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -923,7 +949,10 @@ class _MapScreenState extends State<MapScreen> {
                         children: [
                           Text(
                             'Hãng: ${target['brand'] ?? 'N/A'}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
                           if (_currentPosition != null) ...[
                             const SizedBox(width: 12),

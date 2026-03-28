@@ -340,22 +340,78 @@ class _BookCarScreenState extends State<BookCarScreen> {
       return;
     }
 
-    if (_selectedLocation != 'SHOWROOM') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn SHOWROOM để xem bản đồ chỉ đường'),
-          backgroundColor: Colors.red,
+    if (_selectedLocation == 'SHOWROOM') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MapScreen(
+            preferredBrand: widget.carData['brand']?.toString(),
+          ),
         ),
       );
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MapScreen(
-          preferredBrand: widget.carData['brand']?.toString(),
+    // Show success dialog
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Đặt lịch thành công',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Họ và tên: ${_nameController.text}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Text(
+              'Số điện thoại: ${_phoneController.text}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Text(
+              'Email: ${_emailController.text}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Text(
+              'Ngày: ${_formatDate(_selectedDate)}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Text(
+              'Thời gian: $_selectedTime',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            Text(
+              'Địa điểm: $_selectedLocation',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Xe: ${widget.carData['name']} - ${widget.carData['brand']}',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF3b82c8),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF3b82c8),
+            ),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
@@ -819,7 +875,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
     );
   }
 
-  // ...existing code...
+  // Bottom Navigation from HomeScreen
   Widget _buildBottomNav() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

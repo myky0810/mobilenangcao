@@ -14,7 +14,7 @@ class ShowroomApiService {
   Future<List<Map<String, dynamic>>> fetchNearbyShowrooms({
     required double latitude,
     required double longitude,
-    int radiusInMeters = 250000,
+    int radiusInMeters = 300000, // Default 300km
     int limit = 30,
     bool forceRefresh = false,
   }) async {
@@ -26,7 +26,8 @@ class ShowroomApiService {
       }
     }
 
-    final query = '''
+    final query =
+        '''
 [out:json][timeout:35];
 (
   node["shop"="car"](around:$radiusInMeters,$latitude,$longitude);
@@ -85,7 +86,8 @@ out center tags;
           if (name == null || name.isEmpty) continue;
 
           final brand = (tags['brand'] as String?)?.trim();
-          final phone = (tags['phone'] as String?)?.trim() ??
+          final phone =
+              (tags['phone'] as String?)?.trim() ??
               (tags['contact:phone'] as String?)?.trim() ??
               '';
 
@@ -147,9 +149,7 @@ out center tags;
         return null;
       }
 
-      return items
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      return items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (_) {
       await prefs.remove(key);
       return null;
@@ -185,39 +185,76 @@ out center tags;
     final fallback = (tags['addr:full'] as String?)?.trim();
     if (fallback != null && fallback.isNotEmpty) return fallback;
 
-    return 'Địa chỉ đang cập nhật';
+    // Thử lấy từ name hoặc description
+    final description = (tags['description'] as String?)?.trim();
+    if (description != null && description.isNotEmpty) return description;
+
+    final operator = (tags['operator'] as String?)?.trim();
+    if (operator != null && operator.isNotEmpty) return 'Cơ sở của $operator';
+
+    // Lấy thông tin quận/huyện
+    final district = (tags['addr:district'] as String?)?.trim();
+    final city =
+        (tags['addr:city'] as String?)?.trim() ??
+        (tags['addr:state'] as String?)?.trim();
+
+    if (district != null && city != null) {
+      return '$district, $city';
+    } else if (city != null) {
+      return city;
+    }
+
+    return 'Vị trí showroom';
   }
 
   String _inferBrandFromName(String name) {
-    const knownBrands = <String>[
-      'Toyota',
-      'Hyundai',
-      'Kia',
-      'Mazda',
-      'Mercedes',
-      'BMW',
-      'Audi',
-      'Ford',
-      'Honda',
-      'Mitsubishi',
-      'Nissan',
-      'VinFast',
-      'Volvo',
-      'Lexus',
-      'Porsche',
-      'Subaru',
-      'Peugeot',
-      'Chevrolet',
-      'Isuzu',
-      'Suzuki',
-      'MG',
-    ];
+    final lowerName = name.toLowerCase();
 
-    for (final brand in knownBrands) {
-      if (name.toLowerCase().contains(brand.toLowerCase())) {
-        return brand;
+    // Map các pattern brand với tên chuẩn
+    const brandPatterns = {
+      'toyota': ['toyota'],
+      'hyundai': ['hyundai', 'huyndai'],
+      'kia': ['kia'],
+      'mazda': ['mazda'],
+      'mercedes': ['mercedes', 'mercedes-benz', 'mb'],
+      'bmw': ['bmw'],
+      'audi': ['audi'],
+      'ford': ['ford'],
+      'honda': ['honda'],
+      'mitsubishi': ['mitsubishi'],
+      'nissan': ['nissan'],
+      'vinfast': ['vinfast', 'vf'],
+      'volvo': ['volvo'],
+      'lexus': ['lexus'],
+      'tesla': ['tesla'],
+      'volkswagen': ['volkswagen', 'vw'],
+      'peugeot': ['peugeot'],
+      'subaru': ['subaru'],
+      'isuzu': ['isuzu'],
+      'suzuki': ['suzuki'],
+      'chevrolet': ['chevrolet', 'chevy'],
+      'land rover': ['land rover', 'landrover'],
+      'jaguar': ['jaguar'],
+    };
+
+    for (final entry in brandPatterns.entries) {
+      final standardBrand = entry.key;
+      final patterns = entry.value;
+
+      for (final pattern in patterns) {
+        if (lowerName.contains(pattern)) {
+          // Trả về tên chuẩn với chữ cái đầu viết hoa
+          return standardBrand
+              .split(' ')
+              .map(
+                (word) =>
+                    word.substring(0, 1).toUpperCase() + word.substring(1),
+              )
+              .join(' ');
+        }
       }
     }
-    return 'Showroom ô tô';
+
+    return 'Showroom xe';
   }
 }

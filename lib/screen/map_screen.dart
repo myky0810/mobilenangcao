@@ -161,7 +161,7 @@ class _MapScreenState extends State<MapScreen> {
       final apiShowrooms = await _showroomApiService.fetchNearbyShowrooms(
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
-        radiusInMeters: 250000,
+        radiusInMeters: 300000, // 300km radius
         limit: 40,
         forceRefresh: forceRefresh,
       );
@@ -183,7 +183,7 @@ class _MapScreenState extends State<MapScreen> {
       if (_showrooms.isEmpty) {
         _showrooms = apiShowrooms;
         _locationError =
-            'Không có showroom đúng hãng trong bán kính tìm kiếm, đang hiển thị showroom gần nhất';
+            'Không có showroom đúng hãng trong bán kính 300km, đang hiển thị showroom gần nhất';
       } else {
         _locationError = null;
       }

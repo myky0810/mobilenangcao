@@ -543,7 +543,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            showroomAddress.isNotEmpty ? showroomAddress : '—',
+            _getDisplayAddress(showroomAddress),
             style: GoogleFonts.leagueSpartan(
               color: Colors.white70,
               fontSize: 14,
@@ -589,6 +589,31 @@ class DetailCalendarCarScreen extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  /// Cải thiện hiển thị địa chỉ - ẩn các placeholder text
+  String _getDisplayAddress(String address) {
+    if (address.isEmpty) return '—';
+
+    // Các từ khóa cần ẩn
+    const hiddenPhrases = [
+      'địa chỉ đang cập nhật',
+      'đang cập nhật',
+      'vị trí showroom',
+      'cơ sở của',
+    ];
+
+    final lowerAddress = address.toLowerCase();
+    for (final phrase in hiddenPhrases) {
+      if (lowerAddress.contains(phrase)) {
+        // Nếu chỉ có phrase này thì ẩn, nếu có thêm info khác thì giữ
+        if (lowerAddress.trim() == phrase) {
+          return '—';
+        }
+      }
+    }
+
+    return address;
   }
 
   Widget _buildPlaceholderImage() {

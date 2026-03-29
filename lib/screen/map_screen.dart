@@ -137,8 +137,7 @@ class _MapScreenState extends State<MapScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _locationError =
-            'Lỗi xác định vị trí. Đang hiển thị bản đồ mặc định.';
+        _locationError = 'Lỗi xác định vị trí. Đang hiển thị bản đồ mặc định.';
         _isRequestingLocation = false;
         _locationPermissionGranted = false;
       });
@@ -1061,6 +1060,28 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    // Nút chọn showroom này
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _selectShowroom(target),
+                        icon: const Icon(Icons.check_circle, size: 18),
+                        label: const Text(
+                          'Chọn showroom này',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F9D58),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1162,5 +1183,21 @@ class _MapScreenState extends State<MapScreen> {
     final minutes = duration.inMinutes.remainder(60);
     if (hours > 0) return '$hours giờ $minutes phút';
     return '$minutes phút';
+  }
+
+  /// Chọn showroom và trả về thông tin cho màn hình trước
+  void _selectShowroom(Map<String, dynamic> showroom) {
+    final lat = showroom['lat'] as double;
+    final lng = showroom['lng'] as double;
+
+    // Tạo Google Maps URL
+    final googleMapsUrl =
+        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
+
+    // Trả về thông tin showroom kèm URL
+    Navigator.pop(context, {
+      'showroom': showroom,
+      'googleMapsUrl': googleMapsUrl,
+    });
   }
 }

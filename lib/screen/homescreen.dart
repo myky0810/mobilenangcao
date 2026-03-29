@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../data/firebase_helper.dart';
 import '../services/favorite_service.dart';
@@ -22,6 +23,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _slideAnimationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _hasShownNotification =
+      false; // Flag để tránh hiện notification nhiều lần
 
   final List<CarBrand> _brands = [
     CarBrand(
@@ -83,7 +86,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       name: 'Mercedes-Benz AMG GT Coupe 2024',
       price: '8.500.000.000₫',
       subtitle: 'Mercedes',
-      image: 'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
+      image:
+          'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
       gallery: [
         'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
         'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-2de29e9b9a86483c11f3779bac10cd5929.jpg',
@@ -95,7 +99,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       name: 'BMW X7 2023',
       price: '7.799.000.000₫',
       subtitle: 'BMW',
-      image: 'assets/images/products/BMW-X7-2023-1280-1980c2431b01e69530f98bf3202efb03d2.jpg',
+      image:
+          'assets/images/products/BMW-X7-2023-1280-1980c2431b01e69530f98bf3202efb03d2.jpg',
       gallery: [
         'assets/images/products/BMW-X7-2023-1280-1980c2431b01e69530f98bf3202efb03d2.jpg',
         'assets/images/products/BMW-X7-2023-1280-297ea50aea9d6f4fb52a4cca5a5718131f.jpg',
@@ -108,7 +113,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       name: 'Tesla Cybertruck 2025',
       price: '2.091.538.525₫',
       subtitle: 'Tesla',
-      image: 'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
+      image:
+          'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
       gallery: [
         'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
         'assets/images/products/Tesla-Cybertruck-2025-1280-16e1b7f3835967587c752ccbc071af69c5.jpg',
@@ -120,7 +126,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       name: 'Toyota Land Cruiser 2021',
       price: '4.030.000.000₫',
       subtitle: 'Toyota',
-      image: 'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
+      image:
+          'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
       gallery: [
         'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
         'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-4efc18483995a822f3ece39367d5d155ed.jpg',
@@ -199,6 +206,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _startBannerTimer();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Kiểm tra nếu có arguments từ booking
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map<String, dynamic> &&
+        args['showBookingNotification'] == true &&
+        !_hasShownNotification) {
+      _hasShownNotification = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showBookingSuccessNotification();
+      });
+    }
+  }
+
   void _startBannerTimer() {
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
@@ -223,6 +246,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _bannerAnimationController.dispose();
     _slideAnimationController.dispose();
     super.dispose();
+  }
+
+  // Hiển thị notification từ trên xuống như tin nhắn điện thoại
+  void _showBookingSuccessNotification() {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => _BookingNotificationWidget(
+        onDismiss: () {
+          overlayEntry.remove();
+        },
+        onTap: () {
+          overlayEntry.remove();
+          // Chuyển đến trang profile để xem lịch
+          Navigator.pushNamed(context, '/profile');
+        },
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    // Tự động ẩn sau 5 giây
+    Future.delayed(const Duration(seconds: 5), () {
+      if (overlayEntry.mounted) {
+        overlayEntry.remove();
+      }
+    });
   }
 
   @override
@@ -336,19 +387,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          // Shopping cart icon
-          Container(
-            width: 40,
-            height: 40,
-            margin: const EdgeInsets.only(right: 8),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF1a1a1a),
-            ),
-            child: const Icon(
-              Icons.shopping_cart_outlined,
-              color: Colors.white,
-              size: 20,
+          // Calendar icon (giống notification icon)
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/date_drive',
+                arguments: widget.phoneNumber,
+              );
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF1a1a1a),
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/images/calendar.png',
+                  width: 20,
+                  height: 20,
+                  color: Colors.white,
+                  fit: BoxFit.contain,
+                ),
+              ),
             ),
           ),
 
@@ -902,9 +966,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             'carPrice': car.price,
             'carDescription':
                 'Xe ${car.name} từ ${car.subtitle} với chất lượng cao và trang bị hiện đại.',
-            'carImages': [
-              car.image,
-            ],
+            'carImages': [car.image],
             'rating': 4.5,
             'reviewCount': 95,
             'isNew': index == 0, // Car đầu tiên sẽ có NEW tag
@@ -927,7 +989,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 CarImageSlider(
                   images: car.gallery.isNotEmpty ? car.gallery : [car.image],
                   height: 180,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
                 Positioned(
                   top: 12,
@@ -1257,6 +1321,150 @@ class ModernPatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Widget hiển thị notification từ trên xuống
+class _BookingNotificationWidget extends StatefulWidget {
+  final VoidCallback onDismiss;
+  final VoidCallback onTap;
+
+  const _BookingNotificationWidget({
+    required this.onDismiss,
+    required this.onTap,
+  });
+
+  @override
+  State<_BookingNotificationWidget> createState() =>
+      _BookingNotificationWidgetState();
+}
+
+class _BookingNotificationWidgetState extends State<_BookingNotificationWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _dismiss() async {
+    await _controller.reverse();
+    widget.onDismiss();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: GestureDetector(
+              onTap: widget.onTap,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0F9D58), Color(0xFF34A853)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Icon
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_circle_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Text
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Đăng ký lái thử thành công!',
+                            style: GoogleFonts.leagueSpartan(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Bấm để xem lịch hẹn trong thông tin cá nhân',
+                            style: GoogleFonts.leagueSpartan(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Close button
+                    IconButton(
+                      onPressed: _dismiss,
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // Banner Data Model

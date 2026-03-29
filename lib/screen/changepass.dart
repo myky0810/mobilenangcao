@@ -136,27 +136,58 @@ class _ChangePassScreenState extends State<ChangePassScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF333333),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF333333),
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Thay đổi mật khẩu',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: SafeArea(
-        top: false,
         child: Column(
           children: [
+            // Header with back button and title
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF333333),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Thay đổi mật khẩu',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Spartan',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 40), // Balance the back button
+                ],
+              ),
+            ),
+
+            // Content
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),

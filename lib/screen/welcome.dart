@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/widgets/luxury_logo.dart';
 
 class Welcome extends StatefulWidget {
@@ -63,13 +64,12 @@ class _WelcomeState extends State<Welcome> with SingleTickerProviderStateMixin {
                       const LuxuryLogo(size: 120),
                       const SizedBox(height: 18),
                       // WELCOME text
-                      const Text(
+                      Text(
                         'WELCOME',
-                        style: TextStyle(
+                        style: GoogleFonts.leagueSpartan(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.w500,
-                          fontFamily: 'Spartan',
                           letterSpacing: 8,
                         ),
                       ),
@@ -92,13 +92,12 @@ class _WelcomeState extends State<Welcome> with SingleTickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         alignment: Alignment.center,
-                        child: const Text(
+                        child: Text(
                           'RR',
-                          style: TextStyle(
+                          style: GoogleFonts.leagueSpartan(
                             color: Colors.white,
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
-                            fontFamily: 'Spartan',
                             fontStyle: FontStyle.italic,
                             letterSpacing: 2,
                           ),

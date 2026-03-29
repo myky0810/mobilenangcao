@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/widgets/luxury_logo.dart';
 import 'package:doan_cuoiki/data/firebase_helper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,13 +69,12 @@ class _LoginEmailState extends State<LoginEmail>
                       const SizedBox(height: 20),
 
                       // ── WELCOME text ──
-                      const Text(
+                      Text(
                         'WELCOME',
-                        style: TextStyle(
+                        style: GoogleFonts.leagueSpartan(
                           color: Colors.white,
                           fontSize: 26,
                           fontWeight: FontWeight.w600,
-                          fontFamily: 'Spartan',
                           letterSpacing: 8,
                         ),
                       ),

@@ -1,0 +1,609 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class DetailCalendarCarScreen extends StatelessWidget {
+  final Map<String, dynamic> bookingData;
+
+  const DetailCalendarCarScreen({super.key, required this.bookingData});
+
+  @override
+  Widget build(BuildContext context) {
+    final carName = (bookingData['carName'] as String?) ?? 'Unknown Car';
+    final carBrand = (bookingData['carBrand'] as String?) ?? '';
+    final carImage = bookingData['carImage'] as String?;
+    final date = (bookingData['date'] as String?) ?? '';
+    final time = (bookingData['time'] as String?) ?? '';
+    final name = (bookingData['name'] as String?) ?? '';
+    final phone = (bookingData['phone'] as String?) ?? '';
+    final email = (bookingData['email'] as String?) ?? '';
+
+    // Thông tin showroom
+    final showroomName = (bookingData['showroomName'] as String?) ?? '';
+    final showroomAddress = (bookingData['showroomAddress'] as String?) ?? '';
+    final googleMapsUrl = (bookingData['googleMapsUrl'] as String?) ?? '';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF111111),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with centered title and circular back button (no right icons)
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111111),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'My Test Drives',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Spartan',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                ],
+              ),
+            ),
+
+            // Scrollable content
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+
+                      // Success checkmark icon
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFF1a3a52),
+                          border: Border.all(
+                            color: const Color(0xFF3b82c8),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Color(0xFF3b82c8),
+                          size: 32,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // XÁC NHẬN ĐẶT LỊCH THÀNH CÔNG
+                      Text(
+                        'XÁC NHẬN ĐẶT LỊCH',
+                        style: GoogleFonts.leagueSpartan(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                          height: 1.1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        'THÀNH CÔNG',
+                        style: GoogleFonts.leagueSpartan(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                          height: 1.1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        'YOUR HIGH-PERFORMANCE EXPERIENCE\nAWAITS.',
+                        style: GoogleFonts.leagueSpartan(
+                          color: Colors.white38,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1.5,
+                          height: 1.6,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Car Image section
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: (carImage != null && carImage.isNotEmpty)
+                            ? Image.asset(
+                                carImage,
+                                width: double.infinity,
+                                height: 160,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildPlaceholderImage(),
+                              )
+                            : _buildPlaceholderImage(),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // SELECTED VEHICLE label
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'SELECTED VEHICLE',
+                          style: GoogleFonts.leagueSpartan(
+                            color: Colors.white30,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      // Car name
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          carBrand.isNotEmpty ? '$carName $carBrand' : carName,
+                          style: GoogleFonts.leagueSpartan(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // SCHEDULE Section
+                      _buildSectionCard(
+                        icon: Icons.calendar_today_rounded,
+                        sectionTitle: 'SCHEDULE',
+                        children: [
+                          _buildInfoRow('DATE', date),
+                          const SizedBox(height: 12),
+                          _buildInfoRow('TIME', time),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // DRIVER INFORMATION Section
+                      _buildSectionCard(
+                        icon: Icons.person_outline_rounded,
+                        sectionTitle: 'DRIVER INFORMATION',
+                        children: [
+                          _buildInfoRow('FULL NAME', name),
+                          const SizedBox(height: 12),
+                          _buildInfoRow('PHONE NUMBER', phone),
+                          const SizedBox(height: 12),
+                          _buildInfoRow('EMAIL ADDRESS', email),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // SHOWROOM LOCATION Section (if available)
+                      if (showroomName.isNotEmpty)
+                        _buildShowroomSection(
+                          showroomName: showroomName,
+                          showroomAddress: showroomAddress,
+                          googleMapsUrl: googleMapsUrl,
+                        ),
+
+                      if (showroomName.isNotEmpty) const SizedBox(height: 16),
+
+                      // Info note
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1a1a2e),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: const Color(
+                              0xFF3b82c8,
+                            ).withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              color: const Color(0xFF3b82c8),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Một chuyên viên tư vấn sẽ liên hệ với bạn trong vòng 24 giờ để nhắc nhở điểm đón. Vui lòng mang theo bằng lái xe còn hiệu lực khi tham gia lái thử.',
+                                style: GoogleFonts.leagueSpartan(
+                                  color: Colors.white54,
+                                  fontSize: 11,
+                                  height: 1.6,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // BACK TO HOME button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                            ).popUntil((route) => route.isFirst);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3b82c8),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Text(
+                            'BACK TO HOME',
+                            style: GoogleFonts.leagueSpartan(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // DOWNLOAD E-TICKET button
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.transparent,
+                                elevation: 0,
+                                margin: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  20,
+                                ),
+                                padding: EdgeInsets.zero,
+                                content: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1a3a52),
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF3b82c8,
+                                      ).withValues(alpha: 0.4),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.download_rounded,
+                                        color: Color(0xFF3b82c8),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Tính năng đang phát triển',
+                                        style: GoogleFonts.leagueSpartan(
+                                          color: Colors.white70,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white54,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text(
+                            'DOWNLOAD E-TICKET',
+                            style: GoogleFonts.leagueSpartan(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.5,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Footer
+                      Column(
+                        children: [
+                          Text(
+                            '© 2026 LUXE DRIVE GLOBAL · KINETIC ELEGANCE',
+                            style: GoogleFonts.leagueSpartan(
+                              color: Colors.white24,
+                              fontSize: 9,
+                              letterSpacing: 1.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            'ALL RIGHTS RESERVED.',
+                            style: GoogleFonts.leagueSpartan(
+                              color: Colors.white24,
+                              fontSize: 9,
+                              letterSpacing: 1.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String sectionTitle,
+    required List<Widget> children,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1a1a1a),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFF3b82c8), size: 16),
+              const SizedBox(width: 8),
+              Text(
+                sectionTitle,
+                style: GoogleFonts.leagueSpartan(
+                  color: Colors.white54,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Divider(color: Colors.white.withValues(alpha: 0.06), height: 20),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.leagueSpartan(
+            color: Colors.white30,
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value.isNotEmpty ? value : '—',
+          style: GoogleFonts.leagueSpartan(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShowroomSection({
+    required String showroomName,
+    required String showroomAddress,
+    required String googleMapsUrl,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1a1a1a),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          Row(
+            children: [
+              const Icon(Icons.location_on, color: Color(0xFF4285F4), size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'SHOWROOM LOCATION',
+                style: GoogleFonts.leagueSpartan(
+                  color: Colors.white54,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Divider(color: Colors.white.withValues(alpha: 0.06), height: 20),
+
+          // Showroom name
+          Text(
+            'SHOWROOM',
+            style: GoogleFonts.leagueSpartan(
+              color: Colors.white30,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            showroomName,
+            style: GoogleFonts.leagueSpartan(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Showroom address
+          Text(
+            'ADDRESS',
+            style: GoogleFonts.leagueSpartan(
+              color: Colors.white30,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            showroomAddress.isNotEmpty ? showroomAddress : '—',
+            style: GoogleFonts.leagueSpartan(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+
+          if (googleMapsUrl.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            // Google Maps Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _openGoogleMaps(googleMapsUrl),
+                icon: const Icon(Icons.directions, size: 18),
+                label: Text(
+                  'Chỉ đường',
+                  style: GoogleFonts.leagueSpartan(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4285F4),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openGoogleMaps(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: 160,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1a1a2e),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.directions_car_outlined,
+        size: 60,
+        color: Colors.white.withValues(alpha: 0.1),
+      ),
+    );
+  }
+}

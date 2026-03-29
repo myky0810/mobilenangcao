@@ -283,6 +283,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               thickness: 1,
                               height: 1,
                             ),
+                            // Lịch đăng ký lái thử
+                            _buildMenuItem(
+                              icon: Icons.calendar_month_outlined,
+                              title: 'Lịch đăng ký lái thử',
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/date_drive',
+                                  arguments: widget.phoneNumber,
+                                );
+                              },
+                              showArrow: true,
+                            ),
+                            const Divider(
+                              color: Color(0xFF4a4a4a),
+                              thickness: 1,
+                              height: 1,
+                            ),
                             // Cho phép đăng nhập Face ID (không sử dụng)
                             _buildSwitchMenuItem(
                               icon: Icons.face_outlined,

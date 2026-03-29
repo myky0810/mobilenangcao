@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../data/firebase_helper.dart';
 import '../widgets/luxury_logo.dart';
@@ -223,13 +224,12 @@ class _LoginHasPassScreenState extends State<LoginHasPassScreen>
                       const LuxuryLogo(size: 110),
                       const SizedBox(height: 20),
 
-                      const Text(
+                      Text(
                         'WELCOME',
-                        style: TextStyle(
+                        style: GoogleFonts.leagueSpartan(
                           color: Colors.white,
                           fontSize: 26,
                           fontWeight: FontWeight.w600,
-                          fontFamily: 'Spartan',
                           letterSpacing: 8,
                         ),
                       ),

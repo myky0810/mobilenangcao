@@ -277,10 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       Navigator.pushNamed(
         context,
         '/otp',
-        arguments: {
-          'phoneNumber': fullPhoneNumber,
-          'otpCode': otpCode,
-        },
+        arguments: {'phoneNumber': fullPhoneNumber, 'otpCode': otpCode},
       );
     } catch (e) {
       if (mounted) {

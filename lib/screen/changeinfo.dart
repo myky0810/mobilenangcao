@@ -1223,30 +1223,55 @@ class _InfoScreenState extends State<InfoScreen> {
         backgroundColor: const Color(0xFF333333),
         body: Column(
           children: [
-            // Header cùng màu #333333
+            // Header with back button and title
             Container(
               padding: EdgeInsets.only(
-                top: topPadding + 8,
-                left: 16,
-                right: 16,
-                bottom: 20,
+                top: topPadding + 12,
+                left: 12,
+                right: 12,
+                bottom: 16,
               ),
-              decoration: const BoxDecoration(color: Color(0xFF333333)),
+              decoration: BoxDecoration(
+                color: const Color(0xFF333333),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 1,
+                  ),
+                ),
+              ),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: _handleBackPress,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Thay đổi thông tin cá nhân',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: _handleBackPress,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Thay đổi thông tin cá nhân',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Spartan',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 40), // Balance the back button
                 ],
               ),
             ),

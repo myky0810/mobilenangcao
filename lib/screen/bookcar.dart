@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'map_screen.dart';
 
 class BookCarScreen extends StatefulWidget {
@@ -299,121 +300,177 @@ class _BookCarScreenState extends State<BookCarScreen> {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
-  void _confirmBooking() {
+  void _confirmBooking() async {
     if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng điền đầy đủ thông tin'),
-          backgroundColor: Colors.red,
-        ),
+      _showModernSnackBar(
+        icon: Icons.warning_amber_rounded,
+        message: 'Vui lòng điền đầy đủ thông tin',
+        color: Colors.orange,
       );
       return;
     }
 
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn ngày'),
-          backgroundColor: Colors.red,
-        ),
+      _showModernSnackBar(
+        icon: Icons.warning_amber_rounded,
+        message: 'Vui lòng chọn ngày',
+        color: Colors.orange,
       );
       return;
     }
 
     if (_selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn thời gian'),
-          backgroundColor: Colors.red,
-        ),
+      _showModernSnackBar(
+        icon: Icons.warning_amber_rounded,
+        message: 'Vui lòng chọn thời gian',
+        color: Colors.orange,
       );
       return;
     }
 
     if (_selectedLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn địa điểm'),
-          backgroundColor: Colors.red,
-        ),
+      _showModernSnackBar(
+        icon: Icons.warning_amber_rounded,
+        message: 'Vui lòng chọn địa điểm',
+        color: Colors.orange,
       );
       return;
     }
 
-    if (_selectedLocation == 'SHOWROOM') {
-      Navigator.push(
+    try {
+      // Lưu dữ liệu đăng ký lái thử tạm thời (chưa có showroom)
+      final bookingData = {
+        'carName': widget.carData['name'] ?? '',
+        'carBrand': widget.carData['brand'] ?? '',
+        'carImage': widget.carData['image'] ?? '',
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'email': _emailController.text.trim(),
+        'date': DateFormat('MMMM d, yyyy', 'en_US').format(_selectedDate!),
+        'time': _selectedTime,
+        'location': _selectedLocation,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'userPhone': widget.carData['phoneNumber'] ?? '',
+      };
+
+      if (!mounted) return;
+
+      // Chuyển ngay sang trang MapScreen để chọn showroom
+      final result = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MapScreen(
-            preferredBrand: widget.carData['brand']?.toString(),
+          builder: (context) =>
+              MapScreen(preferredBrand: widget.carData['brand']?.toString()),
+        ),
+      );
+
+      // Nếu người dùng đã chọn showroom, lưu booking hoàn chỉnh
+      if (result != null && result is Map<String, dynamic>) {
+        final showroom = result['showroom'] as Map<String, dynamic>?;
+        final googleMapsUrl = result['googleMapsUrl'] as String?;
+
+        if (showroom != null && googleMapsUrl != null) {
+          // Thêm thông tin showroom vào booking data
+          bookingData['showroomName'] = showroom['name'];
+          bookingData['showroomAddress'] = showroom['address'];
+          bookingData['showroomBrand'] = showroom['brand'];
+          bookingData['showroomLat'] = showroom['lat'];
+          bookingData['showroomLng'] = showroom['lng'];
+          bookingData['googleMapsUrl'] = googleMapsUrl;
+          bookingData['status'] = 'confirmed';
+
+          // Lưu vào Firestore
+          await FirebaseFirestore.instance
+              .collection('test_drive_bookings')
+              .add(bookingData);
+
+          if (!mounted) return;
+
+          // Hiện thông báo thành công
+          _showModernSnackBar(
+            icon: Icons.check_circle_rounded,
+            message: 'Đăng ký lái thử thành công!',
+            color: Colors.green,
+          );
+
+          // Quay về HomeScreen với flag để hiện notification
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (!mounted) return;
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+              arguments: {
+                'phoneNumber': widget.carData['phoneNumber'],
+                'showBookingNotification': true,
+              },
+            );
+          });
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showModernSnackBar(
+        icon: Icons.error_rounded,
+        message: 'Có lỗi xảy ra. Vui lòng thử lại.',
+        color: Colors.redAccent,
+      );
+    }
+  }
+
+  void _showModernSnackBar({
+    required IconData icon,
+    required String message,
+    required Color color,
+  }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          padding: EdgeInsets.zero,
+          content: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.9),
+                  color.withValues(alpha: 0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.white, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
-      return;
-    }
-
-    // Show success dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a1a),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Đặt lịch thành công',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Họ và tên: ${_nameController.text}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            Text(
-              'Số điện thoại: ${_phoneController.text}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            Text(
-              'Email: ${_emailController.text}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            Text(
-              'Ngày: ${_formatDate(_selectedDate)}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            Text(
-              'Thời gian: $_selectedTime',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            Text(
-              'Địa điểm: $_selectedLocation',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Xe: ${widget.carData['name']} - ${widget.carData['brand']}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF3b82c8),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF3b82c8),
-            ),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

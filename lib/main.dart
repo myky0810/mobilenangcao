@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/screen/welcome.dart';
 import 'package:doan_cuoiki/screen/login.dart';
 import 'package:doan_cuoiki/screen/register.dart';
@@ -27,6 +29,7 @@ import 'package:doan_cuoiki/screen/logocar/hyundai_screen.dart';
 import 'package:doan_cuoiki/screen/endow.dart';
 import 'package:doan_cuoiki/screen/notification.dart';
 import 'package:doan_cuoiki/screen/app_info.dart';
+import 'package:doan_cuoiki/screen/calendar_drive.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
@@ -34,6 +37,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await VietnamProvinces.initialize(version: AdministrativeDivisionVersion.v1);
+  await initializeDateFormatting('en_US', null);
   runApp(const MyApp());
 }
 
@@ -49,17 +53,26 @@ class MyApp extends StatelessWidget {
             scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
           )
           .copyWith(
-            textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Spartan'),
-            primaryTextTheme: ThemeData.dark().primaryTextTheme.apply(
-              fontFamily: 'Spartan',
+            textTheme: GoogleFonts.leagueSpartanTextTheme(
+              ThemeData.dark().textTheme,
+            ),
+            primaryTextTheme: GoogleFonts.leagueSpartanTextTheme(
+              ThemeData.dark().primaryTextTheme,
             ),
           ),
       initialRoute: '/',
       routes: {
         '/': (context) => const Welcome(),
         '/home': (context) {
-          final phoneNumber =
-              ModalRoute.of(context)!.settings.arguments as String?;
+          final args = ModalRoute.of(context)!.settings.arguments;
+          String? phoneNumber;
+
+          if (args is String) {
+            phoneNumber = args;
+          } else if (args is Map<String, dynamic>) {
+            phoneNumber = args['phoneNumber'] as String?;
+          }
+
           return HomeScreen(phoneNumber: phoneNumber);
         },
         '/profile': (context) {
@@ -198,6 +211,11 @@ class MyApp extends StatelessWidget {
           return NotificationScreen(phoneNumber: phoneNumber);
         },
         '/appinfo': (context) => const AppInfoScreen(),
+        '/date_drive': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return TestDriveScreen(phoneNumber: phoneNumber);
+        },
       },
     );
   }

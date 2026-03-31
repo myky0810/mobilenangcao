@@ -8,8 +8,11 @@ class ShowroomApiService {
     'https://overpass.kumi.systems/api/interpreter',
     'https://lz4.overpass-api.de/api/interpreter',
   ];
-  static const Duration _cacheTtl = Duration(minutes: 20);
-  static const String _cachePrefix = 'showroom_cache_v1_';
+  static const Duration _cacheTtl = Duration(
+    hours: 2,
+  ); // Tăng thời gian cache từ 20 phút lên 2 giờ
+  static const String _cachePrefix =
+      'showroom_cache_v2_'; // Bump version để force refresh
 
   Future<List<Map<String, dynamic>>> fetchNearbyShowrooms({
     required double latitude,
@@ -172,39 +175,64 @@ out center tags;
   }
 
   String _buildAddress(Map<String, dynamic> tags) {
+    // Thử lấy địa chỉ structured trước
     final parts = <String>[
       (tags['addr:housenumber'] as String?)?.trim() ?? '',
       (tags['addr:street'] as String?)?.trim() ?? '',
       (tags['addr:suburb'] as String?)?.trim() ?? '',
       (tags['addr:city'] as String?)?.trim() ?? '',
       (tags['addr:province'] as String?)?.trim() ?? '',
+      (tags['addr:state'] as String?)?.trim() ?? '',
     ].where((e) => e.isNotEmpty).toList();
 
-    if (parts.isNotEmpty) return parts.join(', ');
+    if (parts.length >= 2) return parts.join(', ');
 
+    // Fallback 1: địa chỉ đầy đủ
     final fallback = (tags['addr:full'] as String?)?.trim();
     if (fallback != null && fallback.isNotEmpty) return fallback;
 
-    // Thử lấy từ name hoặc description
+    // Fallback 2: description có thể chứa địa chỉ
     final description = (tags['description'] as String?)?.trim();
-    if (description != null && description.isNotEmpty) return description;
+    if (description != null &&
+        description.isNotEmpty &&
+        (description.contains('street') ||
+            description.contains('road') ||
+            description.contains('avenue') ||
+            description.contains('boulevard'))) {
+      return description;
+    }
 
+    // Fallback 3: operator + city
     final operator = (tags['operator'] as String?)?.trim();
-    if (operator != null && operator.isNotEmpty) return 'Cơ sở của $operator';
-
-    // Lấy thông tin quận/huyện
-    final district = (tags['addr:district'] as String?)?.trim();
     final city =
         (tags['addr:city'] as String?)?.trim() ??
-        (tags['addr:state'] as String?)?.trim();
+        (tags['addr:state'] as String?)?.trim() ??
+        (tags['place'] as String?)?.trim();
 
+    if (operator != null && city != null) {
+      return '$operator, $city';
+    }
+
+    // Fallback 4: thông tin địa lý cơ bản
+    final district = (tags['addr:district'] as String?)?.trim();
     if (district != null && city != null) {
       return '$district, $city';
     } else if (city != null) {
       return city;
     }
 
-    return 'Vị trí showroom';
+    // Fallback cuối: dùng name nếu có vẻ như địa chỉ
+    final name = (tags['name'] as String?)?.trim();
+    if (name != null &&
+        name.isNotEmpty &&
+        (name.contains('street') ||
+            name.contains('road') ||
+            name.contains('avenue') ||
+            name.contains(','))) {
+      return name;
+    }
+
+    return 'Showroom location available on Google Maps';
   }
 
   String _inferBrandFromName(String name) {

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/firebase_helper.dart';
@@ -286,6 +287,11 @@ class _InfoScreenState extends State<InfoScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: TextField(
                           controller: queryController,
+                          style: const TextStyle(
+                            color: Colors.black87, // Text đậm hơn
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500, // Đậm hơn
+                          ),
                           onChanged: (value) {
                             setModalState(() {
                               query = value;
@@ -293,20 +299,29 @@ class _InfoScreenState extends State<InfoScreen> {
                           },
                           decoration: InputDecoration(
                             hintText: hintText,
-                            prefixIcon: const Icon(Icons.search),
+                            hintStyle: const TextStyle(
+                              color: Colors.black54, // Hint text đậm hơn
+                              fontSize: 16,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.black54, // Icon đậm hơn
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(
-                                color: Colors.black26,
+                                color: Colors.black38, // Border đậm hơn
+                                width: 1.5,
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(
-                                color: Colors.black54,
+                                color: Colors.black87, // Focus border đậm hơn
+                                width: 2,
                               ),
                             ),
                           ),
@@ -455,11 +470,54 @@ class _InfoScreenState extends State<InfoScreen> {
     });
   }
 
+  void _showStyledSnackBar({
+    required String message, 
+    Color? backgroundColor,
+    IconData? icon,
+    Color? iconColor,
+  }) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, color: iconColor ?? Colors.white, size: 20),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: backgroundColor ?? Colors.orange.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        margin: const EdgeInsets.all(16),
+        elevation: 6,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _pickDistrict() async {
     final province = _selectedProvince;
     if (province == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn Tỉnh/Thành phố trước')),
+      _showStyledSnackBar(
+        message: '🏙️ Vui lòng chọn Tỉnh/Thành phố trước',
+        backgroundColor: Colors.blue.shade600,
+        icon: Icons.location_city,
+        iconColor: Colors.white,
       );
       return;
     }
@@ -468,8 +526,11 @@ class _InfoScreenState extends State<InfoScreen> {
       await _ensureVietnamProvincesInitialized();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể tải dữ liệu Quận/Huyện')),
+      _showStyledSnackBar(
+        message: '❌ Không thể tải dữ liệu Quận/Huyện',
+        backgroundColor: Colors.red.shade600,
+        icon: Icons.error_outline,
+        iconColor: Colors.white,
       );
       return;
     }
@@ -499,14 +560,20 @@ class _InfoScreenState extends State<InfoScreen> {
     final district = _selectedDistrict;
 
     if (province == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn Tỉnh/Thành phố trước')),
+      _showStyledSnackBar(
+        message: '🏙️ Vui lòng chọn Tỉnh/Thành phố trước',
+        backgroundColor: Colors.blue.shade600,
+        icon: Icons.location_city,
+        iconColor: Colors.white,
       );
       return;
     }
     if (district == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn Quận/Huyện trước')),
+      _showStyledSnackBar(
+        message: '🏘️ Vui lòng chọn Quận/Huyện trước',
+        backgroundColor: Colors.blue.shade600,
+        icon: Icons.location_on,
+        iconColor: Colors.white,
       );
       return;
     }
@@ -515,8 +582,11 @@ class _InfoScreenState extends State<InfoScreen> {
       await _ensureVietnamProvincesInitialized();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể tải dữ liệu Phường/Xã')),
+      _showStyledSnackBar(
+        message: '❌ Không thể tải dữ liệu Phường/Xã',
+        backgroundColor: Colors.red.shade600,
+        icon: Icons.error_outline,
+        iconColor: Colors.white,
       );
       return;
     }
@@ -561,9 +631,7 @@ class _InfoScreenState extends State<InfoScreen> {
   }
 
   Future<void> _pickAvatarFromFiles() async {
-    // 1) Try FilePicker first (works on many Android devices).
-    // 2) If FilePicker can't open or returns unreadable bytes on emulator,
-    //    fall back to ImagePicker (Android Photo Picker/Gallery).
+    // Improved FilePicker with better error handling and size limits
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -575,19 +643,51 @@ class _InfoScreenState extends State<InfoScreen> {
       final file = result?.files.single;
       if (file == null) return;
 
+      // Check file size before processing
+      if (file.size > 5 * 1024 * 1024) {
+        if (!mounted) return;
+        _showStyledSnackBar(
+          message: '📁 File quá lớn! Vui lòng chọn file nhỏ hơn 5MB',
+          backgroundColor: Colors.red.shade600,
+          icon: Icons.file_upload_off,
+          iconColor: Colors.white,
+        );
+        return;
+      }
+
       Uint8List? bytes = file.bytes;
       if (bytes == null || bytes.isEmpty) {
         final stream = file.readStream;
         if (stream != null) {
-          final collected = <int>[];
-          await for (final chunk in stream) {
-            collected.addAll(chunk);
+          try {
+            final collected = <int>[];
+            await for (final chunk in stream) {
+              collected.addAll(chunk);
+              // Check size while reading
+              if (collected.length > 5 * 1024 * 1024) {
+                if (!mounted) return;
+                _showStyledSnackBar(
+                  message: '📁 File quá lớn! Vui lòng chọn file nhỏ hơn 5MB',
+                  backgroundColor: Colors.red.shade600,
+                  icon: Icons.file_upload_off,
+                  iconColor: Colors.white,
+                );
+                return;
+              }
+            }
+            bytes = Uint8List.fromList(collected);
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Lỗi đọc file: $e')),
+            );
+            return;
           }
-          bytes = Uint8List.fromList(collected);
         }
       }
 
       if (bytes == null || bytes.isEmpty) {
+        // Fallback to gallery picker
         await _pickAvatarFromGallery();
         return;
       }
@@ -601,28 +701,42 @@ class _InfoScreenState extends State<InfoScreen> {
         bytes: bytes,
         originalFileName: file.name,
       );
-      return;
-    } on PlatformException {
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi hệ thống: ${e.message}')),
+      );
+      // Fallback to gallery
       await _pickAvatarFromGallery();
-    } catch (_) {
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi chọn file: $e')),
+      );
+      // Fallback to gallery
       await _pickAvatarFromGallery();
     }
   }
 
-  Future<void> _pickAvatarFromGallery() async {
+  Future<void> _pickImageFromCamera() async {
     try {
       final XFile? picked = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
+        source: ImageSource.camera,
         imageQuality: 95,
+        maxWidth: 1024,
+        maxHeight: 1024,
       );
       if (picked == null) return;
 
       final bytes = await picked.readAsBytes();
       if (bytes.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Không thể đọc file ảnh')));
+        _showStyledSnackBar(
+          message: '📷 Không thể đọc file ảnh từ camera',
+          backgroundColor: Colors.red.shade600,
+          icon: Icons.camera_alt_outlined,
+          iconColor: Colors.white,
+        );
         return;
       }
 
@@ -635,10 +749,61 @@ class _InfoScreenState extends State<InfoScreen> {
         bytes: bytes,
         originalFileName: picked.name,
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể mở trình chọn ảnh')),
+        SnackBar(content: Text('Lỗi mở camera: $e')),
+      );
+    }
+  }
+
+  Future<void> _pickAvatarFromGallery() async {
+    try {
+      final XFile? picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 95,
+        maxWidth: 1024, // Giới hạn kích thước để tối ưu performance
+        maxHeight: 1024,
+      );
+      if (picked == null) return;
+
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty) {
+        if (!mounted) return;
+        _showStyledSnackBar(
+          message: '🖼️ Không thể đọc file ảnh từ thư viện',
+          backgroundColor: Colors.red.shade600,
+          icon: Icons.image_not_supported,
+          iconColor: Colors.white,
+        );
+        return;
+      }
+
+      // Kiểm tra kích thước file (tối đa 5MB)
+      if (bytes.length > 5 * 1024 * 1024) {
+        if (!mounted) return;
+        _showStyledSnackBar(
+          message: '📁 Ảnh quá lớn! Vui lòng chọn ảnh nhỏ hơn 5MB',
+          backgroundColor: Colors.red.shade600,
+          icon: Icons.file_upload_off,
+          iconColor: Colors.white,
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _avatarBytes = bytes;
+      });
+
+      await _uploadAvatarToFirebaseStorage(
+        bytes: bytes,
+        originalFileName: picked.name,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi mở thư viện ảnh: $e')),
       );
     }
   }
@@ -661,32 +826,94 @@ class _InfoScreenState extends State<InfoScreen> {
     if (ref == null) return;
 
     try {
-      final normalizedPhone = FirebaseHelper.normalizePhone(
-        widget.phoneNumber!,
-      );
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw 'Người dùng chưa đăng nhập';
+      }
+
       final ext = _guessImageExtension(originalFileName);
-      final objectPath = 'avatars/$normalizedPhone/avatar.$ext';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'avatar_${timestamp}.$ext';
+      final objectPath = 'users/${user.uid}/avatars/$fileName';
 
-      final storageRef = FirebaseStorage.instance.ref(objectPath);
-      final metadata = SettableMetadata(contentType: 'image/$ext');
+      final storageRef = FirebaseStorage.instance.ref().child(objectPath);
+      
+      // Tạo metadata phù hợp
+      final metadata = SettableMetadata(
+        contentType: 'image/$ext',
+        customMetadata: {
+          'uploadedBy': user.uid,
+          'uploadedAt': DateTime.now().toIso8601String(),
+          'originalFileName': originalFileName,
+        },
+      );
 
-      await storageRef.putData(bytes, metadata);
-      final url = await storageRef.getDownloadURL();
+      // Upload file với progresss tracking
+      final uploadTask = storageRef.putData(bytes, metadata);
+      
+      // Đợi upload hoàn thành
+      final snapshot = await uploadTask;
+      
+      if (snapshot.state == TaskState.success) {
+        final url = await storageRef.getDownloadURL();
 
-      await ref.set({
-        'avatarUrl': url,
-        'avatarUpdatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+        // Cập nhật Firestore
+        await ref.set({
+          'avatarUrl': url,
+          'avatarPath': objectPath,
+          'avatarUpdatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
 
+        if (!mounted) return;
+        setState(() {
+          _avatarUrl = url;
+        });
+
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text('Upload ảnh thành công!')),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else {
+        throw 'Upload không thành công';
+      }
+    } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _avatarUrl = url;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Upload file thất bại')));
+      print('Upload error: $e'); // Debug log
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Upload ảnh thất bại', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Vui lòng thử lại sau. Lỗi: ${e.toString()}', style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -714,19 +941,83 @@ class _InfoScreenState extends State<InfoScreen> {
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Chọn ảnh đại diện',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Nút chọn từ Camera
                 ListTile(
-                  title: const Text('Upload file'),
+                  leading: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.blue,
+                  ),
+                  title: const Text(
+                    'Chụp ảnh từ Camera',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    // Give the bottom sheet time to fully close before opening
-                    // the native file picker dialog.
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 200),
+                    );
+                    await _pickImageFromCamera();
+                  },
+                ),
+                // Nút chọn từ Thư viện
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library,
+                    color: Colors.green,
+                  ),
+                  title: const Text(
+                    'Chọn từ Thư viện',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 200),
+                    );
+                    await _pickAvatarFromGallery();
+                  },
+                ),
+                // Nút Upload File (cho những file khác)
+                ListTile(
+                  leading: const Icon(
+                    Icons.insert_drive_file,
+                    color: Colors.orange,
+                  ),
+                  title: const Text(
+                    'Upload File',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
                     await Future<void>.delayed(
                       const Duration(milliseconds: 200),
                     );
                     await _pickAvatarFromFiles();
                   },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
               ],
             ),
           ),

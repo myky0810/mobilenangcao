@@ -162,6 +162,35 @@ class FirebaseHelper {
     });
   }
 
+  /// Reset password without requiring old password (used for forgot password flow after OTP verification)
+  static Future<void> resetPassword({
+    required String phone,
+    required String newPassword,
+  }) async {
+    final normalized = normalizePhone(phone);
+    final ref = _users.doc(normalized);
+
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'user-not-found',
+          message: 'Tài khoản không tồn tại.',
+        );
+      }
+
+      final newSalt = _randomSaltBase64();
+      final newHash = _hashPassword(saltBase64: newSalt, pass: newPassword);
+      tx.update(ref, {
+        'passwordSalt': newSalt,
+        'passwordHash': newHash,
+        'passwordUpdatedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   static Future<void> deleteAccount({required String phone}) async {
     final normalized = normalizePhone(phone);
     final ref = _users.doc(normalized);

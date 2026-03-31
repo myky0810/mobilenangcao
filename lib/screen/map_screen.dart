@@ -158,6 +158,43 @@ class _MapScreenState extends State<MapScreen> {
     });
 
     try {
+      // Thử cache trước để tăng tốc
+      if (!forceRefresh) {
+        final cachedShowrooms = await _showroomApiService.fetchNearbyShowrooms(
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          radiusInMeters: 300000,
+          limit: 40,
+          forceRefresh: false,
+        );
+
+        if (cachedShowrooms.isNotEmpty) {
+          if (!mounted) return;
+          _showrooms = _filterByPreferredBrand(cachedShowrooms);
+          if (_showrooms.isEmpty) {
+            _showrooms = cachedShowrooms;
+            _locationError =
+                'Không có showroom đúng hãng trong bán kính 300km, đang hiển thị showroom gần nhất';
+          } else {
+            _locationError = null;
+          }
+          _updateNearestShowrooms();
+          _selectedShowroom = _nearestShowrooms.isNotEmpty
+              ? _nearestShowrooms.first
+              : null;
+          _setShowroomMarkers();
+
+          setState(() {
+            _isLoadingShowrooms = false;
+          });
+
+          // Load route trong background
+          _loadRouteToSelectedShowroom();
+          _moveCameraToNearestShowroom();
+          return;
+        }
+      }
+
       final apiShowrooms = await _showroomApiService.fetchNearbyShowrooms(
         latitude: _currentPosition!.latitude,
         longitude: _currentPosition!.longitude,
@@ -1189,14 +1226,38 @@ class _MapScreenState extends State<MapScreen> {
   void _selectShowroom(Map<String, dynamic> showroom) {
     final lat = showroom['lat'] as double;
     final lng = showroom['lng'] as double;
+    final name = showroom['name'] as String? ?? '';
+    final brand = showroom['brand'] as String? ?? '';
 
     // Tạo Google Maps URL
     final googleMapsUrl =
         'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
 
+    // Tạo địa chỉ fallback nếu address trống hoặc là placeholder
+    String address = showroom['address'] as String? ?? '';
+    if (address.isEmpty ||
+        address.toLowerCase().contains('đang cập nhật') ||
+        address.toLowerCase().contains('vị trí showroom')) {
+      // Tạo địa chỉ từ tên và brand
+      if (name.isNotEmpty && brand.isNotEmpty) {
+        address = '$name - $brand Showroom';
+      } else if (name.isNotEmpty) {
+        address = '$name';
+      } else {
+        address = 'Showroom $brand';
+      }
+
+      // Thêm tọa độ làm reference
+      address += ' (${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)})';
+    }
+
+    // Cập nhật showroom data với địa chỉ được cải thiện
+    final updatedShowroom = Map<String, dynamic>.from(showroom);
+    updatedShowroom['address'] = address;
+
     // Trả về thông tin showroom kèm URL
     Navigator.pop(context, {
-      'showroom': showroom,
+      'showroom': updatedShowroom,
       'googleMapsUrl': googleMapsUrl,
     });
   }

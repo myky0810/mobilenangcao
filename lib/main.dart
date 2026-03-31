@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/screen/welcome.dart';
@@ -30,11 +31,16 @@ import 'package:doan_cuoiki/screen/endow.dart';
 import 'package:doan_cuoiki/screen/notification.dart';
 import 'package:doan_cuoiki/screen/app_info.dart';
 import 'package:doan_cuoiki/screen/calendar_drive.dart';
+import 'package:doan_cuoiki/screen/AIChat.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await VietnamProvinces.initialize(version: AdministrativeDivisionVersion.v1);
   await initializeDateFormatting('en_US', null);
@@ -115,9 +121,23 @@ class MyApp extends StatelessWidget {
           return OTPScreen(phoneNumber: phoneNumber);
         },
         '/createpass': (context) {
-          final phoneNumber =
-              ModalRoute.of(context)!.settings.arguments as String?;
-          return CreatePassScreen(phoneNumber: phoneNumber);
+          final args = ModalRoute.of(context)!.settings.arguments;
+          String? phoneNumber;
+          bool isResetPassword = false;
+
+          if (args is String) {
+            // Legacy format for registration
+            phoneNumber = args;
+          } else if (args is Map) {
+            // New format with reset password flag
+            phoneNumber = args['phoneNumber'] as String?;
+            isResetPassword = args['isResetPassword'] == true;
+          }
+
+          return CreatePassScreen(
+            phoneNumber: phoneNumber,
+            isResetPassword: isResetPassword,
+          );
         },
         '/forgotpass': (context) => const ForgotPassScreen(),
         '/forgototp': (context) {
@@ -215,6 +235,11 @@ class MyApp extends StatelessWidget {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return TestDriveScreen(phoneNumber: phoneNumber);
+        },
+        '/aichat': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return AIChatScreen(phoneNumber: phoneNumber);
         },
       },
     );

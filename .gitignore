@@ -1,3 +1,5 @@
+# Local secrets
+.env
 # Miscellaneous
 *.class
 *.log
@@ -46,3 +48,13 @@ key.properties
 
 # Kotlin / IDE diagnostics (local)
 .kotlin/
+
+# Custom fonts - không track
+fonts/Spartan-*.ttf
+fonts/Spartan-Bold.ttf
+fonts/Spartan-Medium.ttf
+fonts/Spartan-Regular.ttf
+fonts/Spartan-SemiBold.ttf
+
+# Development files - không track  
+lib/screen/otp_new.dart

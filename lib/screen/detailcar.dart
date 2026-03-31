@@ -519,8 +519,8 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 52,
           width: double.infinity,
+          height: 52,
           child: ElevatedButton(
             onPressed: () {
               Navigator.pushNamed(
@@ -545,9 +545,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
             child: const Text(
               'ĐĂNG KÝ LÁI THỬ',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 13,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
+                letterSpacing: 0.4,
               ),
             ),
           ),

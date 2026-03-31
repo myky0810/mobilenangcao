@@ -4,9 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/firebase_helper.dart';
 
 class CreatePassScreen extends StatefulWidget {
-  const CreatePassScreen({super.key, this.phoneNumber});
+  const CreatePassScreen({
+    super.key,
+    this.phoneNumber,
+    this.isResetPassword =
+        false, // Flag to indicate if this is password reset flow
+  });
 
   final String? phoneNumber;
+  final bool isResetPassword;
 
   @override
   State<CreatePassScreen> createState() => _CreatePassScreenState();
@@ -97,10 +103,19 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await FirebaseHelper.register(
-        phone: widget.phoneNumber!,
-        password: password,
-      );
+      if (widget.isResetPassword) {
+        // Reset password flow
+        await FirebaseHelper.resetPassword(
+          phone: widget.phoneNumber!,
+          newPassword: password,
+        );
+      } else {
+        // Registration flow
+        await FirebaseHelper.register(
+          phone: widget.phoneNumber!,
+          password: password,
+        );
+      }
 
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -108,7 +123,9 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
       // Hiển thị thông báo thành công
       _showModernSnackBar(
         icon: Icons.check_circle_rounded,
-        message: 'Tạo tài khoản thành công!',
+        message: widget.isResetPassword
+            ? 'Đặt lại mật khẩu thành công!'
+            : 'Tạo tài khoản thành công!',
         color: Colors.green,
       );
 
@@ -127,7 +144,11 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
       setState(() => _isLoading = false);
       _showModernSnackBar(
         icon: Icons.error_rounded,
-        message: e.message ?? 'Đăng kí thất bại',
+        message:
+            e.message ??
+            (widget.isResetPassword
+                ? 'Đặt lại mật khẩu thất bại'
+                : 'Đăng kí thất bại'),
         color: Colors.redAccent,
       );
     } catch (_) {
@@ -135,7 +156,9 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
       setState(() => _isLoading = false);
       _showModernSnackBar(
         icon: Icons.error_rounded,
-        message: 'Đăng kí thất bại',
+        message: widget.isResetPassword
+            ? 'Đặt lại mật khẩu thất bại'
+            : 'Đăng kí thất bại',
         color: Colors.redAccent,
       );
     }
@@ -219,10 +242,12 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
                 const SizedBox(height: 20),
 
                 // ── Title ──
-                const Center(
+                Center(
                   child: Text(
-                    'Tạo mật khẩu',
-                    style: TextStyle(
+                    widget.isResetPassword
+                        ? 'Đặt lại mật khẩu'
+                        : 'Tạo mật khẩu',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
@@ -377,9 +402,11 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
                               color: Colors.black,
                             ),
                           )
-                        : const Text(
-                            'Cập nhật',
-                            style: TextStyle(
+                        : Text(
+                            widget.isResetPassword
+                                ? 'Đặt lại mật khẩu'
+                                : 'Cập nhật',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.5,

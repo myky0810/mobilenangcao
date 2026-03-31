@@ -309,3 +309,5 @@ Track events:
 
 **Được tạo bởi AI Assistant** 🤖
 **Ngày**: ${DateTime.now().toString()}
+
+cd "G:\VS CODE\mobilenangcao-main\mobilenangcao-main\doan_cuoiki"; flutter run --dart-define=OPENAI_API_KEY="test"

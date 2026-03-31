@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/otp_service.dart';
+import '../data/firebase_helper.dart';
 
 class ForgotPassScreen extends StatefulWidget {
   const ForgotPassScreen({super.key});
@@ -33,22 +35,68 @@ class _ForgotPassScreenState extends State<ForgotPassScreen>
     super.dispose();
   }
 
-  void _handleContinue() {
-    if (_phoneController.text.trim().isEmpty) {
+  void _handleContinue() async {
+    final phoneText = _phoneController.text.trim();
+    if (phoneText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng nhập số điện thoại')),
       );
       return;
     }
 
+    // Validate phone number format
+    if (!RegExp(r'^\d{9,10}$').hasMatch(phoneText)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Số điện thoại không hợp lệ')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
+
+    final fullPhoneNumber = '+84$phoneText';
+
+    try {
+      // Check if phone number exists in database
+      final phoneExists = await FirebaseHelper.phoneExists(fullPhoneNumber);
+      if (!phoneExists) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Số điện thoại chưa được đăng ký')),
+        );
+        return;
+      }
+
+      // Generate and send OTP
+      final otpCode = await OTPService.sendOTP(fullPhoneNumber);
+
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      final phone = '+84${_phoneController.text.trim()}';
-      Navigator.pushNamed(context, '/forgototp', arguments: phone);
-    });
+      // Navigate to OTP screen with phone number and OTP code
+      Navigator.pushNamed(
+        context,
+        '/otp',
+        arguments: {
+          'phoneNumber': fullPhoneNumber,
+          'otpCode': otpCode,
+          'isResetPassword':
+              true, // Flag to indicate this is password reset flow
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   @override

@@ -6,6 +6,7 @@ import '../data/firebase_helper.dart';
 import '../services/favorite_service.dart';
 import '../widgets/notification_icon.dart';
 import '../widgets/car_image_slider.dart';
+import '../widgets/ai_chat_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -280,43 +281,55 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF333333),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
+      body: Stack(
+        children: [
+          // Main content
+          SafeArea(
+            child: Column(
+              children: [
+                // Header
+                _buildHeader(),
 
-            // Content với ScrollView
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16), // Giảm từ 24 -> 16
-                    // Banner hiện đại 2026
-                    _buildModernBanner(),
+                // Content với ScrollView
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16), // Giảm từ 24 -> 16
+                        // Banner hiện đại 2026
+                        _buildModernBanner(),
 
-                    const SizedBox(height: 20), // Giảm từ 24 -> 20
-                    // Car brands
-                    _buildBrandsGrid(),
+                        const SizedBox(height: 20), // Giảm từ 24 -> 20
+                        // Car brands
+                        _buildBrandsGrid(),
 
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                    // Section Thịnh Hành
-                    _buildThinhHanhSection(),
+                        // Section Thịnh Hành
+                        _buildThinhHanhSection(),
 
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                    // Car list
-                    _buildCarList(),
+                        // Car list
+                        _buildCarList(),
 
-                    const SizedBox(height: 20),
-                  ],
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // AI Chat Button - floating trên navbar
+          Positioned(
+            bottom: 100, // Đặt ngay trên bottom nav
+            right: 20,
+            child: AIChatBadge(phoneNumber: widget.phoneNumber),
+          ),
+        ],
       ),
       bottomNavigationBar: _buildBottomNav(),
     );

@@ -23,6 +23,17 @@ class DetailCalendarCarScreen extends StatelessWidget {
     final showroomAddress = (bookingData['showroomAddress'] as String?) ?? '';
     final googleMapsUrl = (bookingData['googleMapsUrl'] as String?) ?? '';
 
+    // Debug info để kiểm tra dữ liệu
+    print('🔍 DetailCalendarCarScreen Debug Info:');
+    print('📅 Date: $date');
+    print('🏢 Showroom Name: $showroomName');
+    print('📍 Showroom Address: $showroomAddress');
+    print('🗺️ Google Maps URL: $googleMapsUrl');
+    print('📄 Full booking data keys: ${bookingData.keys.toList()}');
+    if (googleMapsUrl.isEmpty) {
+      print('❌ Google Maps URL is empty! Full data: $bookingData');
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF111111),
       body: SafeArea(
@@ -225,6 +236,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
                       // SHOWROOM LOCATION Section (if available)
                       if (showroomName.isNotEmpty)
                         _buildShowroomSection(
+                          context: context,
                           showroomName: showroomName,
                           showroomAddress: showroomAddress,
                           googleMapsUrl: googleMapsUrl,
@@ -475,6 +487,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
   }
 
   Widget _buildShowroomSection({
+    required BuildContext context,
     required String showroomName,
     required String showroomAddress,
     required String googleMapsUrl,
@@ -552,13 +565,21 @@ class DetailCalendarCarScreen extends StatelessWidget {
             ),
           ),
 
-          if (googleMapsUrl.isNotEmpty) ...[
+          if (googleMapsUrl.isNotEmpty ||
+              (showroomName.isNotEmpty && showroomAddress.isNotEmpty)) ...[
             const SizedBox(height: 16),
             // Google Maps Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _openGoogleMaps(googleMapsUrl),
+                onPressed: () {
+                  if (googleMapsUrl.isNotEmpty) {
+                    _openGoogleMaps(googleMapsUrl, context);
+                  } else {
+                    // Fallback: tạo URL từ địa chỉ
+                    _openGoogleMapsWithAddress(showroomAddress, context);
+                  }
+                },
                 icon: const Icon(Icons.directions, size: 18),
                 label: Text(
                   'Chỉ đường',
@@ -584,18 +605,155 @@ class DetailCalendarCarScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openGoogleMaps(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _openGoogleMaps(String url, BuildContext context) async {
+    try {
+      // Debug info
+      print('🗺️ Attempting to open Google Maps with URL: $url');
+
+      // Kiểm tra nếu URL có format cũ thì chuyển đổi
+      String processedUrl = url;
+      if (url.contains('google.navigation:')) {
+        // Nếu là URL navigation, chuyển thành web URL
+        final RegExp coordRegex = RegExp(r'q=(-?\d+\.?\d*),(-?\d+\.?\d*)');
+        final match = coordRegex.firstMatch(url);
+        if (match != null) {
+          final lat = match.group(1);
+          final lng = match.group(2);
+          processedUrl =
+              'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+          print('🗺️ Converted to web URL: $processedUrl');
+        }
+      }
+
+      final uri = Uri.parse(processedUrl);
+
+      // Thử mở Google Maps app trước
+      final coordinates = _extractCoordinates(processedUrl);
+      final googleMapsUri = Uri.parse(
+        'google.navigation:q=$coordinates&mode=d',
+      );
+      print('🗺️ Trying Google Maps app with: $googleMapsUri');
+
+      bool launched = false;
+
+      if (await canLaunchUrl(googleMapsUri)) {
+        launched = await launchUrl(
+          googleMapsUri,
+          mode: LaunchMode.externalApplication,
+        );
+        print('🗺️ Google Maps app launch result: $launched');
+      }
+
+      // Nếu không mở được app thì mở trên browser
+      if (!launched && await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        print('🗺️ Web browser launch result: $launched');
+      }
+
+      if (!launched && context.mounted) {
+        print('❌ Failed to launch any Google Maps option');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Không mở được Google Maps. Vui lòng kiểm tra đã cài đặt ứng dụng Google Maps.',
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      } else if (launched) {
+        print('✅ Successfully opened Google Maps');
+      }
+    } catch (e) {
+      print('❌ Error opening Google Maps: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi mở Google Maps: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
-  /// Cải thiện hiển thị địa chỉ - ẩn các placeholder text
-  String _getDisplayAddress(String address) {
-    if (address.isEmpty) return '—';
+  Future<void> _openGoogleMapsWithAddress(
+    String address,
+    BuildContext context,
+  ) async {
+    try {
+      print('🗺️ Opening Google Maps with address: $address');
 
-    // Các từ khóa cần ẩn
+      // Tạo URL search từ địa chỉ
+      final encodedAddress = Uri.encodeComponent(address);
+      final searchUrl =
+          'https://www.google.com/maps/search/?api=1&query=$encodedAddress';
+      final searchUri = Uri.parse(searchUrl);
+
+      // Thử mở Google Maps app trước với search
+      final googleMapsSearchUri = Uri.parse('geo:0,0?q=$encodedAddress');
+
+      bool launched = false;
+
+      // Thử Google Maps app search
+      if (await canLaunchUrl(googleMapsSearchUri)) {
+        launched = await launchUrl(
+          googleMapsSearchUri,
+          mode: LaunchMode.externalApplication,
+        );
+        print('🗺️ Google Maps app search launch result: $launched');
+      }
+
+      // Nếu không mở được app thì mở trên browser
+      if (!launched && await canLaunchUrl(searchUri)) {
+        launched = await launchUrl(
+          searchUri,
+          mode: LaunchMode.externalApplication,
+        );
+        print('🗺️ Web search launch result: $launched');
+      }
+
+      if (!launched && context.mounted) {
+        print('❌ Failed to launch Google Maps search');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Không mở được Google Maps. Vui lòng kiểm tra địa chỉ showroom.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else if (launched) {
+        print('✅ Successfully opened Google Maps search');
+      }
+    } catch (e) {
+      print('❌ Error opening Google Maps search: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tìm kiếm địa chỉ: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  String _extractCoordinates(String url) {
+    final RegExp coordRegex = RegExp(
+      r'destination=(-?\d+\.?\d*),(-?\d+\.?\d*)',
+    );
+    final match = coordRegex.firstMatch(url);
+    if (match != null) {
+      return '${match.group(1)},${match.group(2)}';
+    }
+    return '21.027763,105.834160'; // Fallback to Hanoi
+  }
+
+  /// Cải thiện hiển thị địa chỉ - luôn có địa chỉ cụ thể
+  String _getDisplayAddress(String address) {
+    if (address.isEmpty) return 'Địa chỉ showroom không có sẵn';
+
+    // Các từ khóa cần thay thế bằng địa chỉ backup
     const hiddenPhrases = [
       'địa chỉ đang cập nhật',
       'đang cập nhật',
@@ -606,9 +764,9 @@ class DetailCalendarCarScreen extends StatelessWidget {
     final lowerAddress = address.toLowerCase();
     for (final phrase in hiddenPhrases) {
       if (lowerAddress.contains(phrase)) {
-        // Nếu chỉ có phrase này thì ẩn, nếu có thêm info khác thì giữ
+        // Nếu chỉ có phrase này thì thay thế
         if (lowerAddress.trim() == phrase) {
-          return '—';
+          return 'Địa chỉ chi tiết có trên Google Maps';
         }
       }
     }

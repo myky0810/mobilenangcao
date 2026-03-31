@@ -58,3 +58,5 @@ fonts/Spartan-SemiBold.ttf
 
 # Development files - không track  
 lib/screen/otp_new.dart
+list_models.dart
+test_*.dart

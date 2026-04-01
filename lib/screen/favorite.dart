@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/models/car_detail.dart';
+import '../navigation_observer.dart';
 import '../services/favorite_service.dart';
+import '../widgets/car_card.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key, this.phoneNumber});
@@ -10,41 +13,10 @@ class FavoriteScreen extends StatefulWidget {
   State<FavoriteScreen> createState() => _FavoriteScreenState();
 }
 
-class _FavoriteScreenState extends State<FavoriteScreen> {
+class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
   int _activeNavIndex = 2; // Favorite được chọn (index 2)
-  List<Map<String, dynamic>> _favoriteCars = [];
+  List<CarDetailData> _favoriteCars = [];
   bool _isLoading = true;
-
-  // Sample data cho test (sẽ thay thế bằng data từ Firebase)
-  final List<FavoriteCarModel> _sampleCars = [
-    FavoriteCarModel(
-      id: '1',
-      name: 'C 200 Avantgarde (VỊ)',
-      brand: 'Mercedes',
-      price: '1.599.000.000đ',
-      priceNote: 'Lăn bánh từ 1.8 tỷ',
-      image: 'assets/images/products/car1.jpg',
-      isFavorited: true,
-    ),
-    FavoriteCarModel(
-      id: '2',
-      name: 'Toyota Camry 2026',
-      brand: 'Toyota',
-      price: '1.220.000.000đ',
-      priceNote: 'Lăn bánh từ 1.4 tỷ',
-      image: 'assets/images/products/car2.jpg',
-      isFavorited: true,
-    ),
-    FavoriteCarModel(
-      id: '3',
-      name: 'BMW 3 Series',
-      brand: 'BMW',
-      price: '1.899.000.000đ',
-      priceNote: 'Lăn bánh từ 2.1 tỷ',
-      image: 'assets/images/products/car3.jpg',
-      isFavorited: true,
-    ),
-  ];
 
   @override
   void initState() {
@@ -52,73 +24,56 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     _loadFavoriteCars();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    if (!mounted) return;
+    _loadFavoriteCars();
+  }
+
   Future<void> _loadFavoriteCars() async {
     try {
       setState(() => _isLoading = true);
 
-      // Lấy danh sách yêu thích từ SharedPreferences
+      // Lấy danh sách yêu thích từ SharedPreferences và chuyển thành CarDetailData
       final favorites = await FavoriteService.getFavorites();
+      final favoriteCars = favorites.map((fav) => CarDetailData.fromMap(fav)).toList();
 
-      if (favorites.isNotEmpty) {
-        setState(() {
-          _favoriteCars = favorites;
-          _isLoading = false;
-        });
-      } else {
-        // Nếu chưa có favorite nào, tạm thời dùng sample data
-        setState(() {
-          _favoriteCars = _sampleCars.map((car) => car.toMap()).toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi tải danh sách yêu thích: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _removeFromFavorites(String carId) async {
-    try {
-      // Xóa từ SharedPreferences
-      await FavoriteService.removeFromFavorites(carId);
-
-      // Cập nhật UI
+      if (!mounted) return;
       setState(() {
-        _favoriteCars.removeWhere((car) => car['id'] == carId);
+        _favoriteCars = favoriteCars;
+        _isLoading = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã xóa khỏi danh sách yêu thích'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi xóa: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi tải danh sách yêu thích: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: const Color(0xFF101B28),
       appBar: _buildAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
@@ -129,7 +84,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: const Color(0xFF0E1623),
       elevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
@@ -138,12 +93,30 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       title: const Text(
         'Sản phẩm yêu thích',
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+          color: Color(0xFF8AACFF),
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
         ),
       ),
+      titleSpacing: 0,
       centerTitle: false,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white12),
+              image: const DecorationImage(
+                image: AssetImage('assets/images/RR.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -172,158 +145,71 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               'Hãy thêm những chiếc xe bạn yêu thích',
               style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
+            const SizedBox(height: 18),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushReplacementNamed(
+                  context,
+                  '/newcar',
+                  arguments: widget.phoneNumber,
+                );
+              },
+              icon: const Icon(Icons.directions_car_rounded),
+              label: const Text('Khám phá xe ngay'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82C8),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _favoriteCars.length,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      itemCount: _favoriteCars.length + 1,
       itemBuilder: (context, index) {
-        return _buildFavoriteCarCard(_favoriteCars[index]);
-      },
-    );
-  }
-
-  Widget _buildFavoriteCarCard(Map<String, dynamic> car) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/detailcar',
-          arguments: {
-            'carName': car['name'] ?? 'Xe yêu thích',
-            'carBrand': car['brand'] ?? car['subtitle'] ?? 'Unknown',
-            'carImage': car['image'] ?? 'assets/images/products/car1.jpg',
-            'carPrice': car['price'] ?? 'Liên hệ',
-            'carDescription':
-                'Xe ${car['name'] ?? 'yêu thích'} với thiết kế hiện đại và trang bị cao cấp. Đã được thêm vào danh sách yêu thích.',
-            'carImages': <String>[
-              car['image'] ?? 'assets/images/products/car1.jpg',
-              'assets/images/products/car2.jpg',
-              'assets/images/products/car3.jpg',
+        if (index == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_favoriteCars.length} xe đã lưu',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Danh sách xe bạn đã đánh dấu yêu thích',
+                style: TextStyle(color: Colors.grey[400], fontSize: 14),
+              ),
+              const SizedBox(height: 20),
             ],
-            'rating': (car['rating'] as num?)?.toDouble() ?? 4.5,
-            'reviewCount': car['reviewCount'] ?? 95,
-            'isNew': car['isNew'] ?? false,
-            'phoneNumber': widget.phoneNumber,
-          },
+          );
+        }
+        return CarCard(
+          id: _favoriteCars[index - 1].id,
+          name: _favoriteCars[index - 1].name,
+          brand: _favoriteCars[index - 1].brand,
+          price: _favoriteCars[index - 1].price,
+          priceNote: 'Lăn bánh từ ${_favoriteCars[index - 1].price}',
+          image: _favoriteCars[index - 1].image,
+          gallery: _favoriteCars[index - 1].images,
+          rating: _favoriteCars[index - 1].rating,
+          reviewCount: _favoriteCars[index - 1].reviewCount,
+          isNew: _favoriteCars[index - 1].isNew,
+          description: _favoriteCars[index - 1].description,
+          phoneNumber: widget.phoneNumber,
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Car Image with heart icon
-            Stack(
-              children: [
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: Colors.grey[900],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.asset(
-                      car['image'] ?? 'assets/images/products/car1.jpg',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[800],
-                          child: const Center(
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white30,
-                              size: 60,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                // Heart icon
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: GestureDetector(
-                    onTap: () => _removeFromFavorites(car['id'] ?? ''),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                      child: const Icon(
-                        Icons.favorite,
-                        color: Colors.red,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Car Info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Car name
-                  Text(
-                    car['name'] ?? 'Unknown Car',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Brand
-                  Text(
-                    car['brand'] ?? 'Unknown Brand',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Price
-                  Text(
-                    car['price'] ?? '0đ',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Price note
-                  Text(
-                    car['priceNote'] ?? '',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -334,13 +220,13 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       child: Container(
         height: 70,
         decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
+          color: const Color(0xFF121B28),
           borderRadius: BorderRadius.circular(30),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Color.fromRGBO(0, 0, 0, 0.3),
               blurRadius: 12,
-              offset: const Offset(0, -3),
+              offset: Offset(0, -3),
               spreadRadius: 0,
             ),
           ],
@@ -363,27 +249,28 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     return GestureDetector(
       onTap: () {
+        if (_activeNavIndex == index) return;
         setState(() {
           _activeNavIndex = index;
         });
 
-        // Navigate to different screens
+        // Điều hướng tới các màn hình tương ứng.
         if (index == 0) {
-          // Navigate to HomeScreen
+          // Điều hướng về màn hình Trang chủ.
           Navigator.pushReplacementNamed(
             context,
             '/home',
             arguments: widget.phoneNumber,
           );
         } else if (index == 1) {
-          // Navigate to NewCar
+          // Điều hướng tới màn hình xe mới.
           Navigator.pushReplacementNamed(
             context,
             '/newcar',
             arguments: widget.phoneNumber,
           );
         } else if (index == 3) {
-          // Navigate to Profile
+          // Điều hướng tới màn hình hồ sơ.
           Navigator.pushReplacementNamed(
             context,
             '/profile',
@@ -407,11 +294,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               : null,
           color: isActive ? null : Colors.transparent,
           boxShadow: isActive
-              ? [
+              ? const [
                   BoxShadow(
-                    color: const Color(0xFF3b82c8).withOpacity(0.6),
+                    color: Color.fromRGBO(59, 130, 200, 0.6),
                     blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    offset: Offset(0, 4),
                   ),
                 ]
               : [],
@@ -429,51 +316,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-// Model cho car yêu thích
-class FavoriteCarModel {
-  final String id;
-  final String name;
-  final String brand;
-  final String price;
-  final String priceNote;
-  final String image;
-  final bool isFavorited;
-
-  FavoriteCarModel({
-    required this.id,
-    required this.name,
-    required this.brand,
-    required this.price,
-    required this.priceNote,
-    required this.image,
-    this.isFavorited = false,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'brand': brand,
-      'price': price,
-      'priceNote': priceNote,
-      'image': image,
-      'isFavorited': isFavorited,
-    };
-  }
-
-  factory FavoriteCarModel.fromMap(Map<String, dynamic> map) {
-    return FavoriteCarModel(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      brand: map['brand'] ?? '',
-      price: map['price'] ?? '',
-      priceNote: map['priceNote'] ?? '',
-      image: map['image'] ?? '',
-      isFavorited: map['isFavorited'] ?? false,
     );
   }
 }

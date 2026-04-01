@@ -29,7 +29,6 @@ class _InfoScreenState extends State<InfoScreen> {
   // Variables to track changes
   bool _hasChanges = false;
   String? _originalName;
-  String? _originalPhone;
   String? _originalEmail;
   String? _originalStreet;
   String? _originalGender;
@@ -180,7 +179,7 @@ class _InfoScreenState extends State<InfoScreen> {
         _selectedDistrict = district;
         _selectedWard = ward;
 
-        // Save original values để compare changes
+        // Lưu giá trị gốc để so sánh thay đổi.
         _originalName = effectiveName;
         _originalEmail = email;
         _originalStreet = street;
@@ -190,14 +189,13 @@ class _InfoScreenState extends State<InfoScreen> {
         _originalDistrict = district;
         _originalWard = ward;
         _originalAvatarUrl = _avatarUrl;
-        _originalPhone = _formatPhoneNumber(widget.phoneNumber);
         _hasChanges = false; // Reset changes flag
       });
 
       // Add listeners to track changes
       _addChangeListeners();
     } catch (_) {
-      // Keep UI usable even if load fails.
+      // Giữ giao diện vẫn dùng được ngay cả khi tải dữ liệu thất bại.
     }
   }
 
@@ -231,7 +229,7 @@ class _InfoScreenState extends State<InfoScreen> {
     }
   }
 
-  // Show confirmation dialog before leaving
+  // Hiển thị hộp thoại xác nhận trước khi rời màn hình
   Future<bool> _showExitConfirmationDialog() async {
     if (!_hasChanges) return true; // No changes, allow exit
 
@@ -270,7 +268,7 @@ class _InfoScreenState extends State<InfoScreen> {
                     child: TextButton(
                       onPressed: () => Navigator.of(
                         context,
-                      ).pop('cancel'), // Cancel - stay on page
+                      ).pop('cancel'), // Hủy, ở lại trang hiện tại
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -292,7 +290,7 @@ class _InfoScreenState extends State<InfoScreen> {
                   Expanded(
                     child: TextButton(
                       onPressed: () =>
-                          Navigator.of(context).pop('save'), // Save and exit
+                          Navigator.of(context).pop('save'), // Lưu và thoát
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -329,7 +327,7 @@ class _InfoScreenState extends State<InfoScreen> {
     return false;
   }
 
-  // Handle back button press
+  // Xử lý khi nhấn nút quay lại
   Future<void> _handleBackPress() async {
     final shouldExit = await _showExitConfirmationDialog();
     if (shouldExit && mounted) {
@@ -378,7 +376,6 @@ class _InfoScreenState extends State<InfoScreen> {
 
       // Reset change detection after successful save
       _originalName = name;
-      _originalPhone = _phoneController.text.trim();
       _originalEmail = email;
       _originalStreet = street;
       _originalGender = _selectedGender;
@@ -394,7 +391,7 @@ class _InfoScreenState extends State<InfoScreen> {
 
       if (!mounted) return;
 
-      // Navigate back to infomation.dart instead of just popping
+      // Điều hướng về infomation.dart thay vì chỉ đóng màn hình
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -881,7 +878,7 @@ class _InfoScreenState extends State<InfoScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Upload file thất bại')));
+      ).showSnackBar(const SnackBar(content: Text('Tải tệp thất bại')));
     }
   }
 
@@ -910,10 +907,10 @@ class _InfoScreenState extends State<InfoScreen> {
                   ),
                 ),
                 ListTile(
-                  title: const Text('Upload file'),
+                  title: const Text('Tải tệp lên'),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    // Give the bottom sheet time to fully close before opening
+                    // Chờ bottom sheet đóng hẳn trước khi mở trình chọn tệp
                     // the native file picker dialog.
                     await Future<void>.delayed(
                       const Duration(milliseconds: 200),

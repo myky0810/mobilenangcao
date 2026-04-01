@@ -103,6 +103,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
             'Các thông báo mới sẽ xuất hiện ở đây',
             style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 14),
           ),
+          const SizedBox(height: 18),
+          ElevatedButton.icon(
+            onPressed: _loadNotifications,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Làm mới'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82C8),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
         ],
       ),
     );

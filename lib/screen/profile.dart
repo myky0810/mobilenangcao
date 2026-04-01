@@ -425,6 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return GestureDetector(
       onTap: () {
+        if (_activeNavIndex == index) return;
         setState(() {
           _activeNavIndex = index;
         });

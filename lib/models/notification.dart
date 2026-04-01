@@ -5,6 +5,9 @@ class NotificationModel {
   final String title;
   final String description;
   final String type; // 'price', 'promotion', 'discount'
+  // Admin có thể map campaign vào banner bằng bannerKey hoặc bannerIndex.
+  final String? bannerKey;
+  final int? bannerIndex;
   final String? carModel;
   final String? originalPrice;
   final String? discountPrice;
@@ -18,6 +21,8 @@ class NotificationModel {
     required this.title,
     required this.description,
     required this.type,
+    this.bannerKey,
+    this.bannerIndex,
     this.carModel,
     this.originalPrice,
     this.discountPrice,
@@ -33,6 +38,10 @@ class NotificationModel {
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       type: json['type'] ?? 'promotion',
+        bannerKey: json['bannerKey'],
+        bannerIndex: json['bannerIndex'] is int
+          ? json['bannerIndex'] as int
+          : int.tryParse('${json['bannerIndex'] ?? ''}'),
       carModel: json['carModel'],
       originalPrice: json['originalPrice'],
       discountPrice: json['discountPrice'],
@@ -51,6 +60,8 @@ class NotificationModel {
       'title': title,
       'description': description,
       'type': type,
+      'bannerKey': bannerKey,
+      'bannerIndex': bannerIndex,
       'carModel': carModel,
       'originalPrice': originalPrice,
       'discountPrice': discountPrice,
@@ -67,6 +78,8 @@ class NotificationModel {
     String? title,
     String? description,
     String? type,
+    String? bannerKey,
+    int? bannerIndex,
     String? carModel,
     String? originalPrice,
     String? discountPrice,
@@ -80,6 +93,8 @@ class NotificationModel {
       title: title ?? this.title,
       description: description ?? this.description,
       type: type ?? this.type,
+      bannerKey: bannerKey ?? this.bannerKey,
+      bannerIndex: bannerIndex ?? this.bannerIndex,
       carModel: carModel ?? this.carModel,
       originalPrice: originalPrice ?? this.originalPrice,
       discountPrice: discountPrice ?? this.discountPrice,

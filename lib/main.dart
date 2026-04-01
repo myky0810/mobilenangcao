@@ -33,7 +33,12 @@ import 'package:doan_cuoiki/screen/app_info.dart';
 import 'package:doan_cuoiki/screen/calendar_drive.dart';
 import 'package:doan_cuoiki/screen/AIChat.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
+import 'package:doan_cuoiki/models/car_detail.dart';
+import 'package:doan_cuoiki/services/car_data_service.dart';
+import 'package:doan_cuoiki/services/favorite_service.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
+
+import 'navigation_observer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +49,10 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await VietnamProvinces.initialize(version: AdministrativeDivisionVersion.v1);
   await initializeDateFormatting('en_US', null);
+  await CarDataService().initialize();
+
+  // Làm sạch dữ liệu yêu thích trùng lặp khi ứng dụng khởi động
+  await FavoriteService.deduplicateAndSync();
   runApp(const MyApp());
 }
 
@@ -54,6 +63,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [routeObserver],
       theme: ThemeData.dark()
           .copyWith(
             scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
@@ -146,8 +156,8 @@ class MyApp extends StatelessWidget {
           return ForgotOtpScreen(phoneNumber: phoneNumber);
         },
         '/newcar': (context) {
-          final phoneNumber =
-              ModalRoute.of(context)!.settings.arguments as String?;
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final phoneNumber = args is String ? args : null;
           return NewCarScreen(phoneNumber: phoneNumber);
         },
         '/favorite': (context) {
@@ -156,21 +166,8 @@ class MyApp extends StatelessWidget {
           return FavoriteScreen(phoneNumber: phoneNumber);
         },
         '/detailcar': (context) {
-          final args =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<String, dynamic>;
-          return DetailCarScreen(
-            carName: args['carName'] as String,
-            carBrand: args['carBrand'] as String,
-            carImage: args['carImage'] as String,
-            carPrice: args['carPrice'] as String,
-            carDescription: args['carDescription'] as String,
-            carImages: args['carImages'] as List<String>,
-            rating: args['rating'] as double,
-            reviewCount: args['reviewCount'] as int,
-            isNew: args['isNew'] as bool,
-            phoneNumber: args['phoneNumber'] as String?,
-          );
+          final args = ModalRoute.of(context)!.settings.arguments;
+          return DetailCarScreen(car: CarDetailData.fromRouteArguments(args));
         },
         '/bookcar': (context) {
           final args =

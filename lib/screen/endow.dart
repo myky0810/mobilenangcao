@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../models/notification.dart';
 import '../services/notification_api_service.dart';
@@ -14,6 +16,7 @@ class EndowScreen extends StatefulWidget {
 class _EndowScreenState extends State<EndowScreen> {
   int _activeNavIndex = 1; // Index cho Ưu đãi (index 1)
   final NotificationApiService _notificationService = NotificationApiService();
+  StreamSubscription<List<NotificationModel>>? _notificationSubscription;
   Map<String, List<NotificationModel>> _notificationsByDate = {};
   bool _isLoading = true;
   int _unreadCount = 0;
@@ -41,9 +44,16 @@ class _EndowScreenState extends State<EndowScreen> {
   }
 
   void _listenToNotifications() {
-    _notificationService.notificationStream.listen((notifications) {
+    _notificationSubscription?.cancel();
+    _notificationSubscription = _notificationService.notificationStream.listen((notifications) {
       _loadNotifications();
     });
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -525,10 +535,11 @@ class _EndowScreenState extends State<EndowScreen> {
 
     return GestureDetector(
       onTap: () {
+        if (_activeNavIndex == index) return;
         setState(() {
           _activeNavIndex = index;
         });
-        // Navigate to different screens
+        // Điều hướng tới các màn hình tương ứng.
         if (index == 0) {
           // Home
           Navigator.pushReplacementNamed(
@@ -537,7 +548,7 @@ class _EndowScreenState extends State<EndowScreen> {
             arguments: widget.phoneNumber,
           );
         } else if (index == 2) {
-          // NewCar
+          // Xe mới
           Navigator.pushReplacementNamed(
             context,
             '/newcar',
@@ -601,18 +612,18 @@ class _EndowScreenState extends State<EndowScreen> {
     );
   }
 
-  // Handle notification tap
+  // Xử lý khi nhấn vào thông báo
   void _handleNotificationTap(NotificationModel notification) async {
     // Mark as read
     if (!notification.isRead) {
       await _notificationService.markAsRead(notification.id);
     }
 
-    // Show notification details
+    // Hiển thị chi tiết thông báo
     _showNotificationDetails(notification);
   }
 
-  // Show notification options menu
+  // Hiển thị menu tùy chọn thông báo
   void _showNotificationOptions(NotificationModel notification) {
     showModalBottomSheet(
       context: context,
@@ -658,7 +669,11 @@ class _EndowScreenState extends State<EndowScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                _notificationService.markAsRead(notification.id);
+                if (notification.isRead) {
+                  _notificationService.markAsUnread(notification.id);
+                } else {
+                  _notificationService.markAsRead(notification.id);
+                }
               },
             ),
             ListTile(
@@ -678,7 +693,7 @@ class _EndowScreenState extends State<EndowScreen> {
     );
   }
 
-  // Show notification details dialog
+  // Hiển thị hộp thoại chi tiết thông báo
   void _showNotificationDetails(NotificationModel notification) {
     showDialog(
       context: context,
@@ -785,7 +800,7 @@ class _EndowScreenState extends State<EndowScreen> {
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      // Navigate to car details or promotion page
+                      // Điều hướng tới chi tiết xe hoặc trang ưu đãi
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,

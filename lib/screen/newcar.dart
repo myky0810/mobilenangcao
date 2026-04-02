@@ -1028,7 +1028,8 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
             _buildNavItem(Icons.home_rounded, 0),
             _buildNavItem(Icons.directions_car_rounded, 1),
             _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.person_rounded, 3),
+            _buildNavItem(Icons.verified_user_rounded, 3),
+            _buildNavItem(Icons.person_rounded, 4),
           ],
         ),
       ),
@@ -1058,6 +1059,12 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
               arguments: widget.phoneNumber,
             );
           } else if (index == 3) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/warranty',
+              arguments: widget.phoneNumber,
+            );
+          } else if (index == 4) {
             Navigator.pushReplacementNamed(
               context,
               '/profile',

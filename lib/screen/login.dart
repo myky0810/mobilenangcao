@@ -19,6 +19,8 @@ class _LoginEmailState extends State<LoginEmail>
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
   final TextEditingController _phoneController = TextEditingController();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  bool _googleSignInInitialized = false;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
 
@@ -38,6 +40,12 @@ class _LoginEmailState extends State<LoginEmail>
     _controller.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _ensureGoogleSignInInitialized() async {
+    if (_googleSignInInitialized) return;
+    await _googleSignIn.initialize();
+    _googleSignInInitialized = true;
   }
 
   @override
@@ -362,22 +370,17 @@ class _LoginEmailState extends State<LoginEmail>
     setState(() => _isGoogleLoading = true);
 
     try {
+      await _ensureGoogleSignInInitialized();
+
       // Đăng xuất trước để hiện danh sách tài khoản
-      await GoogleSignIn().signOut();
+      await _googleSignIn.signOut();
 
       // Sign in with Google - sẽ hiện danh sách tài khoản
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        // User cancelled
-        if (!mounted) return;
-        setState(() => _isGoogleLoading = false);
-        return;
-      }
+      final googleUser = await _googleSignIn.authenticate();
 
       // Get authentication details
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
@@ -424,6 +427,22 @@ class _LoginEmailState extends State<LoginEmail>
         '/home',
         (route) => false,
         arguments: email,
+      );
+    } on GoogleSignInException catch (e) {
+      if (!mounted) return;
+      setState(() => _isGoogleLoading = false);
+
+      if (e.code == GoogleSignInExceptionCode.canceled ||
+          e.code == GoogleSignInExceptionCode.interrupted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Đăng nhập Google thất bại: ${e.description ?? e.code.name}',
+          ),
+        ),
       );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;

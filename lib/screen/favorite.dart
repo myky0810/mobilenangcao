@@ -84,12 +84,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      automaticallyImplyLeading: false,
       backgroundColor: const Color(0xFF0E1623),
       elevation: 0,
-      leading: IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-      ),
       title: const Text(
         'Sản phẩm yêu thích',
         style: TextStyle(
@@ -98,7 +95,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
           fontWeight: FontWeight.bold,
         ),
       ),
-      titleSpacing: 0,
       centerTitle: false,
       actions: [
         Padding(
@@ -237,7 +233,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
             _buildNavItem(Icons.home_rounded, 0),
             _buildNavItem(Icons.directions_car_rounded, 1),
             _buildNavItem(Icons.favorite_rounded, 2), // Active
-            _buildNavItem(Icons.person_rounded, 3),
+            _buildNavItem(Icons.verified_user_rounded, 3),
+            _buildNavItem(Icons.person_rounded, 4),
           ],
         ),
       ),
@@ -270,6 +267,13 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
             arguments: widget.phoneNumber,
           );
         } else if (index == 3) {
+          // Điều hướng tới màn hình bảo hành.
+          Navigator.pushReplacementNamed(
+            context,
+            '/warranty',
+            arguments: widget.phoneNumber,
+          );
+        } else if (index == 4) {
           // Điều hướng tới màn hình hồ sơ.
           Navigator.pushReplacementNamed(
             context,

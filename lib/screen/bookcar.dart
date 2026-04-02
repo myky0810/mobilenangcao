@@ -49,6 +49,13 @@ class _BookCarScreenState extends State<BookCarScreen> {
         Navigator.pushReplacementNamed(context, '/favorite');
         break;
       case 3:
+        Navigator.pushReplacementNamed(
+          context,
+          '/warranty',
+          arguments: widget.carData['phoneNumber'],
+        );
+        break;
+      case 4:
         Navigator.pushReplacementNamed(context, '/profile');
         break;
     }
@@ -957,7 +964,8 @@ class _BookCarScreenState extends State<BookCarScreen> {
             _buildNavItem(Icons.home_rounded, 0),
             _buildNavItem(Icons.directions_car_rounded, 1),
             _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.person_rounded, 3),
+            _buildNavItem(Icons.verified_user_rounded, 3),
+            _buildNavItem(Icons.person_rounded, 4),
           ],
         ),
       ),

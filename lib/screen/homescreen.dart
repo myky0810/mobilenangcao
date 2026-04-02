@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../data/cars_data.dart';
 import '../data/firebase_helper.dart';
-import '../services/favorite_service.dart';
+import '../models/car_detail.dart';
 import '../widgets/notification_icon.dart';
-import '../widgets/car_image_slider.dart';
 import '../widgets/ai_chat_button.dart';
+import '../widgets/car_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -82,63 +83,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ),
   ];
 
-  final List<CarItem> _cars = [
-    CarItem(
-      name: 'Mercedes-Benz AMG GT Coupe 2024',
-      price: '8.500.000.000₫',
-      subtitle: 'Mercedes',
-      image:
-          'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
-      gallery: [
-        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-00cab4cac69d4468527a0bddd73df086de.jpg',
-        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-2de29e9b9a86483c11f3779bac10cd5929.jpg',
-        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-3c0a7e2e90aae7e1d15736519f0b3cf3a5.jpg',
-        'assets/images/products/Mercedes-Benz-AMG_GT_Coupe-2024-1280-a7b02c4db5d04a1bd5dbf1d8b30e87b024.jpg',
-      ],
-    ),
-    CarItem(
-      name: 'BMW X7 2023',
-      price: '7.799.000.000₫',
-      subtitle: 'BMW',
-      image:
-          'assets/images/products/BMW-X7-2023-1280-1980c2431b01e69530f98bf3202efb03d2.jpg',
-      gallery: [
-        'assets/images/products/BMW-X7-2023-1280-1980c2431b01e69530f98bf3202efb03d2.jpg',
-        'assets/images/products/BMW-X7-2023-1280-297ea50aea9d6f4fb52a4cca5a5718131f.jpg',
-        'assets/images/products/BMW-X7-2023-1280-528da416a6f27c502b174cf3c931e7fe73.jpg',
-        'assets/images/products/BMW-X7-2023-1280-664e52a5958bfe61899dc501d95ab720bb.jpg',
-        'assets/images/products/BMW-X7-2023-1280-9263bf2a78ef49c7e8752a9d49d7c571d5.jpg',
-      ],
-    ),
-    CarItem(
-      name: 'Tesla Cybertruck 2025',
-      price: '2.091.538.525₫',
-      subtitle: 'Tesla',
-      image:
-          'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
-      gallery: [
-        'assets/images/products/Tesla-Cybertruck-2025-1280-aba810131368e11e171f4658a02a79d3f2.jpg',
-        'assets/images/products/Tesla-Cybertruck-2025-1280-16e1b7f3835967587c752ccbc071af69c5.jpg',
-        'assets/images/products/Tesla-Cybertruck-2025-1280-4c154b2d57ac41a915b7ad60624ed73dc1.jpg',
-        'assets/images/products/Tesla-Cybertruck-2025-1280-7ca3be8dc288bd177f33cdb0d03ecaa027.jpg',
-      ],
-    ),
-    CarItem(
-      name: 'Toyota Land Cruiser 2021',
-      price: '4.030.000.000₫',
-      subtitle: 'Toyota',
-      image:
-          'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
-      gallery: [
-        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg',
-        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-4efc18483995a822f3ece39367d5d155ed.jpg',
-        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-58ff0f9258d235b970aa7e53956b659206.jpg',
-        'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-f3049447d164609d97e40ac527c2d83b53.jpg',
-      ],
-    ),
-  ];
-
-  final Set<int> _favorites = {};
+  late final List<CarDetailData> _cars = CarsData.allCars;
 
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
     final phone = widget.phoneNumber;
@@ -324,11 +269,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
 
           // AI Chat Button - floating trên navbar
-          Positioned(
-            bottom: 100, // Đặt ngay trên bottom nav
-            right: 20,
-            child: AIChatBadge(phoneNumber: widget.phoneNumber),
-          ),
+          AIChatBadge(phoneNumber: widget.phoneNumber),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -959,157 +900,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _cars.length,
       itemBuilder: (context, index) {
-        return _buildCarCard(_cars[index], index);
-      },
-    );
-  }
-
-  Widget _buildCarCard(CarItem car, int index) {
-    final isFavorite = _favorites.contains(index);
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/detailcar',
-          arguments: {
-            'carName': car.name,
-            'carBrand': car.subtitle,
-            'carImage': car.image,
-            'carPrice': car.price,
-            'carDescription':
-                'Xe ${car.name} từ ${car.subtitle} với chất lượng cao và trang bị hiện đại.',
-            'carImages': [car.image],
-            'rating': 4.5,
-            'reviewCount': 95,
-            'isNew': index == 0, // Car đầu tiên sẽ có NEW tag
-            'phoneNumber': widget.phoneNumber,
+        final car = _cars[index];
+        return CarCard.fromMap(
+          {
+            'id': car.id,
+            'name': car.name,
+            'brand': car.brand,
+            'price': car.price,
+            'priceNote': 'Lăn bánh từ ${car.price}',
+            'image': car.image,
+            'gallery': car.images,
+            'rating': car.rating,
+            'reviewCount': car.reviewCount,
+            'isNew': car.isNew,
+            'description': car.description,
           },
+          phoneNumber: widget.phoneNumber,
+          showBrandBadge: false,
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Car gallery slider
-            Stack(
-              children: [
-                CarImageSlider(
-                  images: car.gallery.isNotEmpty ? car.gallery : [car.image],
-                  height: 180,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: GestureDetector(
-                    onTap: () async {
-                      try {
-                        final carData = _cars[index].toMap();
-                        carData['id'] = index.toString(); // Thêm id
-
-                        if (isFavorite) {
-                          _favorites.remove(index);
-                          await FavoriteService.removeFromFavorites(
-                            index.toString(),
-                          );
-                        } else {
-                          _favorites.add(index);
-                          await FavoriteService.addToFavorites(carData);
-                        }
-                        setState(() {});
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Lỗi khi cập nhật yêu thích: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.6),
-                      ),
-                      child: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? Colors.red : Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
-                // NEW tag for first car
-                if (index == 0)
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'NEW',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            // Car info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    car.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    car.subtitle,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    car.price,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1137,7 +946,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _buildNavItem(Icons.home_rounded, 0),
             _buildNavItem(Icons.directions_car_rounded, 1),
             _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.person_rounded, 3),
+            _buildNavItem(Icons.verified_user_rounded, 3),
+            _buildNavItem(Icons.person_rounded, 4),
           ],
         ),
       ),
@@ -1170,6 +980,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             arguments: widget.phoneNumber,
           );
         } else if (index == 3) {
+          // Navigate to warranty screen
+          Navigator.pushReplacementNamed(
+            context,
+            '/warranty',
+            arguments: widget.phoneNumber,
+          );
+        } else if (index == 4) {
           // Navigate to profile screen
           Navigator.pushReplacementNamed(
             context,
@@ -1249,34 +1066,6 @@ class _BrandLogo extends StatelessWidget {
     }
 
     return Icon(brand.icon, color: Colors.white, size: size);
-  }
-}
-
-class CarItem {
-  final String name;
-  final String price;
-  final String subtitle;
-  final String image;
-  final List<String> gallery;
-
-  CarItem({
-    required this.name,
-    required this.price,
-    required this.subtitle,
-    required this.image,
-    this.gallery = const [],
-  });
-
-  // Thêm phương thức toMap
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'price': price,
-      'brand': subtitle, // Dùng subtitle làm brand
-      'priceNote': 'Lăn bánh từ ${price}',
-      'image': image,
-      'isFavorited': true,
-    };
   }
 }
 

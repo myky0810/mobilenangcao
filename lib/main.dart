@@ -29,6 +29,7 @@ import 'package:doan_cuoiki/screen/logocar/mazda_screen.dart';
 import 'package:doan_cuoiki/screen/logocar/hyundai_screen.dart';
 import 'package:doan_cuoiki/screen/endow.dart';
 import 'package:doan_cuoiki/screen/notification.dart';
+import 'package:doan_cuoiki/screen/warranty.dart';
 import 'package:doan_cuoiki/screen/app_info.dart';
 import 'package:doan_cuoiki/screen/calendar_drive.dart';
 import 'package:doan_cuoiki/screen/AIChat.dart';
@@ -36,6 +37,7 @@ import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/car_data_service.dart';
 import 'package:doan_cuoiki/services/favorite_service.dart';
+import 'package:doan_cuoiki/services/firebase_service.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
 import 'navigation_observer.dart';
@@ -53,6 +55,14 @@ Future<void> main() async {
 
   // Làm sạch dữ liệu yêu thích trùng lặp khi ứng dụng khởi động
   await FavoriteService.deduplicateAndSync();
+
+  // Chạy dọn dữ liệu đặt cọc cũ một lần (nếu có).
+  try {
+    await FirebaseService.cleanupLegacyDepositDataOnce();
+  } catch (_) {
+    // Không chặn app startup nếu cleanup không đủ quyền/không cần thiết.
+  }
+
   runApp(const MyApp());
 }
 
@@ -226,6 +236,11 @@ class MyApp extends StatelessWidget {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return NotificationScreen(phoneNumber: phoneNumber);
+        },
+        '/warranty': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return WarrantyScreen(phoneNumber: phoneNumber);
         },
         '/appinfo': (context) => const AppInfoScreen(),
         '/date_drive': (context) {

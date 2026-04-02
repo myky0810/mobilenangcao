@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service để quản lý dữ liệu user trong Firestore
 class FirebaseService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static const String _cleanupFlagKey = 'legacy_deposit_cleanup_done_v1';
 
   // Collection users
   static CollectionReference get _usersCollection =>
@@ -184,6 +186,109 @@ class FirebaseService {
     } catch (e) {
       print('Error updating display name: $e');
       rethrow;
+    }
+  }
+
+  /// Dọn dữ liệu đặt cọc cũ một lần duy nhất sau khi gỡ tính năng.
+  static Future<void> cleanupLegacyDepositDataOnce() async {
+    final prefs = await SharedPreferences.getInstance();
+    final alreadyDone = prefs.getBool(_cleanupFlagKey) ?? false;
+    if (alreadyDone) {
+      return;
+    }
+
+    // Xóa các field đặt cọc còn sót trong collection booking lái thử.
+    await _removeLegacyDepositFieldsFromBookings();
+
+    // Xóa dữ liệu trong collection booking_deposits nếu còn tồn tại.
+    await _deleteLegacyDepositsCollection();
+
+    await prefs.setBool(_cleanupFlagKey, true);
+  }
+
+  static Future<void> _removeLegacyDepositFieldsFromBookings() async {
+    const pageSize = 300;
+    QueryDocumentSnapshot<Map<String, dynamic>>? lastDoc;
+
+    while (true) {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection('test_drive_bookings')
+          .orderBy(FieldPath.documentId)
+          .limit(pageSize);
+
+      if (lastDoc != null) {
+        query = query.startAfterDocument(lastDoc);
+      }
+
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) {
+        break;
+      }
+
+      WriteBatch batch = _firestore.batch();
+      var writes = 0;
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final hasLegacyFields =
+            data.containsKey('depositRequested') ||
+            data.containsKey('depositRate') ||
+            data.containsKey('depositAmount') ||
+            data.containsKey('depositStatus');
+
+        if (!hasLegacyFields) {
+          continue;
+        }
+
+        batch.update(doc.reference, {
+          'depositRequested': FieldValue.delete(),
+          'depositRate': FieldValue.delete(),
+          'depositAmount': FieldValue.delete(),
+          'depositStatus': FieldValue.delete(),
+        });
+        writes++;
+
+        if (writes == 400) {
+          await batch.commit();
+          batch = _firestore.batch();
+          writes = 0;
+        }
+      }
+
+      if (writes > 0) {
+        await batch.commit();
+      }
+
+      lastDoc = snapshot.docs.last;
+    }
+  }
+
+  static Future<void> _deleteLegacyDepositsCollection() async {
+    const pageSize = 400;
+    QueryDocumentSnapshot<Map<String, dynamic>>? lastDoc;
+
+    while (true) {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection('booking_deposits')
+          .orderBy(FieldPath.documentId)
+          .limit(pageSize);
+
+      if (lastDoc != null) {
+        query = query.startAfterDocument(lastDoc);
+      }
+
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) {
+        break;
+      }
+
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+
+      lastDoc = snapshot.docs.last;
     }
   }
 }

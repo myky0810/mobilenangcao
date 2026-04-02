@@ -88,6 +88,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
     final phone = widget.phoneNumber;
     if (phone == null || phone.trim().isEmpty) return null;
+
+    // Nếu là email (Google login), dùng trực tiếp email làm document ID
+    if (phone.contains('@')) {
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(phone.trim().toLowerCase());
+    }
+
+    // Nếu là số điện thoại, normalize
     final normalized = FirebaseHelper.normalizePhone(phone);
     return FirebaseFirestore.instance.collection('users').doc(normalized);
   }

@@ -51,7 +51,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
 
       // Lấy danh sách yêu thích từ SharedPreferences và chuyển thành CarDetailData
       final favorites = await FavoriteService.getFavorites();
-      final favoriteCars = favorites.map((fav) => CarDetailData.fromMap(fav)).toList();
+      final favoriteCars = favorites
+          .map((fav) => CarDetailData.fromMap(fav))
+          .toList();
 
       if (!mounted) return;
       setState(() {
@@ -155,7 +157,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82C8),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

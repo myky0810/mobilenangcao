@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ShowroomApiService {
   static const List<String> _endpoints = [
@@ -8,6 +10,8 @@ class ShowroomApiService {
     'https://overpass.kumi.systems/api/interpreter',
     'https://lz4.overpass-api.de/api/interpreter',
   ];
+  static const Duration _networkTimeout = Duration(seconds: 22);
+  static const int _maxAttemptsPerEndpoint = 2;
   static const Duration _cacheTtl = Duration(
     hours: 2,
   ); // Tăng thời gian cache từ 20 phút lên 2 giờ
@@ -20,14 +24,34 @@ class ShowroomApiService {
     int radiusInMeters = 300000, // Default 300km
     int limit = 30,
     bool forceRefresh = false,
+    String? brand,
   }) async {
     final cacheKey = _buildCacheKey(latitude, longitude, radiusInMeters);
     if (!forceRefresh) {
       final cached = await _readCache(cacheKey);
       if (cached != null && cached.isNotEmpty) {
-        return cached.take(limit).toList();
+        // Thêm null safety cho cached data
+        final validCached = cached
+            .where(
+              (item) =>
+                  item['name'] != null &&
+                  item['lat'] != null &&
+                  item['lng'] != null,
+            )
+            .toList();
+        return validCached.take(limit).toList();
       }
     }
+
+    final normalizedBrand = (brand ?? '').trim();
+    final brandFilter = normalizedBrand.isEmpty
+        ? ''
+        : '\n  node["brand"~"${_escapeOverpassRegex(normalizedBrand)}",i](around:$radiusInMeters,$latitude,$longitude);\n'
+              '  way["brand"~"${_escapeOverpassRegex(normalizedBrand)}",i](around:$radiusInMeters,$latitude,$longitude);\n'
+              '  relation["brand"~"${_escapeOverpassRegex(normalizedBrand)}",i](around:$radiusInMeters,$latitude,$longitude);\n'
+              '  node["name"~"${_escapeOverpassRegex(normalizedBrand)}",i](around:$radiusInMeters,$latitude,$longitude);\n'
+              '  way["name"~"${_escapeOverpassRegex(normalizedBrand)}",i](around:$radiusInMeters,$latitude,$longitude);\n'
+              '  relation["name"~"${_escapeOverpassRegex(normalizedBrand)}",i](around:$radiusInMeters,$latitude,$longitude);\n';
 
     final query =
         '''
@@ -39,87 +63,119 @@ class ShowroomApiService {
   node["amenity"="car_dealership"](around:$radiusInMeters,$latitude,$longitude);
   way["amenity"="car_dealership"](around:$radiusInMeters,$latitude,$longitude);
   relation["amenity"="car_dealership"](around:$radiusInMeters,$latitude,$longitude);
+$brandFilter
 );
 out center tags;
 ''';
 
-    HttpException? lastHttpError;
+    Exception? lastError;
 
     for (final endpoint in _endpoints) {
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: 20);
+      for (var attempt = 1; attempt <= _maxAttemptsPerEndpoint; attempt++) {
+        final client = HttpClient();
+        client.connectionTimeout = _networkTimeout;
 
-      try {
-        final request = await client.postUrl(Uri.parse(endpoint));
-        request.headers.set(
-          HttpHeaders.contentTypeHeader,
-          'application/x-www-form-urlencoded',
-        );
-        request.headers.set(
-          HttpHeaders.userAgentHeader,
-          'doan_cuoiki_flutter_showroom/1.0',
-        );
-        request.write('data=${Uri.encodeQueryComponent(query)}');
-
-        final response = await request.close();
-        final responseBody = await response.transform(utf8.decoder).join();
-
-        if (response.statusCode != 200) {
-          lastHttpError = HttpException(
-            'Overpass API failed with status: ${response.statusCode}',
+        try {
+          final request = await client
+              .postUrl(Uri.parse(endpoint))
+              .timeout(_networkTimeout);
+          request.headers.set(
+            HttpHeaders.contentTypeHeader,
+            'application/x-www-form-urlencoded',
           );
-          continue;
+          request.headers.set(
+            HttpHeaders.userAgentHeader,
+            'doan_cuoiki_flutter_showroom/1.0',
+          );
+          request.write('data=${Uri.encodeQueryComponent(query)}');
+
+          final response = await request.close().timeout(_networkTimeout);
+          final responseBody = await response
+              .transform(utf8.decoder)
+              .join()
+              .timeout(_networkTimeout);
+
+          if (response.statusCode != 200) {
+            lastError = HttpException(
+              'Overpass API failed with status: ${response.statusCode}',
+            );
+            continue;
+          }
+
+          final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
+          final elements = (decoded['elements'] as List<dynamic>? ?? const []);
+
+          final results = <Map<String, dynamic>>[];
+          final seen = <String>{};
+
+          for (final item in elements) {
+            final element = item as Map<String, dynamic>;
+            final tags = (element['tags'] as Map<String, dynamic>? ?? {});
+
+            final lat = (element['lat'] ?? (element['center']?['lat'])) as num?;
+            final lng = (element['lon'] ?? (element['center']?['lon'])) as num?;
+            if (lat == null || lng == null) continue;
+
+            final name = (tags['name'] as String?)?.trim();
+            if (name == null || name.isEmpty) continue;
+
+            final elementBrand = (tags['brand'] as String?)?.trim();
+            final phone =
+                (tags['phone'] as String?)?.trim() ??
+                (tags['contact:phone'] as String?)?.trim() ??
+                '';
+
+            final address = _buildAddress(tags);
+            final dedupeKey =
+                '$name|${lat.toStringAsFixed(5)}|${lng.toStringAsFixed(5)}';
+            if (seen.contains(dedupeKey)) continue;
+            seen.add(dedupeKey);
+
+            // Tính khoảng cách thực tế từ GPS khách hàng đến showroom
+            final distance = Geolocator.distanceBetween(
+              latitude,
+              longitude,
+              lat.toDouble(),
+              lng.toDouble(),
+            );
+
+            results.add({
+              'name': name,
+              'brand': (elementBrand == null || elementBrand.isEmpty)
+                  ? _inferBrandFromName(name)
+                  : elementBrand,
+              'lat': lat.toDouble(),
+              'lng': lng.toDouble(),
+              'address': address,
+              'phone': phone,
+              'distance': distance, // Thêm khoảng cách thực tế (meters)
+            });
+          }
+
+          if (results.isNotEmpty) {
+            // Sắp xếp theo khoảng cách gần nhất
+            results.sort(
+              (a, b) =>
+                  (a['distance'] as double).compareTo(b['distance'] as double),
+            );
+            await _writeCache(cacheKey, results);
+          }
+          return results.take(limit).toList();
+        } on SocketException catch (e) {
+          lastError = e;
+        } on TimeoutException catch (e) {
+          lastError = e;
+        } on HttpException catch (e) {
+          lastError = e;
+        } catch (e) {
+          lastError = Exception(e.toString());
+        } finally {
+          client.close(force: true);
         }
 
-        final decoded = jsonDecode(responseBody) as Map<String, dynamic>;
-        final elements = (decoded['elements'] as List<dynamic>? ?? const []);
-
-        final results = <Map<String, dynamic>>[];
-        final seen = <String>{};
-
-        for (final item in elements) {
-          final element = item as Map<String, dynamic>;
-          final tags = (element['tags'] as Map<String, dynamic>? ?? {});
-
-          final lat = (element['lat'] ?? (element['center']?['lat'])) as num?;
-          final lng = (element['lon'] ?? (element['center']?['lon'])) as num?;
-          if (lat == null || lng == null) continue;
-
-          final name = (tags['name'] as String?)?.trim();
-          if (name == null || name.isEmpty) continue;
-
-          final brand = (tags['brand'] as String?)?.trim();
-          final phone =
-              (tags['phone'] as String?)?.trim() ??
-              (tags['contact:phone'] as String?)?.trim() ??
-              '';
-
-          final address = _buildAddress(tags);
-          final dedupeKey =
-              '$name|${lat.toStringAsFixed(5)}|${lng.toStringAsFixed(5)}';
-          if (seen.contains(dedupeKey)) continue;
-          seen.add(dedupeKey);
-
-          results.add({
-            'name': name,
-            'brand': (brand == null || brand.isEmpty)
-                ? _inferBrandFromName(name)
-                : brand,
-            'lat': lat.toDouble(),
-            'lng': lng.toDouble(),
-            'address': address,
-            'phone': phone,
-          });
+        if (attempt < _maxAttemptsPerEndpoint) {
+          await Future<void>.delayed(Duration(milliseconds: 600 * attempt));
         }
-
-        if (results.isNotEmpty) {
-          await _writeCache(cacheKey, results);
-        }
-        return results.take(limit).toList();
-      } on HttpException catch (e) {
-        lastHttpError = e;
-      } finally {
-        client.close(force: true);
       }
     }
 
@@ -128,7 +184,7 @@ out center tags;
       return stale.take(limit).toList();
     }
 
-    throw lastHttpError ??
+    throw lastError ??
         const HttpException('Unable to fetch showroom data from endpoints');
   }
 
@@ -172,6 +228,15 @@ out center tags;
     final latRounded = lat.toStringAsFixed(2);
     final lngRounded = lng.toStringAsFixed(2);
     return '$_cachePrefix${latRounded}_${lngRounded}_$radius';
+  }
+
+  String _escapeOverpassRegex(String value) {
+    // Escape các ký tự regex cơ bản để tránh lỗi query Overpass.
+    // Overpass dùng regex kiểu PCRE.
+    return value.replaceAllMapped(
+      RegExp(r'([\\.^$|?*+()\[\]{}-])'),
+      (m) => '\\${m[0]}',
+    );
   }
 
   String _buildAddress(Map<String, dynamic> tags) {

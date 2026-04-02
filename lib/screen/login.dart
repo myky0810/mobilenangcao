@@ -44,8 +44,10 @@ class _LoginEmailState extends State<LoginEmail>
 
   Future<void> _ensureGoogleSignInInitialized() async {
     if (_googleSignInInitialized) return;
+    print('🔧 Initializing Google Sign In...');
     await _googleSignIn.initialize();
     _googleSignInInitialized = true;
+    print('✅ Google Sign In initialized');
   }
 
   @override
@@ -375,19 +377,27 @@ class _LoginEmailState extends State<LoginEmail>
       // Đăng xuất trước để hiện danh sách tài khoản
       await _googleSignIn.signOut();
 
-      // Sign in with Google - sẽ hiện danh sách tài khoản
+      // Sign in with Google - v7.2.0 method
+      print('🔐 Starting Google Sign In...');
       final googleUser = await _googleSignIn.authenticate();
+      print('✅ Google user authenticated: ${googleUser.email}');
 
       // Get authentication details
       final googleAuth = googleUser.authentication;
+      print(
+        '🔑 Got authentication tokens - idToken: ${googleAuth.idToken?.substring(0, 20)}...',
+      );
+
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
+      print('🎫 Created Firebase credential');
 
       // Sign in to Firebase
       final userCredential = await FirebaseAuth.instance.signInWithCredential(
         credential,
       );
+      print('🔥 Firebase sign in successful');
       final user = userCredential.user;
 
       if (user == null) {
@@ -407,16 +417,37 @@ class _LoginEmailState extends State<LoginEmail>
       final photoUrl = user.photoURL?.trim();
       final uid = user.uid.trim();
 
-      // Save to Firestore
+      print(
+        '💾 Saving to Firestore: email=$email, name=$displayName, uid=$uid',
+      );
+
+      // Save to Firestore với đầy đủ thông tin
       await FirebaseFirestore.instance.collection('users').doc(email).set({
         'provider': 'google',
         'googleUid': uid,
         'email': email,
-        'name': displayName,
+        'name': displayName.isNotEmpty ? displayName : 'Người dùng Google',
+        'phone': '', // Để trống, có thể cập nhật sau
+        'gender': 'Nam', // Default
+        'street': '',
         if (photoUrl != null && photoUrl.isNotEmpty) 'avatarUrl': photoUrl,
         'updatedAt': FieldValue.serverTimestamp(),
-        'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      // Đảm bảo các field quan trọng được tạo nếu chưa có
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(email)
+          .update({'createdAt': FieldValue.serverTimestamp()})
+          .catchError((e) async {
+            // Nếu document chưa tồn tại, tạo với createdAt
+            await FirebaseFirestore.instance.collection('users').doc(email).set(
+              {'createdAt': FieldValue.serverTimestamp()},
+              SetOptions(merge: true),
+            );
+          });
+
+      print('🎉 Google login successful! Navigating to home...');
 
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
@@ -429,6 +460,7 @@ class _LoginEmailState extends State<LoginEmail>
         arguments: email,
       );
     } on GoogleSignInException catch (e) {
+      print('❌ Google Sign In Exception: ${e.code} - ${e.description}');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
 
@@ -445,6 +477,7 @@ class _LoginEmailState extends State<LoginEmail>
         ),
       );
     } on FirebaseAuthException catch (e) {
+      print('❌ Firebase Auth Exception: ${e.code} - ${e.message}');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -454,7 +487,9 @@ class _LoginEmailState extends State<LoginEmail>
           duration: const Duration(seconds: 3),
         ),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Unexpected error during Google Sign In: $e');
+      print('📍 Stack trace: $stackTrace');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(

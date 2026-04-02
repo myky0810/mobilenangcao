@@ -166,6 +166,7 @@ class _MapScreenState extends State<MapScreen> {
           radiusInMeters: 300000,
           limit: 40,
           forceRefresh: false,
+          brand: widget.preferredBrand,
         );
 
         if (cachedShowrooms.isNotEmpty) {
@@ -201,8 +202,8 @@ class _MapScreenState extends State<MapScreen> {
         radiusInMeters: 300000, // 300km radius
         limit: 40,
         forceRefresh: forceRefresh,
+        brand: widget.preferredBrand,
       );
-
       if (!mounted) return;
       if (apiShowrooms.isEmpty) {
         setState(() {

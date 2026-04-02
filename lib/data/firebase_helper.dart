@@ -118,12 +118,17 @@ class FirebaseHelper {
     required String oldPassword,
     required String newPassword,
   }) async {
+    print('🔧 Debug changePassword - Phone input: $phone');
     final normalized = normalizePhone(phone);
+    print('🔧 Debug changePassword - Normalized phone: $normalized');
     final ref = _users.doc(normalized);
 
     await _db.runTransaction((tx) async {
+      print('🔧 Debug changePassword - Starting transaction');
       final snap = await tx.get(ref);
+
       if (!snap.exists) {
+        print('❌ Debug changePassword - User not found');
         throw FirebaseException(
           plugin: 'cloud_firestore',
           code: 'user-not-found',
@@ -131,10 +136,16 @@ class FirebaseHelper {
         );
       }
 
+      print('✅ Debug changePassword - User found');
       final data = snap.data();
       final salt = data?['passwordSalt'] as String?;
       final hash = data?['passwordHash'] as String?;
+
+      print('🔧 Debug changePassword - Has salt: ${salt != null}');
+      print('🔧 Debug changePassword - Has hash: ${hash != null}');
+
       if (salt == null || hash == null) {
+        print('❌ Debug changePassword - Missing salt or hash');
         throw FirebaseException(
           plugin: 'cloud_firestore',
           code: 'corrupt-user',
@@ -142,8 +153,15 @@ class FirebaseHelper {
         );
       }
 
+      print('🔧 Debug changePassword - Computing input hash...');
       final inputHash = _hashPassword(saltBase64: salt, pass: oldPassword);
+
+      print('🔧 Debug changePassword - Stored hash: $hash');
+      print('🔧 Debug changePassword - Input hash:  $inputHash');
+      print('🔧 Debug changePassword - Hashes match: ${inputHash == hash}');
+
       if (inputHash != hash) {
+        print('❌ Debug changePassword - Wrong password');
         throw FirebaseException(
           plugin: 'cloud_firestore',
           code: 'wrong-password',
@@ -151,15 +169,26 @@ class FirebaseHelper {
         );
       }
 
+      print(
+        '✅ Debug changePassword - Old password correct, generating new hash...',
+      );
       final newSalt = _randomSaltBase64();
       final newHash = _hashPassword(saltBase64: newSalt, pass: newPassword);
+
+      print('🔧 Debug changePassword - New salt: $newSalt');
+      print('🔧 Debug changePassword - New hash: $newHash');
+
       tx.update(ref, {
         'passwordSalt': newSalt,
         'passwordHash': newHash,
         'passwordUpdatedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      print('✅ Debug changePassword - Transaction completed successfully');
     });
+
+    print('🎉 Debug changePassword - Change password completed');
   }
 
   /// Reset password without requiring old password (used for forgot password flow after OTP verification)

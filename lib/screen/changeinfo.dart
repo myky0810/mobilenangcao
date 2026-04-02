@@ -8,7 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/firebase_helper.dart';
-import 'infomation.dart';
+import '../services/user_service.dart';
 
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key, this.phoneNumber});
@@ -29,6 +29,7 @@ class _InfoScreenState extends State<InfoScreen> {
   // Variables to track changes
   bool _hasChanges = false;
   String? _originalName;
+  String? _originalPhone;
   String? _originalEmail;
   String? _originalStreet;
   String? _originalGender;
@@ -58,8 +59,7 @@ class _InfoScreenState extends State<InfoScreen> {
           version: AdministrativeDivisionVersion.v1,
         );
       } catch (_) {
-        // Best-effort: package may already be initialized,
-        // or initialization might have been done in main().
+        // Best-effort
       }
     }();
 
@@ -79,49 +79,30 @@ class _InfoScreenState extends State<InfoScreen> {
     return null;
   }
 
-  int? _toInt(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is String) return int.tryParse(value);
-    return null;
-  }
-
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    final phone = widget.phoneNumber;
-    if (phone == null || phone.trim().isEmpty) return null;
-    final normalized = FirebaseHelper.normalizePhone(phone);
-    return FirebaseFirestore.instance.collection('users').doc(normalized);
+    final identifier = widget.phoneNumber;
+    if (identifier == null || identifier.trim().isEmpty) return null;
+    return UserService.userRef(identifier);
   }
 
   Future<void> _loadUserProfile() async {
-    final ref = _userDocRef();
-    if (ref == null) return;
+    final identifier = widget.phoneNumber;
+    if (identifier == null || identifier.trim().isEmpty) return;
 
     try {
-      final snap = await ref.get();
-      if (!snap.exists) return;
-      final data = snap.data();
-      if (data == null) return;
+      final userModel = await UserService.get(identifier);
+      if (userModel == null) return;
 
-      final name = data['name'] as String?;
-      final legacyPhoneField = data['phone'] as String?;
-      final avatarUrl = data['avatarUrl'] as String?;
-      final email = data['email'] as String?;
-      final street = data['street'] as String?;
-      final gender = data['gender'] as String?;
-      final dob = data['dob'];
-      final provinceCode = _toInt(data['provinceCode']);
-      final districtCode = _toInt(data['districtCode']);
-      final wardCode = _toInt(data['wardCode']);
-
-      DateTime? dobDate;
-      if (dob is Timestamp) {
-        dobDate = dob.toDate();
-      } else if (dob is DateTime) {
-        dobDate = dob;
-      } else if (dob is String) {
-        dobDate = DateTime.tryParse(dob);
-      }
+      final name = userModel.name;
+      final phone = userModel.phone;
+      final avatarUrl = userModel.avatarUrl;
+      final email = userModel.email;
+      final street = userModel.street;
+      final gender = userModel.gender;
+      final dobDate = userModel.dob;
+      final provinceCode = userModel.provinceCode;
+      final districtCode = userModel.districtCode;
+      final wardCode = userModel.wardCode;
 
       Province? province;
       District? district;
@@ -156,13 +137,13 @@ class _InfoScreenState extends State<InfoScreen> {
         _avatarUrl = (avatarUrl != null && avatarUrl.trim().isNotEmpty)
             ? avatarUrl.trim()
             : null;
-        final effectiveName = (name != null && name.trim().isNotEmpty)
+        final effectiveName = (name.trim().isNotEmpty)
             ? name
-            : (legacyPhoneField != null &&
-                  legacyPhoneField.trim().isNotEmpty &&
-                  !_looksLikePhone(legacyPhoneField) &&
-                  !legacyPhoneField.contains('@'))
-            ? legacyPhoneField
+            : (phone != null &&
+                  phone.trim().isNotEmpty &&
+                  !_looksLikePhone(phone) &&
+                  !phone.contains('@'))
+            ? phone
             : null;
         if (effectiveName != null) _nameController.text = effectiveName;
         if (email != null) {
@@ -181,6 +162,7 @@ class _InfoScreenState extends State<InfoScreen> {
 
         // Lưu giá trị gốc để so sánh thay đổi.
         _originalName = effectiveName;
+        _originalPhone = phone;
         _originalEmail = email;
         _originalStreet = street;
         _originalGender = gender ?? 'Nam';
@@ -189,38 +171,66 @@ class _InfoScreenState extends State<InfoScreen> {
         _originalDistrict = district;
         _originalWard = ward;
         _originalAvatarUrl = _avatarUrl;
-        _hasChanges = false; // Reset changes flag
+        _hasChanges = false;
+
+        // Cập nhật phone controller
+        if (phone != null && phone.trim().isNotEmpty) {
+          _phoneController.text = _formatPhoneNumber(phone);
+        } else if (widget.phoneNumber != null) {
+          _phoneController.text = _formatPhoneNumber(widget.phoneNumber!);
+        }
       });
 
-      // Add listeners to track changes
-      _addChangeListeners();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _checkForChanges();
+        }
+      });
     } catch (_) {
       // Giữ giao diện vẫn dùng được ngay cả khi tải dữ liệu thất bại.
     }
   }
 
-  // Add listeners to track changes
   void _addChangeListeners() {
     _nameController.addListener(_checkForChanges);
+    _phoneController.addListener(_checkForChanges);
     _emailController.addListener(_checkForChanges);
     _streetController.addListener(_checkForChanges);
   }
 
-  // Check if any field has been modified
   void _checkForChanges() {
     if (!mounted) return;
 
+    final nameChanged =
+        _nameController.text.trim() != (_originalName?.trim() ?? '');
+    final emailChanged =
+        _emailController.text.trim() != (_originalEmail?.trim() ?? '');
+    final streetChanged =
+        _streetController.text.trim() != (_originalStreet?.trim() ?? '');
+
+    final currentPhone = _formatPhoneNumber(_phoneController.text.trim());
+    final originalPhone = _formatPhoneNumber(_originalPhone?.trim() ?? '');
+    final phoneChanged = currentPhone != originalPhone;
+
+    final genderChanged = _selectedGender != (_originalGender ?? 'Nam');
+    final dateChanged = _selectedDate != _originalDate;
+    final provinceChanged = _selectedProvince != _originalProvince;
+    final districtChanged = _selectedDistrict != _originalDistrict;
+    final wardChanged = _selectedWard != _originalWard;
+    final avatarChanged =
+        _avatarBytes != null || _avatarUrl != _originalAvatarUrl;
+
     final hasChanged =
-        _nameController.text.trim() != (_originalName ?? '') ||
-        _emailController.text.trim() != (_originalEmail ?? '') ||
-        _streetController.text.trim() != (_originalStreet ?? '') ||
-        _selectedGender != _originalGender ||
-        _selectedDate != _originalDate ||
-        _selectedProvince != _originalProvince ||
-        _selectedDistrict != _originalDistrict ||
-        _selectedWard != _originalWard ||
-        _avatarUrl != _originalAvatarUrl ||
-        _avatarBytes != null; // New avatar selected
+        nameChanged ||
+        emailChanged ||
+        streetChanged ||
+        phoneChanged ||
+        genderChanged ||
+        dateChanged ||
+        provinceChanged ||
+        districtChanged ||
+        wardChanged ||
+        avatarChanged;
 
     if (hasChanged != _hasChanges) {
       setState(() {
@@ -229,128 +239,136 @@ class _InfoScreenState extends State<InfoScreen> {
     }
   }
 
-  // Hiển thị hộp thoại xác nhận trước khi rời màn hình
-  Future<bool> _showExitConfirmationDialog() async {
-    if (!_hasChanges) return true; // No changes, allow exit
-
-    final result = await showDialog<String>(
+  // DIALOG POPUP THEO HÌNH 3
+  Future<String?> _showExitConfirmationDialog() async {
+    return await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(30), // Bo góc giống hệt hình 3
           ),
-          contentPadding: const EdgeInsets.all(24),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Xác nhận',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Xác nhận',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Bạn có muốn lưu những thay đổi đã thực hiện không?',
-                style: TextStyle(color: Colors.black87, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).pop('cancel'), // Hủy, ở lại trang hiện tại
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          side: const BorderSide(color: Colors.grey, width: 1),
-                        ),
-                      ),
-                      child: const Text(
-                        'Hủy',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+                const Text(
+                  'Lưu thay đổi?',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 36),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).pop('cancel'), // Đóng popup, ở lại trang
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            side: const BorderSide(
+                              color: Colors.black,
+                              width: 1.2,
+                            ),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Text(
+                            'Hủy',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () =>
-                          Navigator.of(context).pop('save'), // Lưu và thoát
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text(
-                        'Đồng ý',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).pop('save'), // Lưu và chuyển trang
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Text(
+                            'Đồng ý',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
     );
-
-    if (result == null || result == 'cancel') {
-      return false; // User canceled - stay on page
-    } else if (result == 'save') {
-      // User wants to save - save changes then exit
-      await _saveChanges();
-      return true;
-    }
-
-    return false;
   }
 
-  // Xử lý khi nhấn nút quay lại
+  // XỬ LÝ KHI BẤM NÚT BACK (GÓC TRÁI TRÊN)
   Future<void> _handleBackPress() async {
-    final shouldExit = await _showExitConfirmationDialog();
-    if (shouldExit && mounted) {
+    if (!_hasChanges) {
       Navigator.pop(context);
-    }
-  }
-
-  Future<void> _saveChanges() async {
-    final ref = _userDocRef();
-    if (ref == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thiếu số điện thoại để lưu dữ liệu')),
-      );
       return;
     }
+
+    // Hiện popup xác nhận
+    final result = await _showExitConfirmationDialog();
+
+    if (result == 'save') {
+      // Nếu bấm Đồng ý -> Lưu dữ liệu rồi tự động đẩy về trang infomation
+      await _saveChangesAndExit();
+    }
+    // Nếu bấm 'cancel' (Hủy) -> không làm gì, tiếp tục ở lại trang changeinfo
+  }
+
+  // LƯU TẠI CHỖ (BẤM NÚT DƯỚI CÙNG TRANG) - CẬP NHẬT GIAO DIỆN KHÔNG THOÁT
+  Future<void> _saveChanges() async {
+    final identifier = widget.phoneNumber;
+    if (identifier == null || identifier.trim().isEmpty) return;
 
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
     try {
-      final normalizedPhone = FirebaseHelper.normalizePhone(
-        widget.phoneNumber!,
-      );
+      final newPhone = _phoneController.text.trim();
+      final normalizedPhone = newPhone.isNotEmpty
+          ? FirebaseHelper.normalizePhone(newPhone)
+          : (UserService.isPhoneLogin(identifier)
+                ? FirebaseHelper.normalizePhone(identifier)
+                : '');
+
       final name = _nameController.text.trim();
       final email = _emailController.text.trim();
       final street = _streetController.text.trim();
@@ -358,8 +376,9 @@ class _InfoScreenState extends State<InfoScreen> {
       final district = _selectedDistrict;
       final ward = _selectedWard;
 
-      await ref.set({
+      await UserService.updateFields(identifier, {
         'phone': normalizedPhone,
+        'phoneNumber': normalizedPhone,
         'name': name,
         'email': email,
         'gender': _selectedGender,
@@ -372,10 +391,11 @@ class _InfoScreenState extends State<InfoScreen> {
         'wardName': ward?.name,
         'street': street,
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      });
 
-      // Reset change detection after successful save
+      // LƯU LẠI GIÁ TRỊ GỐC ĐỂ GIAO DIỆN HIỂU LÀ ĐÃ CẬP NHẬT NHƯNG VẪN Ở LẠI TRANG
       _originalName = name;
+      _originalPhone = normalizedPhone;
       _originalEmail = email;
       _originalStreet = street;
       _originalGender = _selectedGender;
@@ -387,23 +407,30 @@ class _InfoScreenState extends State<InfoScreen> {
 
       setState(() {
         _hasChanges = false;
+        if (normalizedPhone.isNotEmpty) {
+          _phoneController.text = _formatPhoneNumber(normalizedPhone);
+        }
       });
 
       if (!mounted) return;
 
-      // Điều hướng về infomation.dart thay vì chỉ đóng màn hình
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              InfomationScreen(phoneNumber: widget.phoneNumber),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Lưu thông tin thành công'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
         ),
       );
-    } on FirebaseException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Lưu thất bại')));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -411,6 +438,61 @@ class _InfoScreenState extends State<InfoScreen> {
       ).showSnackBar(const SnackBar(content: Text('Lưu thất bại')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  // LƯU VÀ CHUYỂN VỀ TRANG INFO (BẤM TỪ POPUP)
+  Future<void> _saveChangesAndExit() async {
+    final identifier = widget.phoneNumber;
+    if (identifier == null || identifier.trim().isEmpty) return;
+
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    try {
+      final newPhone = _phoneController.text.trim();
+      final normalizedPhone = newPhone.isNotEmpty
+          ? FirebaseHelper.normalizePhone(newPhone)
+          : (UserService.isPhoneLogin(identifier)
+                ? FirebaseHelper.normalizePhone(identifier)
+                : '');
+
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final street = _streetController.text.trim();
+      final province = _selectedProvince;
+      final district = _selectedDistrict;
+      final ward = _selectedWard;
+
+      await UserService.updateFields(identifier, {
+        'phone': normalizedPhone,
+        'phoneNumber': normalizedPhone,
+        'name': name,
+        'email': email,
+        'gender': _selectedGender,
+        'dob': _selectedDate,
+        'provinceCode': province?.code,
+        'provinceName': province?.name,
+        'districtCode': district?.code,
+        'districtName': district?.name,
+        'wardCode': ward?.code,
+        'wardName': ward?.name,
+        'street': street,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        // Trả về {saved: true} cho trang InfomationScreen để nó làm mới lại dữ liệu
+        Navigator.pop(context, {'saved': true});
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã có lỗi xảy ra khi lưu!')),
+        );
+      }
     }
   }
 
@@ -734,26 +816,24 @@ class _InfoScreenState extends State<InfoScreen> {
   @override
   void initState() {
     super.initState();
-    // Set số điện thoại từ arguments
-    _phoneController.text = _formatPhoneNumber(widget.phoneNumber);
 
-    _nameController.addListener(() {
-      if (!mounted) return;
-      setState(() {});
-    });
+    if (widget.phoneNumber != null) {
+      if (widget.phoneNumber!.contains('@')) {
+        _phoneController.text = '';
+      } else {
+        _phoneController.text = _formatPhoneNumber(widget.phoneNumber!);
+      }
+    }
 
-    // Pre-warm dataset to avoid LateInitializationError on hot reload.
     _vietnamProvincesInit = VietnamProvinces.initialize(
       version: AdministrativeDivisionVersion.v1,
     );
 
+    _addChangeListeners();
     _loadUserProfile();
   }
 
   Future<void> _pickAvatarFromFiles() async {
-    // 1) Try FilePicker first (works on many Android devices).
-    // 2) If FilePicker can't open or returns unreadable bytes on emulator,
-    //    fall back to ImagePicker (Android Photo Picker/Gallery).
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -910,8 +990,6 @@ class _InfoScreenState extends State<InfoScreen> {
                   title: const Text('Tải tệp lên'),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    // Chờ bottom sheet đóng hẳn trước khi mở trình chọn tệp
-                    // the native file picker dialog.
                     await Future<void>.delayed(
                       const Duration(milliseconds: 200),
                     );
@@ -936,7 +1014,6 @@ class _InfoScreenState extends State<InfoScreen> {
     super.dispose();
   }
 
-  // Format số điện thoại: +84987654321 -> 0987654321
   String _formatPhoneNumber(String? phone) {
     final value = (phone ?? '').trim();
     if (value.isEmpty) return '';
@@ -1200,7 +1277,6 @@ class _InfoScreenState extends State<InfoScreen> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
 
-    // Set status bar màu tối
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Color(0xFF333333),
@@ -1210,8 +1286,8 @@ class _InfoScreenState extends State<InfoScreen> {
     );
 
     return PopScope(
-      canPop: false, // Prevent default pop behavior
-      onPopInvoked: (didPop) async {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
           await _handleBackPress();
         }
@@ -1220,7 +1296,6 @@ class _InfoScreenState extends State<InfoScreen> {
         backgroundColor: const Color(0xFF333333),
         body: Column(
           children: [
-            // Header with back button and title
             Container(
               padding: EdgeInsets.only(
                 top: topPadding + 12,
@@ -1268,12 +1343,11 @@ class _InfoScreenState extends State<InfoScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 40), // Balance the back button
+                  const SizedBox(width: 40),
                 ],
               ),
             ),
 
-            // Scrollable content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1281,7 +1355,6 @@ class _InfoScreenState extends State<InfoScreen> {
                   children: [
                     const SizedBox(height: 20),
 
-                    // Avatar tròn + nút camera
                     SizedBox(
                       width: 100,
                       height: 100,
@@ -1346,7 +1419,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Số điện thoại lớn (tên hiển thị)
                     Text(
                       _nameController.text.trim().isNotEmpty
                           ? _nameController.text.trim()
@@ -1360,7 +1432,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 4),
 
-                    // Số điện thoại nhỏ
                     Text(
                       _formatPhoneNumber(widget.phoneNumber),
                       style: TextStyle(
@@ -1371,7 +1442,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // TextField Họ và tên
                     TextField(
                       controller: _nameController,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
@@ -1393,11 +1463,8 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // TextField số điện thoại
                     TextField(
                       controller: _phoneController,
-                      readOnly: true,
-                      enableInteractiveSelection: false,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
                         hintText: '0123456789',
@@ -1414,10 +1481,11 @@ class _InfoScreenState extends State<InfoScreen> {
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                       keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
+                      onChanged: (value) => _checkForChanges(),
                     ),
                     const SizedBox(height: 24),
 
-                    // TextField Email
                     TextField(
                       controller: _emailController,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
@@ -1439,7 +1507,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Radio buttons Nam/Nữ
                     RadioGroup<String>(
                       groupValue: _selectedGender,
                       onChanged: (value) {
@@ -1510,7 +1577,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Chọn ngày sinh
                     InkWell(
                       onTap: () => _selectDate(context),
                       child: InputDecorator(
@@ -1553,7 +1619,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Chọn tỉnh/Thành phố (bottom sheet search)
                     InkWell(
                       onTap: _pickProvince,
                       child: InputDecorator(
@@ -1593,7 +1658,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Chọn quận/huyện (bottom sheet search)
                     InkWell(
                       onTap: _pickDistrict,
                       child: InputDecorator(
@@ -1633,7 +1697,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Chọn phường/xã (bottom sheet search)
                     InkWell(
                       onTap: _pickWard,
                       child: InputDecorator(
@@ -1673,7 +1736,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // TextField Tên đường
                     TextField(
                       controller: _streetController,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
@@ -1694,7 +1756,6 @@ class _InfoScreenState extends State<InfoScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Nút Lưu thay đổi
                     SizedBox(
                       width: double.infinity,
                       height: 56,

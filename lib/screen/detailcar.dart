@@ -201,7 +201,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Tên của bạn',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: const Color(0xFF25354A),
                         border: OutlineInputBorder(
@@ -216,7 +218,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                         final star = index + 1;
                         return IconButton(
                           onPressed: () {
-                            setModalState(() => selectedRating = star.toDouble());
+                            setModalState(
+                              () => selectedRating = star.toDouble(),
+                            );
                           },
                           icon: Icon(
                             star <= selectedRating
@@ -234,7 +238,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Chia sẻ cảm nhận của bạn về mẫu xe này...',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: const Color(0xFF25354A),
                         border: OutlineInputBorder(
@@ -255,7 +261,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                           if (comment.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Vui lòng nhập nội dung đánh giá'),
+                                content: Text(
+                                  'Vui lòng nhập nội dung đánh giá',
+                                ),
                               ),
                             );
                             return;
@@ -283,7 +291,12 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 92, 140, 255),
+                          backgroundColor: const Color.fromARGB(
+                            255,
+                            92,
+                            140,
+                            255,
+                          ),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -681,9 +694,7 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                   );
                   if (!mounted) return;
                   ScaffoldMessenger.of(this.context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã gửi báo cáo đánh giá.'),
-                    ),
+                    const SnackBar(content: Text('Đã gửi báo cáo đánh giá.')),
                   );
                 },
                 icon: const Icon(
@@ -700,7 +711,10 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                   ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 0,
+                  ),
                   minimumSize: const Size(0, 28),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -884,9 +898,7 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.16),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.24),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.24)),
                   ),
                   child: const Icon(
                     Icons.play_circle_fill,
@@ -1006,35 +1018,77 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
         child: SizedBox(
           width: double.infinity,
           height: 52,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/bookcar',
-                arguments: {
-                  'carName': widget.car.name,
-                  'carBrand': widget.car.brand,
-                  'carImage': widget.car.image,
-                  'phoneNumber': widget.car.phoneNumber,
-                },
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 92, 140, 255),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+          child: Row(
+            children: [
+              // Button ĐĂNG KÝ LÁI THỬ
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/bookcar',
+                      arguments: {
+                        'carName': widget.car.name,
+                        'carBrand': widget.car.brand,
+                        'carImage': widget.car.image,
+                        'phoneNumber': widget.car.phoneNumber,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 92, 140, 255),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'ĐĂNG KÝ LÁI THỬ',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ),
               ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'ĐĂNG KÝ LÁI THỬ',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.4,
+              const SizedBox(width: 12),
+              // Button ĐẶT CỌC NGAY
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/deposit',
+                      arguments: {
+                        'carName': widget.car.name,
+                        'carBrand': widget.car.brand,
+                        'carImage': widget.car.image,
+                        'carPrice': widget.car.price,
+                        'phoneNumber': widget.car.phoneNumber,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 255, 193, 7),
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'ĐẶT CỌC NGAY',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

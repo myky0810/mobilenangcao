@@ -100,8 +100,6 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
     'Doanh nhân',
   ];
 
-
-
   late List<CarDetailData> _cars = CarsData.allCars;
 
   @override
@@ -109,10 +107,7 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
     super.initState();
   }
 
-  List<String> get _availableBrands =>
-      CarsData.getAllBrands();
-
-
+  List<String> get _availableBrands => CarsData.getAllBrands();
 
   @override
   void dispose() {
@@ -131,8 +126,7 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   }
 
   @override
-  void didPopNext() {
-  }
+  void didPopNext() {}
 
   List<CarDetailData> get _filteredCars {
     return _buildFilteredCars(
@@ -241,7 +235,6 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
     final numericString = price.replaceAll(RegExp(r'[^\d]'), '');
     return int.tryParse(numericString) ?? 0;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -401,22 +394,19 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
       itemCount: cars.length,
       itemBuilder: (context, index) {
         final car = cars[index];
-        return CarCard.fromMap(
-          {
-            'id': car.id,
-            'name': car.name,
-            'brand': car.brand,
-            'price': car.price,
-            'priceNote': 'Lăn bánh từ ${car.price}',
-            'image': car.image,
-            'gallery': car.images,
-            'rating': car.rating,
-            'reviewCount': car.reviewCount,
-            'isNew': car.isNew,
-            'description': car.description,
-          },
-          phoneNumber: widget.phoneNumber,
-        );
+        return CarCard.fromMap({
+          'id': car.id,
+          'name': car.name,
+          'brand': car.brand,
+          'price': car.price,
+          'priceNote': 'Lăn bánh từ ${car.price}',
+          'image': car.image,
+          'gallery': car.images,
+          'rating': car.rating,
+          'reviewCount': car.reviewCount,
+          'isNew': car.isNew,
+          'description': car.description,
+        }, phoneNumber: widget.phoneNumber);
       },
     );
   }
@@ -517,8 +507,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _categories,
                                   selected: _selectedCategory,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedCategory = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedCategory = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -528,8 +519,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _priceRanges,
                                   selected: _selectedPriceRange,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedPriceRange = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedPriceRange = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -539,8 +531,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _seatFilters,
                                   selected: _selectedSeatFilter,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedSeatFilter = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedSeatFilter = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -550,8 +543,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _fuelFilters,
                                   selected: _selectedFuelType,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedFuelType = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedFuelType = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -561,8 +555,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _transmissionFilters,
                                   selected: _selectedTransmission,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedTransmission = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedTransmission = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -572,8 +567,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _powerRanges,
                                   selected: _selectedPowerRange,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedPowerRange = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedPowerRange = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -583,8 +579,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _driveFilters,
                                   selected: _selectedDriveType,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedDriveType = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedDriveType = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -594,8 +591,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                 child: _buildChoiceWrap(
                                   options: _purposeFilters,
                                   selected: _selectedPurpose,
-                                  onSelected: (value) =>
-                                      setModalState(() => _selectedPurpose = value),
+                                  onSelected: (value) => setModalState(
+                                    () => _selectedPurpose = value,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -648,7 +646,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                           vertical: 15,
                                         ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                         ),
                                       ),
                                       child: const Text('Xóa lọc'),
@@ -669,7 +669,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                         elevation: 0,
                                         backgroundColor: _filterActivePrimary,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                         ),
                                       ),
                                       child: const Text(
@@ -696,8 +698,6 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
       },
     );
   }
-
-
 
   Widget _buildChoiceWrap({
     required List<String> options,

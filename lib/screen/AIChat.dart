@@ -59,6 +59,12 @@ class _AIChatScreenState extends State<AIChatScreen>
       // Still allow the UI to work on guest mode.
       return 'guest';
     }
+
+    // Nếu là email (Google login), dùng trực tiếp email
+    if (phone.contains('@')) {
+      return phone.trim().toLowerCase();
+    }
+
     return FirebaseHelper.normalizePhone(phone);
   }
 

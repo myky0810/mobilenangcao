@@ -106,19 +106,35 @@ class _ChangePassScreenState extends State<ChangePassScreen> {
     setState(() => _isSaving = true);
 
     try {
+      print('🔧 Debug - Đang đổi mật khẩu cho phone: $phone');
+      print('🔧 Debug - Old password length: ${oldPass.length}');
+      print('🔧 Debug - New password length: ${newPass.length}');
+
       await FirebaseHelper.changePassword(
         phone: phone,
         oldPassword: oldPass,
         newPassword: newPass,
       );
+
+      print('✅ Debug - Đổi mật khẩu thành công');
+      if (!mounted) return;
+
+      // Hiển thị thông báo thành công chi tiết
+      _showMessage('🎉 Đổi mật khẩu thành công!');
+
+      // Delay nhỏ để user thấy thông báo trước khi đóng màn hình
+      await Future.delayed(const Duration(milliseconds: 1500));
+
       if (!mounted) return;
       Navigator.pop(context, {'changedPassword': true});
     } on FirebaseException catch (e) {
+      print('❌ Debug - FirebaseException: ${e.code} - ${e.message}');
       if (!mounted) return;
-      _showMessage(e.message ?? 'Đổi mật khẩu thất bại');
-    } catch (_) {
+      _showMessage('Lỗi: ${e.message ?? 'Đổi mật khẩu thất bại'}');
+    } catch (e) {
+      print('❌ Debug - Exception: $e');
       if (!mounted) return;
-      _showMessage('Đổi mật khẩu thất bại');
+      _showMessage('Lỗi không xác định: $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

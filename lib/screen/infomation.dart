@@ -3,27 +3,37 @@ import 'package:flutter/services.dart';
 
 import '../data/firebase_helper.dart';
 
-class InfomationScreen extends StatelessWidget {
+class InfomationScreen extends StatefulWidget {
   const InfomationScreen({super.key, this.phoneNumber});
 
   final String? phoneNumber;
 
   @override
-  Widget build(BuildContext context) {
-    void showSavedSnackBar() {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Lưu thành công'),
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
+  State<InfomationScreen> createState() => _InfomationScreenState();
+}
 
+class _InfomationScreenState extends State<InfomationScreen> {
+  int _refreshTick = 0;
+
+  void _showSavedSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('✅ Lưu thành công'),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     void showPasswordChangedSnackBar() {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -126,7 +136,7 @@ class InfomationScreen extends StatelessWidget {
                                   onPressed: isDeleting
                                       ? null
                                       : () async {
-                                          final phone = phoneNumber;
+                                          final phone = widget.phoneNumber;
                                           if (phone == null ||
                                               phone.trim().isEmpty) {
                                             Navigator.pop(dialogContext);
@@ -281,14 +291,18 @@ class InfomationScreen extends StatelessWidget {
                     icon: Icons.person_outline,
                     title: 'Thay đổi thông tin cá nhân',
                     onTap: () async {
+                      // Điều hướng tới trang thay đổi thông tin
                       final result = await Navigator.pushNamed(
                         context,
                         '/info',
-                        arguments: phoneNumber,
+                        arguments: widget.phoneNumber,
                       );
-                      if (!context.mounted) return;
+
+                      if (!mounted) return;
                       if (result is Map && result['saved'] == true) {
-                        showSavedSnackBar();
+                        _showSavedSnackBar();
+                        // Force rebuild so any FutureBuilder/stream in this screen re-runs
+                        setState(() => _refreshTick++);
                       }
                     },
                   ),
@@ -307,7 +321,7 @@ class InfomationScreen extends StatelessWidget {
                       final result = await Navigator.pushNamed(
                         context,
                         '/changepass',
-                        arguments: phoneNumber,
+                        arguments: widget.phoneNumber,
                       );
 
                       if (!context.mounted) return;

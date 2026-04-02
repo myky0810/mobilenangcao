@@ -30,7 +30,8 @@ class _CarImageSliderState extends State<CarImageSlider> {
   @override
   Widget build(BuildContext context) {
     final images = widget.images.isNotEmpty ? widget.images : [''];
-    final radius = widget.borderRadius ??
+    final radius =
+        widget.borderRadius ??
         const BorderRadius.vertical(top: Radius.circular(12));
 
     return SizedBox(

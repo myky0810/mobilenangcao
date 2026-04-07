@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import '../data/firebase_helper.dart';
+import '../services/user_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.phoneNumber});
@@ -15,51 +16,37 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   int _activeNavIndex = 3; // Profile index 3
-  String? _displayName;
 
+  /// ✅ Ưu tiên lấy user từ FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
+    // Ưu tiên: FirebaseAuth currentUser (Google/Phone login)
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      return UserService.googleUserRefByUid();
+    }
+
+    // Fallback: widget.phoneNumber (legacy)
     final phone = widget.phoneNumber;
     if (phone == null || phone.trim().isEmpty) return null;
-
-    // Nếu là email (Google login), dùng trực tiếp email làm document ID
-    if (phone.contains('@')) {
-      return FirebaseFirestore.instance
-          .collection('users')
-          .doc(phone.trim().toLowerCase());
-    }
-
-    final normalized = FirebaseHelper.normalizePhone(phone);
-    return FirebaseFirestore.instance.collection('users').doc(normalized);
+    return UserService.userRef(phone);
   }
 
-  Future<void> _loadProfileDisplay() async {
-    final ref = _userDocRef();
-    if (ref == null) return;
+  /// ✅ Lấy tên hiển thị từ Firestore data
+  String _displayNameFromData(Map<String, dynamic>? data) {
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    try {
-      final snap = await ref.get();
-      final data = snap.data();
-      final name = data?['name'] as String?;
-      final legacyPhoneField = data?['phone'] as String?;
-      if (!mounted) return;
-      setState(() {
-        if (name != null && name.trim().isNotEmpty) {
-          _displayName = name;
-        } else if (legacyPhoneField != null &&
-            legacyPhoneField.trim().isNotEmpty &&
-            !_looksLikePhone(legacyPhoneField) &&
-            !legacyPhoneField.contains('@')) {
-          _displayName = legacyPhoneField;
-        } else {
-          _displayName = null;
-        }
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _displayName = null;
-      });
+    final name = (data?['name'] as String?)?.trim();
+    if (name != null && name.isNotEmpty) {
+      return name;
     }
+
+    // Fallback: FirebaseAuth displayName
+    if (currentUser?.displayName != null &&
+        currentUser!.displayName!.isNotEmpty) {
+      return currentUser.displayName!;
+    }
+
+    return 'Người dùng';
   }
 
   bool _looksLikePhone(String value) {
@@ -204,13 +191,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _displayName = null;
-    _loadProfileDisplay();
   }
 
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final userRef = _userDocRef();
 
     // Set status bar màu sáng trên nền xám
     SystemChrome.setSystemUIOverlayStyle(
@@ -241,19 +227,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.only(top: 70), // Space cho avatar
                   child: Column(
                     children: [
-                      // Số điện thoại lớn (tên hiển thị)
-                      Text(
-                        (_displayName != null &&
-                                _displayName!.trim().isNotEmpty)
-                            ? _displayName!
-                            : _formatPhoneNumber(widget.phoneNumber),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
+                      // ✅ Tên hiển thị - dùng StreamBuilder để realtime
+                      if (userRef == null)
+                        Text(
+                          _formatPhoneNumber(widget.phoneNumber),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        )
+                      else
+                        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                          stream: userRef.snapshots(),
+                          builder: (context, snapshot) {
+                            final displayName = _displayNameFromData(
+                              snapshot.data?.data(),
+                            );
+                            return Text(
+                              displayName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            );
+                          },
                         ),
-                      ),
                       const SizedBox(height: 4),
                       // Số điện thoại nhỏ mờ
                       Text(
@@ -281,8 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   '/infomation',
                                   arguments: widget.phoneNumber,
                                 );
-                                if (!context.mounted) return;
-                                await _loadProfileDisplay();
+                                // Không cần reload vì dùng StreamBuilder rồi
                               },
                               showArrow: true,
                             ),

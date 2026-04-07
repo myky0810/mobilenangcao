@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'map_screen.dart';
 
 class BookCarScreen extends StatefulWidget {
@@ -24,6 +25,11 @@ class _BookCarScreenState extends State<BookCarScreen> {
   String? _selectedLocation;
 
   int _activeNavIndex = 0;
+
+  // Màu sắc tương tự deposit.dart
+  static const _bg = Color(0xFF1E2A47);
+  static const _card = Color(0xFF2C3E5C);
+  static const _primaryColor = Color(0xFF5C8CFF);
 
   @override
   void dispose() {
@@ -307,6 +313,163 @@ class _BookCarScreenState extends State<BookCarScreen> {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
+  Widget _buildCarInfoCard() {
+    // Debug log để kiểm tra URL
+    debugPrint('Car Image URL: ${widget.carData['image']}');
+
+    // Kiểm tra xem có phải network image không
+    final carImage = widget.carData['image'] ?? 'assets/images/RR.jpg';
+    final isNetworkImage =
+        carImage.startsWith('http://') || carImage.startsWith('https://');
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      height: 200,
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Stack(
+        children: [
+          // Hình xe
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: isNetworkImage
+                ? Image.network(
+                    carImage,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('Error loading image: $error');
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: _card,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.directions_car,
+                              color: Colors.white54,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Không thể tải hình',
+                              style: GoogleFonts.leagueSpartan(
+                                fontSize: 12,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: _card,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                : null,
+                            color: _primaryColor,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : Image.asset(
+                    carImage,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('Error loading asset image: $error');
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: _card,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.directions_car,
+                              color: Colors.white54,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Không thể tải hình',
+                              style: GoogleFonts.leagueSpartan(
+                                fontSize: 12,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          // Gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+              ),
+            ),
+          ),
+          // Thông tin xe
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.carData['name'] ?? 'Unknown Car',
+                  style: GoogleFonts.leagueSpartan(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'THƯƠNG HIỆU',
+                  style: GoogleFonts.leagueSpartan(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white70,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  widget.carData['brand'] ?? 'Unknown Brand',
+                  style: GoogleFonts.leagueSpartan(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmBooking() async {
     if (!_formKey.currentState!.validate()) {
       _showModernSnackBar(
@@ -510,64 +673,8 @@ class _BookCarScreenState extends State<BookCarScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Vehicle Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1a1a1a),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white12),
-                  ),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          widget.carData['image'] ?? 'assets/images/RR.jpg',
-                          width: 100,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 100,
-                              height: 80,
-                              color: const Color(0xFF2a2a2a),
-                              child: const Icon(
-                                Icons.car_rental,
-                                size: 40,
-                                color: Colors.white54,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.carData['name'] ?? 'Unknown Car',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.carData['brand'] ?? 'Unknown Brand',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // Vehicle Card - giống deposit.dart
+                _buildCarInfoCard(),
                 const SizedBox(height: 24),
 
                 // Full Name Field

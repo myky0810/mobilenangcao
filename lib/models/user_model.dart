@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Canonical user profile stored under Firestore: `users/{identifier}`.
+/// Canonical user profile stored under Firestore: `users/{uid}`.
 ///
 /// UNIFIED MODEL: Supports both phone and Google (email) login.
-/// - Phone login: id = normalizedPhone, phoneNumber = phone
-/// - Google login: id = email.toLowerCase(), email = email, phoneNumber = optional phone
+/// - Canonical: id = FirebaseAuth uid
+/// - Legacy fallback: id may be normalizedPhone or email.toLowerCase()
 ///
 /// Notes:
 /// - Keep fields optional to avoid breaking existing writes.

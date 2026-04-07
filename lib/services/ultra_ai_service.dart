@@ -3,15 +3,21 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
-/// Ultra AI Service - Trí tuệ nhân tạo (Powered by Gemini 1.5)
+/// Ultra AI Service - Trí tuệ nhân tạo (Powered by Gemini 1.5 Flash)
 class UltraAIService {
   static String get _geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 
+  // Gemini model (đã verified bằng ListModels cho API key mới): gemini-2.5-flash
   static const String _geminiBaseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   final List<Map<String, String>> _conversationHistory = [];
   String _projectContext = '';
+
+  // Retry & Rate limiting
+  DateTime? _lastRequestTime;
+  static const int _maxRetries = 3;
+  static const int _minIntervalMs = 300;
 
   Future<void> _loadProjectContext() async {
     if (_projectContext.isNotEmpty) return;
@@ -327,102 +333,173 @@ QUY TẮC TỐI THƯỢNG (TUYỆT ĐỐI TUÂN THỦ):
   }
 
   Future<String> sendMessage(String userMessage, String userName) async {
-    try {
-      await _loadProjectContext();
+    print('📩 User: $userMessage');
 
-      // Lưu lịch sử để AI nhớ ngữ cảnh (Giữ 5 tin nhắn gần nhất để tránh quá dài)
-      _conversationHistory.add({'role': 'user', 'content': userMessage});
-      if (_conversationHistory.length > 5) {
-        _conversationHistory.removeRange(0, _conversationHistory.length - 5);
-      }
-
-      if (_geminiApiKey.isEmpty) {
-        return 'Lỗi: Không tìm thấy API Key trong file .env';
-      }
-
-      print('✨ Đang gọi Gemini 1.5 Flash...');
-      String aiResponse = await _callGeminiAI(userMessage, userName);
-
-      if (aiResponse.isNotEmpty) {
-        _conversationHistory.add({'role': 'model', 'content': aiResponse});
-        return aiResponse;
-      } else {
-        return 'Hệ thống đang bảo trì mạng một chút, $userName đợi mình vài giây rồi thử lại nhé!';
-      }
-    } catch (e) {
-      print('❌ Lỗi hệ thống nghiêm trọng: $e');
-      return 'Hệ thống đang bảo trì mạng một chút, $userName đợi mình vài giây rồi thử lại nhé!';
+    // Lưu lịch sử
+    _conversationHistory.add({'role': 'user', 'content': userMessage});
+    if (_conversationHistory.length > 10) {
+      _conversationHistory.removeRange(0, _conversationHistory.length - 10);
     }
+
+    // Kiểm tra API key
+    if (_geminiApiKey.isEmpty) {
+      print('❌ API Key empty!');
+      return 'Xin lỗi $userName, cần cấu hình API Key để AI hoạt động! 🔑';
+    }
+
+    // Rate limiting
+    if (_lastRequestTime != null) {
+      final elapsed = DateTime.now()
+          .difference(_lastRequestTime!)
+          .inMilliseconds;
+      if (elapsed < _minIntervalMs) {
+        await Future.delayed(Duration(milliseconds: _minIntervalMs - elapsed));
+      }
+    }
+    _lastRequestTime = DateTime.now();
+
+    print('🚀 Calling Gemini 1.5 Flash...');
+
+    // ✅ RETRY LOGIC - Thử 3 lần
+    for (int attempt = 1; attempt <= _maxRetries; attempt++) {
+      print('📡 Attempt $attempt/$_maxRetries');
+
+      try {
+        await _loadProjectContext();
+        final response = await _callGeminiAI(userMessage, userName);
+
+        if (response.isNotEmpty) {
+          _conversationHistory.add({'role': 'model', 'content': response});
+          print('✅ Success! Response length: ${response.length}');
+          return response;
+        }
+
+        print('⚠️ Empty response on attempt $attempt');
+        if (attempt < _maxRetries) {
+          await Future.delayed(Duration(milliseconds: 1000 * attempt));
+        }
+      } catch (e) {
+        print('❌ Attempt $attempt failed: $e');
+        if (attempt < _maxRetries) {
+          await Future.delayed(Duration(milliseconds: 1000 * attempt));
+        } else {
+          // Last attempt failed
+          return 'Mình gặp chút trục trặc kết nối, $userName thử hỏi lại nhé! �';
+        }
+      }
+    }
+
+    // Backup
+    return 'Mình cần kết nối lại, $userName đợi chút rồi hỏi tiếp nhé! 😊';
   }
 
   Future<String> _callGeminiAI(String userMessage, String userName) async {
-    try {
-      // Debug: In ra API key và thông tin request
-      print('🔑 GEMINI API KEY: ${_geminiApiKey.substring(0, 10)}...');
-      print('📡 GEMINI URL: $_geminiBaseUrl');
+    // Build conversation context
+    final conversationContext = StringBuffer();
+    for (final msg in _conversationHistory) {
+      final role = msg['role'] == 'user' ? 'Khách hàng' : 'Luxe AI';
+      conversationContext.writeln('$role: ${msg['content']}');
+    }
 
-      // Thử gọi API đơn giản trước, không dùng conversation history
-      final requestBody = {
-        'contents': [
-          {
-            'parts': [
-              {
-                'text':
-                    '${_getUltraSystemPrompt(userName)}\n\nUser: $userMessage',
-              },
-            ],
-          },
-        ],
-        'generationConfig': {
-          'temperature': 0.7,
-          'maxOutputTokens': 1024, // Giảm để tránh quá dài
+    final requestBody = {
+      'contents': [
+        {
+          'parts': [
+            {
+              'text':
+                  '''${_getUltraSystemPrompt(userName)}
+
+══════════════════════════════════════
+📜 LỊCH SỬ HỘI THOẠI:
+$conversationContext
+══════════════════════════════════════
+
+Hãy trả lời câu hỏi/yêu cầu cuối cùng của khách hàng một cách thân thiện và hữu ích.''',
+            },
+          ],
         },
-      };
+      ],
+      'generationConfig': {
+        'temperature': 0.85,
+        'topK': 40,
+        'topP': 0.95,
+        'maxOutputTokens': 2048,
+      },
+      'safetySettings': [
+        {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+        {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+        {
+          'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          'threshold': 'BLOCK_NONE',
+        },
+        {
+          'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          'threshold': 'BLOCK_NONE',
+        },
+      ],
+    };
 
-      print(
-        '📤 REQUEST PAYLOAD SIZE: ${json.encode(requestBody).length} characters',
-      );
+    final url = '$_geminiBaseUrl?key=$_geminiApiKey';
+    print('📡 Calling: $url');
 
-      final response = await http.post(
-        Uri.parse('$_geminiBaseUrl?key=$_geminiApiKey'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(requestBody),
-      );
+    final response = await http
+        .post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(requestBody),
+        )
+        .timeout(const Duration(seconds: 30));
 
-      print('📥 RESPONSE STATUS: ${response.statusCode}');
-      print('📥 RESPONSE BODY: ${response.body}');
+    print('📥 Status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes));
 
-        // Debug: Kiểm tra cấu trúc response
-        print('📊 RESPONSE STRUCTURE: ${data.keys.toList()}');
-        if (data['candidates'] != null && data['candidates'].isNotEmpty) {
-          final candidate = data['candidates'][0];
-          print('📝 CANDIDATE STRUCTURE: ${candidate.keys.toList()}');
+      if (data['candidates'] != null &&
+          (data['candidates'] as List).isNotEmpty) {
+        final candidate = data['candidates'][0];
+        final content = candidate['content'];
 
-          final content = candidate['content'];
-          if (content != null &&
-              content['parts'] != null &&
-              content['parts'].isNotEmpty) {
-            final text = content['parts'][0]['text'];
-            print('✅ AI RESPONSE LENGTH: ${text?.length ?? 0} characters');
-            return text ?? '';
+        if (content != null &&
+            content['parts'] != null &&
+            (content['parts'] as List).isNotEmpty) {
+          final text = content['parts'][0]['text'] as String?;
+          if (text != null && text.trim().isNotEmpty) {
+            return text.trim();
           }
         }
 
-        print('❌ INVALID RESPONSE STRUCTURE');
-        return '';
-      } else {
-        print(
-          '⚠️ LỖI GEMINI SERVER (${response.statusCode}): ${response.body}',
-        );
-        return '';
+        // Check finish reason
+        final finishReason = candidate['finishReason'] as String?;
+        print('⚠️ Finish reason: $finishReason');
+
+        if (finishReason == 'SAFETY') {
+          return 'Mình hiểu câu hỏi của $userName. Bạn có thể hỏi cách khác không? 😊';
+        }
       }
-    } catch (e, stackTrace) {
-      print('❌ Ngoại lệ gọi API Gemini: $e');
-      print('🔍 Stack trace: $stackTrace');
+
+      // Check prompt feedback
+      if (data['promptFeedback'] != null) {
+        final feedback = data['promptFeedback'];
+        if (feedback['blockReason'] != null) {
+          print('⚠️ Prompt blocked: ${feedback['blockReason']}');
+          return '';
+        }
+      }
+
+      print('❌ Empty response from API');
       return '';
+    } else if (response.statusCode == 429) {
+      print('⚠️ Rate limited');
+      throw Exception('Rate limited');
+    } else if (response.statusCode == 403) {
+      print('❌ API Key invalid or permissions denied');
+      throw Exception('API Key issue: ${response.body}');
+    } else {
+      print(
+        '❌ HTTP ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 500))}',
+      );
+      throw Exception('HTTP ${response.statusCode}');
     }
   }
 }

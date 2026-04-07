@@ -7,8 +7,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../data/firebase_helper.dart';
 import '../services/user_service.dart';
+import '../models/user_model.dart';
 
 class InfoScreen extends StatefulWidget {
   const InfoScreen({super.key, this.phoneNumber});
@@ -79,19 +81,63 @@ class _InfoScreenState extends State<InfoScreen> {
     return null;
   }
 
+  /// ✅ Ưu tiên FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
+    // Ưu tiên: FirebaseAuth currentUser UID
+    final uidRef = UserService.googleUserRefByUid();
+    if (uidRef != null) return uidRef;
+
+    // Fallback: widget.phoneNumber (legacy)
     final identifier = widget.phoneNumber;
     if (identifier == null || identifier.trim().isEmpty) return null;
     return UserService.userRef(identifier);
   }
 
   Future<void> _loadUserProfile() async {
-    final identifier = widget.phoneNumber;
-    if (identifier == null || identifier.trim().isEmpty) return;
+    // ✅ Debug log
+    print('🔄 [ChangeInfo] _loadUserProfile() started');
+    print('   widget.phoneNumber: ${widget.phoneNumber}');
+    print(
+      '   FirebaseAuth currentUser: ${FirebaseAuth.instance.currentUser?.uid}',
+    );
 
     try {
-      final userModel = await UserService.get(identifier);
-      if (userModel == null) return;
+      UserModel? userModel;
+
+      // Ưu tiên 1: Lấy từ FirebaseAuth UID
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        print('   ✅ Trying UID: ${currentUser.uid}');
+        final docRef = UserService.googleUserRefByUid();
+        if (docRef != null) {
+          final doc = await docRef.get();
+          if (doc.exists) {
+            userModel = UserModel.fromSnapshot(doc);
+            print('   ✅ Found user from UID: ${userModel.name}');
+          }
+        }
+      }
+
+      // Ưu tiên 2: Fallback từ phoneNumber
+      if (userModel == null &&
+          widget.phoneNumber != null &&
+          widget.phoneNumber!.isNotEmpty) {
+        print('   ⚠️ Fallback to phoneNumber: ${widget.phoneNumber}');
+        userModel = await UserService.get(widget.phoneNumber!);
+        if (userModel != null) {
+          print('   ✅ Found user from phoneNumber: ${userModel.name}');
+        }
+      }
+
+      if (userModel == null) {
+        print('   ❌ No user found - showing empty form');
+        // Vẫn cho phép form hoạt động với data trống
+        if (!mounted) return;
+        setState(() {
+          _hasChanges = false;
+        });
+        return;
+      }
 
       final name = userModel.name;
       final phone = userModel.phone;
@@ -338,6 +384,10 @@ class _InfoScreenState extends State<InfoScreen> {
 
   // XỬ LÝ KHI BẤM NÚT BACK (GÓC TRÁI TRÊN)
   Future<void> _handleBackPress() async {
+    // Đảm bảo trạng thái thay đổi được tính lại trước khi quyết định có hiện popup hay không.
+    // Nếu user vừa chỉnh sửa xong và bấm Back ngay, _hasChanges đôi khi chưa kịp cập nhật.
+    _checkForChanges();
+
     if (!_hasChanges) {
       Navigator.pop(context);
       return;
@@ -355,17 +405,29 @@ class _InfoScreenState extends State<InfoScreen> {
 
   // LƯU TẠI CHỖ (BẤM NÚT DƯỚI CÙNG TRANG) - CẬP NHẬT GIAO DIỆN KHÔNG THOÁT
   Future<void> _saveChanges() async {
-    final identifier = widget.phoneNumber;
-    if (identifier == null || identifier.trim().isEmpty) return;
+    // ✅ Kiểm tra có user đăng nhập không (UID hoặc phoneNumber)
+    final hasCurrentUser = UserService.getCurrentUid() != null;
+    final hasPhoneNumber =
+        widget.phoneNumber != null && widget.phoneNumber!.trim().isNotEmpty;
+
+    if (!hasCurrentUser && !hasPhoneNumber) {
+      print('❌ Cannot save: No user logged in');
+      return;
+    }
 
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
     try {
+      print(
+        '🔄 STARTING SAVE - UID: ${UserService.getCurrentUid()}, Phone: ${widget.phoneNumber}',
+      );
+
       final newPhone = _phoneController.text.trim();
+      final identifier = widget.phoneNumber ?? '';
       final normalizedPhone = newPhone.isNotEmpty
           ? FirebaseHelper.normalizePhone(newPhone)
-          : (UserService.isPhoneLogin(identifier)
+          : (identifier.isNotEmpty && UserService.isPhoneLogin(identifier)
                 ? FirebaseHelper.normalizePhone(identifier)
                 : '');
 
@@ -376,7 +438,10 @@ class _InfoScreenState extends State<InfoScreen> {
       final district = _selectedDistrict;
       final ward = _selectedWard;
 
-      await UserService.updateFields(identifier, {
+      print('📝 SAVING DATA: name=$name, phone=$normalizedPhone, email=$email');
+
+      // ✅ Dùng updateCurrentUserFields (sẽ tự động lưu theo UID nếu có)
+      await UserService.updateCurrentUserFields({
         'phone': normalizedPhone,
         'phoneNumber': normalizedPhone,
         'name': name,
@@ -390,8 +455,9 @@ class _InfoScreenState extends State<InfoScreen> {
         'wardCode': ward?.code,
         'wardName': ward?.name,
         'street': street,
-        'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      print('✅ SAVE COMPLETED SUCCESSFULLY!');
 
       // LƯU LẠI GIÁ TRỊ GỐC ĐỂ GIAO DIỆN HIỂU LÀ ĐÃ CẬP NHẬT NHƯNG VẪN Ở LẠI TRANG
       _originalName = name;
@@ -443,17 +509,25 @@ class _InfoScreenState extends State<InfoScreen> {
 
   // LƯU VÀ CHUYỂN VỀ TRANG INFO (BẤM TỪ POPUP)
   Future<void> _saveChangesAndExit() async {
-    final identifier = widget.phoneNumber;
-    if (identifier == null || identifier.trim().isEmpty) return;
+    // ✅ Kiểm tra có user đăng nhập không (UID hoặc phoneNumber)
+    final hasCurrentUser = UserService.getCurrentUid() != null;
+    final hasPhoneNumber =
+        widget.phoneNumber != null && widget.phoneNumber!.trim().isNotEmpty;
+
+    if (!hasCurrentUser && !hasPhoneNumber) {
+      print('❌ Cannot save: No user logged in');
+      return;
+    }
 
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
     try {
       final newPhone = _phoneController.text.trim();
+      final identifier = widget.phoneNumber ?? '';
       final normalizedPhone = newPhone.isNotEmpty
           ? FirebaseHelper.normalizePhone(newPhone)
-          : (UserService.isPhoneLogin(identifier)
+          : (identifier.isNotEmpty && UserService.isPhoneLogin(identifier)
                 ? FirebaseHelper.normalizePhone(identifier)
                 : '');
 
@@ -464,7 +538,8 @@ class _InfoScreenState extends State<InfoScreen> {
       final district = _selectedDistrict;
       final ward = _selectedWard;
 
-      await UserService.updateFields(identifier, {
+      // ✅ Dùng updateCurrentUserFields (sẽ tự động lưu theo UID nếu có)
+      await UserService.updateCurrentUserFields({
         'phone': normalizedPhone,
         'phoneNumber': normalizedPhone,
         'name': name,
@@ -478,7 +553,6 @@ class _InfoScreenState extends State<InfoScreen> {
         'wardCode': ward?.code,
         'wardName': ward?.name,
         'street': street,
-        'updatedAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {

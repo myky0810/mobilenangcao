@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Service OTP dùng Firestore — miễn phí, không cần cấu hình Firebase Phone Auth.
 /// Mã OTP 6 số ngẫu nhiên được lưu vào Firestore và verify tại client.
@@ -7,6 +8,57 @@ class OTPService {
   OTPService._();
 
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  static bool _notificationsInitialized = false;
+
+  /// Khởi tạo notification plugin và request permission
+  static Future<void> _initializeNotifications() async {
+    if (_notificationsInitialized) return;
+
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+    const initSettings = InitializationSettings(android: androidSettings);
+
+    await _notificationsPlugin.initialize(initSettings);
+
+    // Request notification permission cho Android 13+
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestNotificationsPermission();
+
+    _notificationsInitialized = true;
+  }
+
+  /// Hiển thị notification với mã OTP
+  static Future<void> _showOTPNotification(String otpCode) async {
+    await _initializeNotifications();
+
+    const androidDetails = AndroidNotificationDetails(
+      'otp_channel',
+      'OTP Notifications',
+      channelDescription: 'Notifications for OTP codes',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      ongoing: false, // Cho phép vuốt để xóa
+      autoCancel: false, // Không tự động xóa khi tap
+      styleInformation: BigTextStyleInformation(''),
+    );
+
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    await _notificationsPlugin.show(
+      0, // notification ID
+      'Mã OTP của bạn',
+      'Mã xác thực: $otpCode\nMã có hiệu lực trong 5 phút',
+      notificationDetails,
+    );
+  }
 
   static CollectionReference<Map<String, dynamic>> get _otpCollection =>
       _db.collection('otp_codes');
@@ -32,7 +84,7 @@ class OTPService {
     return p;
   }
 
-  /// Gửi OTP — tạo mã mới, lưu vào Firestore, trả về mã OTP
+  /// Gửi OTP — tạo mã mới, lưu vào Firestore, trả về mã OTP và hiển thị notification
   /// Returns: mã OTP 6 số
   static Future<String> sendOTP(String phoneNumber) async {
     final normalizedPhone = _normalizePhone(phoneNumber);
@@ -48,6 +100,9 @@ class OTPService {
       'verified': false,
       'attempts': 0,
     });
+
+    // Hiển thị notification với mã OTP
+    await _showOTPNotification(otpCode);
 
     return otpCode;
   }
@@ -104,10 +159,10 @@ class OTPService {
     return true;
   }
 
-  /// Gửi lại OTP — xóa mã cũ, tạo mã mới
+  /// Gửi lại OTP — xóa mã cũ, tạo mã mới và hiển thị notification
   /// Returns: mã OTP 6 số mới
   static Future<String> resendOTP(String phoneNumber) async {
-    // Gọi lại sendOTP sẽ tự động ghi đè mã cũ
+    // Gọi lại sendOTP sẽ tự động ghi đè mã cũ và hiển thị notification
     return await sendOTP(phoneNumber);
   }
 

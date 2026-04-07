@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:doan_cuoiki/services/showroom_api_service.dart';
-import '../models/booking_models.dart';
+import 'package:doan_cuoiki/screen/payment_methods.dart';
+import '../services/user_service.dart';
 
 class DepositScreen extends StatefulWidget {
   final String carName;
@@ -61,27 +61,30 @@ class _DepositScreenState extends State<DepositScreen> {
     if (widget.phoneNumber == null || widget.phoneNumber!.isEmpty) return;
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.phoneNumber)
-          .get();
+      final ref = UserService.currentUserProfileRef(
+        phoneIdentifier: widget.phoneNumber,
+      );
+      if (ref == null) return;
+      final doc = await ref.get();
 
       if (doc.exists && mounted) {
-        final data = doc.data()!;
-        setState(() {
-          _nameController.text = data['name'] ?? '';
-          _phoneController.text = widget.phoneNumber ?? '';
-          _emailController.text = data['email'] ?? '';
+        final data = doc.data();
+        if (data != null) {
+          setState(() {
+            _nameController.text = data['name'] ?? '';
+            _phoneController.text = widget.phoneNumber ?? '';
+            _emailController.text = data['email'] ?? '';
 
-          final street = data['street'] ?? '';
-          final ward = data['wardName'] ?? '';
-          final district = data['districtName'] ?? '';
-          final province = data['provinceName'] ?? '';
+            final street = data['street'] ?? '';
+            final ward = data['wardName'] ?? '';
+            final district = data['districtName'] ?? '';
+            final province = data['provinceName'] ?? '';
 
-          if (street.isNotEmpty) {
-            _addressController.text = '$street, $ward, $district, $province';
-          }
-        });
+            if (street.isNotEmpty) {
+              _addressController.text = '$street, $ward, $district, $province';
+            }
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error loading user data: $e');
@@ -89,11 +92,13 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   Future<void> _findNearestShowroom() async {
+    debugPrint('🔍 Bắt đầu tìm showroom gần nhất...');
     setState(() => _isLoadingShowrooms = true);
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        debugPrint('❌ GPS không được bật');
         if (mounted) {
           _showSnackBar(
             'Vui lòng bật GPS để tìm showroom gần nhất',
@@ -111,6 +116,7 @@ class _DepositScreenState extends State<DepositScreen> {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
+        debugPrint('❌ Không có quyền truy cập vị trí');
         if (mounted) {
           _showSnackBar('Cần cấp quyền truy cập vị trí', isError: true);
         }
@@ -118,19 +124,37 @@ class _DepositScreenState extends State<DepositScreen> {
         return;
       }
 
+      // Thêm timeout cho getCurrentPosition
+      debugPrint('📍 Đang lấy vị trí GPS...');
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
       );
+      debugPrint('✅ Vị trí GPS: ${position.latitude}, ${position.longitude}');
 
       final showroomService = ShowroomApiService();
-      final showrooms = await showroomService.fetchNearbyShowrooms(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        radiusInMeters: 300000,
-        limit: 10,
-        brand: widget.carBrand,
-      ); // Luôn tính lại khoảng cách theo GPS hiện tại (kể cả dữ liệu cache)
-      // để đảm bảo "gần nhất" là đúng theo vị trí thiết bị tại thời điểm bấm.
+
+      // Thêm timeout cho API call
+      debugPrint('🌐 Đang gọi API tìm showroom...');
+      final showrooms = await showroomService
+          .fetchNearbyShowrooms(
+            latitude: position.latitude,
+            longitude: position.longitude,
+            radiusInMeters: 300000,
+            limit: 10,
+            brand: widget.carBrand,
+          )
+          .timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {
+              debugPrint('⏰ API timeout - trả về list rỗng');
+              // Nếu timeout, trả về list rỗng
+              return <Map<String, dynamic>>[];
+            },
+          );
+
+      debugPrint('✅ Tìm thấy ${showrooms.length} showroom từ API');
+
       final showroomsWithDistance = _withDistanceSorted(
         showrooms,
         userLat: position.latitude,
@@ -138,48 +162,80 @@ class _DepositScreenState extends State<DepositScreen> {
       );
 
       if (showroomsWithDistance.isEmpty) {
+        debugPrint(
+          '❌ Không có showroom nào trong bán kính 300km từ OpenStreetMap',
+        );
         if (mounted) {
-          _showSnackBar('Không tìm thấy showroom gần bạn', isError: true);
+          _showSnackBar(
+            'Không tìm thấy showroom ${widget.carBrand} trong bán kính 300km từ vị trí GPS của bạn.',
+            isError: true,
+          );
         }
         setState(() => _isLoadingShowrooms = false);
         return;
       }
 
       List<Map<String, dynamic>> filteredShowrooms = showroomsWithDistance;
-      if (widget.carBrand.isNotEmpty) {
-        filteredShowrooms = showroomsWithDistance.where((s) {
+      if (widget.carBrand.isNotEmpty && filteredShowrooms.isNotEmpty) {
+        final brandFiltered = showroomsWithDistance.where((s) {
           final brand = (s['brand'] ?? '').toString().toLowerCase();
           return brand.contains(widget.carBrand.toLowerCase());
         }).toList();
 
-        if (filteredShowrooms.isEmpty) {
-          filteredShowrooms = showroomsWithDistance;
+        // Chỉ dùng filter nếu có kết quả
+        if (brandFiltered.isNotEmpty) {
+          filteredShowrooms = brandFiltered;
         }
       }
 
       // Sort lại lần nữa sau filter để vẫn đảm bảo gần nhất nằm trên cùng
-      filteredShowrooms = _withDistanceSorted(
-        filteredShowrooms,
-        userLat: position.latitude,
-        userLng: position.longitude,
-      );
+      if (filteredShowrooms.isNotEmpty) {
+        filteredShowrooms = _withDistanceSorted(
+          filteredShowrooms,
+          userLat: position.latitude,
+          userLng: position.longitude,
+        );
 
-      if (mounted) {
-        _showShowroomSelector(filteredShowrooms);
+        debugPrint(
+          '✅ Hiển thị ${filteredShowrooms.length} showroom sau filter',
+        );
+
+        if (mounted) {
+          _showShowroomSelector(filteredShowrooms);
+        }
+      } else {
+        debugPrint('❌ Không có showroom nào sau filter');
+        if (mounted) {
+          _showSnackBar(
+            'Không tìm thấy showroom nào. Vui lòng thử lại hoặc liên hệ hotline.',
+            isError: true,
+          );
+        }
       }
     } catch (e) {
-      debugPrint('Error finding showroom: $e');
+      debugPrint('❌ Lỗi tìm showroom: $e');
       if (mounted) {
         final msg = e.toString();
-        if (msg.contains('SocketException') ||
-            msg.contains('TimeoutException')) {
+        if (msg.contains('TimeoutException') || msg.contains('timeout')) {
           _showSnackBar(
-            'Không kết nối được máy chủ showroom (Overpass) do mạng chậm/đang quá tải. '
-            'Vui lòng thử lại sau ít phút.',
+            'Tìm kiếm showroom hơi lâu, vui lòng kiểm tra kết nối mạng và thử lại.',
+            isError: true,
+          );
+        } else if (msg.contains('SocketException')) {
+          _showSnackBar(
+            'Không kết nối được mạng. Vui lòng kiểm tra Wi-Fi/4G.',
+            isError: true,
+          );
+        } else if (msg.contains('LocationServiceDisabledException')) {
+          _showSnackBar(
+            'Vui lòng bật GPS trong cài đặt thiết bị.',
             isError: true,
           );
         } else {
-          _showSnackBar('Lỗi khi tìm showroom: $e', isError: true);
+          _showSnackBar(
+            'Không thể tìm showroom. Vui lòng liên hệ hotline để được hỗ trợ.',
+            isError: true,
+          );
         }
       }
     } finally {
@@ -350,6 +406,11 @@ class _DepositScreenState extends State<DepositScreen> {
       return;
     }
 
+    if (_selectedShowroom == null) {
+      _showSnackBar('Vui lòng chọn showroom', isError: true);
+      return;
+    }
+
     // Xác định số tiền đặt cọc
     int depositAmount;
     if (_isCustomAmount) {
@@ -369,69 +430,34 @@ class _DepositScreenState extends State<DepositScreen> {
       depositAmount = _selectedDepositAmount!;
     }
 
-    setState(() => _isLoading = true);
+    // Tạo booking data để truyền qua màn hình payment
+    final bookingData = {
+      'userPhone': (widget.phoneNumber ?? '').toString(),
+      'carName': widget.carName,
+      'carBrand': widget.carBrand,
+      'carImage': widget.carImage,
+      'carPrice': widget.carPrice,
+      'customerName': _nameController.text.trim(),
+      'customerPhone': _phoneController.text.trim(),
+      'customerEmail': _emailController.text.trim(),
+      'address': _addressController.text.trim(),
+      'notes': _notesController.text.trim(),
+      'depositAmount': depositAmount,
+      'showroom': _selectedShowroom,
+      'createdAt': DateTime.now().toIso8601String(),
+    };
 
-    try {
-      final carPrice =
-          int.tryParse(widget.carPrice.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-      final order = DepositOrder(
-        userPhone: (widget.phoneNumber ?? '').toString(),
-        carName: widget.carName,
-        carBrand: widget.carBrand,
-        carImage: widget.carImage,
-        carPrice: widget.carPrice,
-        customerName: _nameController.text.trim(),
-        customerPhone: _phoneController.text.trim(),
-        customerEmail: _emailController.text.trim(),
-        address: _addressController.text.trim(),
-        notes: _notesController.text.trim(),
-        depositAmount: depositAmount,
-        paymentMethod: _selectedPaymentMethod,
-        showroom: _selectedShowroom,
-      );
-
-      // Backward compatible payload: keep your existing field names.
-      final depositData = <String, dynamic>{
-        ...order.toMap(),
-        'depositId': DateTime.now().millisecondsSinceEpoch.toString(),
-        'customerPhone': order.customerPhone,
-        'customerName': order.customerName,
-        'customerEmail': order.customerEmail,
-        'customerAddress': order.address,
-        'carId': widget.carBrand,
-        'carPrice': carPrice,
-        'depositStatus': 'pending',
-        'paymentStatus': 'unpaid',
-        'depositDate': FieldValue.serverTimestamp(),
-        'depositPercentage': carPrice > 0
-            ? (depositAmount / carPrice * 100).toStringAsFixed(1)
-            : '0',
-        'showroomId': _selectedShowroom?['id'],
-        'showroomName': _selectedShowroom?['name'] ?? 'Chưa chọn',
-        'showroomDistance': _selectedShowroom?['distance'],
-        'adminNotes': '',
-        'assignedStaff': '',
-        'expiresAt': Timestamp.fromDate(
-          DateTime.now().add(const Duration(days: 7)),
+    // Điều hướng đến màn hình payment methods
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentMethodsScreen(
+          amount: depositAmount.toDouble(),
+          carName: widget.carName,
+          bookingData: bookingData,
         ),
-      };
-
-      await FirebaseFirestore.instance.collection('deposits').add(depositData);
-
-      if (mounted) {
-        _showSnackBar('Đặt cọc thành công! Chúng tôi sẽ liên hệ với bạn sớm.');
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      debugPrint('Error submitting deposit: $e');
-      if (mounted) {
-        _showSnackBar('Lỗi khi đặt cọc: $e', isError: true);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+      ),
+    );
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -960,13 +986,24 @@ class _DepositScreenState extends State<DepositScreen> {
                       children: [
                         Text(
                           _selectedShowroom?['name'] ??
-                              'Chọn địa chỉ  gần nhất',
+                              'Bấm để tìm showroom ${widget.carBrand}',
                           style: GoogleFonts.leagueSpartan(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
                         ),
+                        if (_selectedShowroom == null && !_isLoadingShowrooms)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Chạm vào đây để tìm kiếm',
+                              style: GoogleFonts.leagueSpartan(
+                                fontSize: 12,
+                                color: _primaryColor,
+                              ),
+                            ),
+                          ),
                         if (_selectedShowroom != null) ...[
                           const SizedBox(height: 4),
                           Text(
@@ -1015,26 +1052,43 @@ class _DepositScreenState extends State<DepositScreen> {
                       _selectedShowroom!['distance'] != null &&
                       _selectedShowroom!['distance'] is num &&
                       _selectedShowroom!['distance'] > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _primaryColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${(_selectedShowroom!['distance'] / 1000).toStringAsFixed(1)} km',
-                        style: const TextStyle(
-                          color: _primaryColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _primaryColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${(_selectedShowroom!['distance'] / 1000).toStringAsFixed(1)} km',
+                            style: const TextStyle(
+                              color: _primaryColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _findNearestShowroom(),
+                          child: Icon(
+                            Icons.refresh,
+                            color: _primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                      ],
                     )
                   else
-                    const SizedBox.shrink(),
+                    Icon(
+                      Icons.location_searching,
+                      color: _primaryColor,
+                      size: 20,
+                    ),
                 ],
               ),
             ),

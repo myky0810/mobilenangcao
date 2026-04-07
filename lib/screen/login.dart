@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../services/user_service.dart';
 
 class LoginEmail extends StatefulWidget {
   const LoginEmail({super.key});
@@ -414,38 +415,15 @@ class _LoginEmailState extends State<LoginEmail>
 
       final displayName = (user.displayName ?? googleUser.displayName ?? '')
           .trim();
-      final photoUrl = user.photoURL?.trim();
       final uid = user.uid.trim();
 
       print(
         '💾 Saving to Firestore: email=$email, name=$displayName, uid=$uid',
       );
 
-      // Save to Firestore với đầy đủ thông tin
-      await FirebaseFirestore.instance.collection('users').doc(email).set({
-        'provider': 'google',
-        'googleUid': uid,
-        'email': email,
-        'name': displayName.isNotEmpty ? displayName : 'Người dùng Google',
-        'phone': '', // Để trống, có thể cập nhật sau
-        'gender': 'Nam', // Default
-        'street': '',
-        if (photoUrl != null && photoUrl.isNotEmpty) 'avatarUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
-      // Đảm bảo các field quan trọng được tạo nếu chưa có
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(email)
-          .update({'createdAt': FieldValue.serverTimestamp()})
-          .catchError((e) async {
-            // Nếu document chưa tồn tại, tạo với createdAt
-            await FirebaseFirestore.instance.collection('users').doc(email).set(
-              {'createdAt': FieldValue.serverTimestamp()},
-              SetOptions(merge: true),
-            );
-          });
+      // ✅ GỌI HÀM saveUserToFirestore từ UserService
+      await UserService.saveUserToFirestore(user, 'google');
+      print('✅ Saved to Firestore via UserService');
 
       print('🎉 Google login successful! Navigating to home...');
 

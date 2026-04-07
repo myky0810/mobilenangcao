@@ -1,9 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../data/firebase_helper.dart';
+import '../services/user_service.dart';
 import '../widgets/luxury_logo.dart';
 
 class LoginHasPassScreen extends StatefulWidget {
@@ -79,6 +80,12 @@ class _LoginHasPassScreenState extends State<LoginHasPassScreen>
       }
 
       await FirebaseHelper.login(phone: '+84$phone', password: pass);
+
+      // ✅ GỌI saveUserToFirestore để cập nhật lastLogin (cho phone users)
+      // Phone login ở app này là Firestore-only, không dùng FirebaseAuth PhoneAuth
+      // Nên ta cần cập nhật lastLogin trực tiếp vào users_phone collection
+      await UserService.savePhoneUserLoginToFirestore('+84$phone');
+
       if (!mounted) return;
       setState(() => _isLoading = false);
       Navigator.pushNamedAndRemoveUntil(

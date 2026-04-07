@@ -7,7 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 /// Firestore-only auth (phone + password) per your requirement.
 ///
-/// Collection: `users`
+/// Collection: `users_phone`
 /// Document id: normalized phone (unique)
 /// Fields:
 /// - phone: normalized phone
@@ -20,7 +20,7 @@ class FirebaseHelper {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static CollectionReference<Map<String, dynamic>> get _users =>
-      _db.collection('users');
+      _db.collection('users_phone');
 
   static String normalizePhone(String input) {
     var p = input.trim().replaceAll(' ', '');

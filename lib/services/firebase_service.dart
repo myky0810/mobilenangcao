@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/user_service.dart';
 
 /// Service để quản lý dữ liệu user trong Firestore
 class FirebaseService {
@@ -9,8 +10,14 @@ class FirebaseService {
   static const String _cleanupFlagKey = 'legacy_deposit_cleanup_done_v1';
 
   // Collection users
-  static CollectionReference get _usersCollection =>
-      _firestore.collection('users');
+  // Provider-aware users collection reference getter
+  static CollectionReference<Map<String, dynamic>>?
+  _usersCollectionByCurrentAuth() {
+    final uid = _auth.currentUser?.uid;
+    if (uid != null)
+      return _firestore.collection(UserService.googleUsersCollection);
+    return null;
+  }
 
   /// Lưu thông tin user vào Firestore
   static Future<void> saveUserData({
@@ -18,11 +25,14 @@ class FirebaseService {
     required Map<String, dynamic> userData,
   }) async {
     try {
-      await _usersCollection.doc(userId).set({
-        ...userData,
-        'updatedAt': FieldValue.serverTimestamp(),
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final usersCol = _usersCollectionByCurrentAuth();
+      if (usersCol != null) {
+        await usersCol.doc(userId).set({
+          ...userData,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
     } catch (e) {
       print('Error saving user data: $e');
       rethrow;
@@ -35,10 +45,13 @@ class FirebaseService {
     required Map<String, dynamic> data,
   }) async {
     try {
-      await _usersCollection.doc(userId).update({
-        ...data,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final usersCol = _usersCollectionByCurrentAuth();
+      if (usersCol != null) {
+        await usersCol.doc(userId).update({
+          ...data,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
     } catch (e) {
       print('Error updating user data: $e');
       rethrow;
@@ -48,9 +61,11 @@ class FirebaseService {
   /// Lấy thông tin user theo ID
   static Future<Map<String, dynamic>?> getUserData(String userId) async {
     try {
-      final doc = await _usersCollection.doc(userId).get();
+      final usersCol = _usersCollectionByCurrentAuth();
+      if (usersCol == null) return null;
+      final doc = await usersCol.doc(userId).get();
       if (doc.exists) {
-        return doc.data() as Map<String, dynamic>?;
+        return doc.data();
       }
       return null;
     } catch (e) {
@@ -63,7 +78,11 @@ class FirebaseService {
   static Stream<DocumentSnapshot<Map<String, dynamic>>> getUserDataStream(
     String userId,
   ) {
-    return _firestore.collection('users').doc(userId).snapshots();
+    final usersCol = _usersCollectionByCurrentAuth();
+    if (usersCol == null) {
+      return Stream.empty();
+    }
+    return usersCol.doc(userId).snapshots();
   }
 
   /// Lưu thông tin user sau khi đăng ký
@@ -113,7 +132,8 @@ class FirebaseService {
   /// Xóa dữ liệu user
   static Future<void> deleteUserData(String userId) async {
     try {
-      await _usersCollection.doc(userId).delete();
+      final usersCol = _usersCollectionByCurrentAuth();
+      if (usersCol != null) await usersCol.doc(userId).delete();
     } catch (e) {
       print('Error deleting user data: $e');
       rethrow;
@@ -123,7 +143,9 @@ class FirebaseService {
   /// Kiểm tra user đã tồn tại chưa
   static Future<bool> userExists(String userId) async {
     try {
-      final doc = await _usersCollection.doc(userId).get();
+      final usersCol = _usersCollectionByCurrentAuth();
+      if (usersCol == null) return false;
+      final doc = await usersCol.doc(userId).get();
       return doc.exists;
     } catch (e) {
       print('Error checking user exists: $e');
@@ -134,10 +156,10 @@ class FirebaseService {
   /// Lấy danh sách tất cả users (admin only)
   static Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
-      final snapshot = await _usersCollection.get();
-      return snapshot.docs
-          .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
-          .toList();
+      final usersCol = _usersCollectionByCurrentAuth();
+      if (usersCol == null) return [];
+      final snapshot = await usersCol.get();
+      return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
     } catch (e) {
       print('Error getting all users: $e');
       return [];
@@ -147,14 +169,18 @@ class FirebaseService {
   /// Tìm user theo số điện thoại
   static Future<Map<String, dynamic>?> getUserByPhone(String phone) async {
     try {
-      final snapshot = await _usersCollection
+      // For phone-based lookup, use the phone collection
+      final phoneRef = FirebaseFirestore.instance.collection(
+        UserService.phoneUsersCollection,
+      );
+      final snapshot = await phoneRef
           .where('phone', isEqualTo: phone)
           .limit(1)
           .get();
 
       if (snapshot.docs.isNotEmpty) {
         final doc = snapshot.docs.first;
-        return {'id': doc.id, ...doc.data() as Map<String, dynamic>};
+        return {'id': doc.id, ...doc.data()};
       }
       return null;
     } catch (e) {

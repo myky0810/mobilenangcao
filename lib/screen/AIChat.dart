@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/user_service.dart';
 import 'dart:async';
 import '../data/firebase_helper.dart';
 import '../services/ultra_ai_service.dart'; // Ultra AI - Maximum Intelligence System
@@ -191,12 +192,12 @@ class _AIChatScreenState extends State<AIChatScreen>
       final normalizedPhone = _normalizePhoneOrFallback();
       if (normalizedPhone == 'guest') return;
 
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(normalizedPhone)
-          .get();
+      final ref = UserService.currentUserProfileRef(
+        phoneIdentifier: normalizedPhone,
+      );
+      final doc = (ref == null) ? null : await ref.get();
 
-      final data = doc.data();
+      final data = doc?.data();
       final name = data?['name'] as String?;
 
       if (name != null && name.trim().isNotEmpty && mounted) {

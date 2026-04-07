@@ -175,7 +175,7 @@ class _MapScreenState extends State<MapScreen> {
           if (_showrooms.isEmpty) {
             _showrooms = cachedShowrooms;
             _locationError =
-                'Không có showroom đúng hãng trong bán kính 300km, đang hiển thị showroom gần nhất';
+                'Không có showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật, đang hiển thị showroom gần nhất';
           } else {
             _locationError = null;
           }
@@ -210,7 +210,8 @@ class _MapScreenState extends State<MapScreen> {
           _showrooms = [];
           _nearestShowrooms = [];
           _selectedShowroom = null;
-          _locationError = 'Không tìm thấy showroom gần khu vực của bạn';
+          _locationError =
+              'Không tìm thấy showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật của bạn';
           _isLoadingShowrooms = false;
           _markers = _buildOnlyUserMarker();
         });
@@ -221,7 +222,7 @@ class _MapScreenState extends State<MapScreen> {
       if (_showrooms.isEmpty) {
         _showrooms = apiShowrooms;
         _locationError =
-            'Không có showroom đúng hãng trong bán kính 300km, đang hiển thị showroom gần nhất';
+            'Không có showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật, đang hiển thị showroom gần nhất';
       } else {
         _locationError = null;
       }
@@ -242,7 +243,7 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _isLoadingShowrooms = false;
         _locationError =
-            'Lỗi kết nối API showroom. Vui lòng kiểm tra mạng và thử lại.';
+            'Lỗi kết nối OpenStreetMap API. Vui lòng kiểm tra mạng và thử lại.';
         _markers = _buildOnlyUserMarker();
       });
     }

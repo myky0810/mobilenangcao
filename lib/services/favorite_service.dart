@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
+import '../services/user_service.dart';
 
 class FavoriteService {
   static const String _favoritesKey = 'user_favorites';
@@ -11,9 +12,17 @@ class FavoriteService {
   static String? _currentUid() => _auth.currentUser?.uid;
 
   static CollectionReference<Map<String, dynamic>>? _favoritesRef() {
+    // Try Google UID first
     final uid = _currentUid();
-    if (uid == null || uid.isEmpty) return null;
-    return _db.collection('users').doc(uid).collection('favorites');
+    if (uid != null && uid.isNotEmpty) {
+      return _db
+          .collection(UserService.googleUsersCollection)
+          .doc(uid)
+          .collection('favorites');
+    }
+
+    // Otherwise we cannot resolve phone-based favorites from auth alone
+    return null;
   }
 
   static Future<List<Map<String, dynamic>>> _getLocalFavorites() async {
@@ -23,7 +32,9 @@ class FavoriteService {
       if (encodedData != null) {
         final List<dynamic> decodedData = jsonDecode(encodedData);
         final favorites = decodedData
-            .map((item) => _normalizeFavoriteMap(Map<String, dynamic>.from(item)))
+            .map(
+              (item) => _normalizeFavoriteMap(Map<String, dynamic>.from(item)),
+            )
             .toList();
         await _saveLocalFavorites(favorites);
         return favorites;
@@ -151,9 +162,10 @@ class FavoriteService {
     if (idText.isNotEmpty) return idText;
 
     final name = (car['carName'] ?? car['name'] ?? 'Xe').toString().trim();
-    final brand = (car['carBrand'] ?? car['brand'] ?? car['subtitle'] ?? 'Unknown')
-        .toString()
-        .trim();
+    final brand =
+        (car['carBrand'] ?? car['brand'] ?? car['subtitle'] ?? 'Unknown')
+            .toString()
+            .trim();
     final price = (car['carPrice'] ?? car['price'] ?? '').toString().trim();
 
     final parts = [brand, name];
@@ -161,9 +173,7 @@ class FavoriteService {
     return parts.join('_').replaceAll(RegExp(r'\s+'), '_');
   }
 
-  static Map<String, dynamic> _normalizeFavoriteMap(
-    Map<String, dynamic> car,
-  ) {
+  static Map<String, dynamic> _normalizeFavoriteMap(Map<String, dynamic> car) {
     final normalized = Map<String, dynamic>.from(car);
     normalized['id'] = _normalizeFavoriteId(normalized);
     return normalized;
@@ -242,7 +252,7 @@ class FavoriteService {
       if (encodedData == null) return;
 
       final List<dynamic> decodedData = jsonDecode(encodedData);
-      
+
       // Tạo map để theo dõi các ID đã xem
       final seenIds = <String>{};
       final deduplicatedList = <Map<String, dynamic>>[];
@@ -261,7 +271,9 @@ class FavoriteService {
 
       // Lưu lại danh sách làm sạch
       await saveFavorites(deduplicatedList);
-      print('Deduplicated favorites: ${decodedData.length} -> ${deduplicatedList.length}');
+      print(
+        'Deduplicated favorites: ${decodedData.length} -> ${deduplicatedList.length}',
+      );
     } catch (e) {
       print('Error deduplicating favorites: $e');
     }

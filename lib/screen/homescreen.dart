@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../data/cars_data.dart';
-import '../data/firebase_helper.dart';
 import '../models/car_detail.dart';
 import '../widgets/notification_icon.dart';
 import '../widgets/ai_chat_button.dart';
 import '../widgets/car_card.dart';
+import '../services/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -86,19 +87,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final List<CarDetailData> _cars = CarsData.allCars;
 
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    final phone = widget.phoneNumber;
-    if (phone == null || phone.trim().isEmpty) return null;
+    // Ưu tiên: FirebaseAuth currentUser (Google/Phone login)
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    // Nếu là email (Google login), dùng trực tiếp email làm document ID
-    if (phone.contains('@')) {
-      return FirebaseFirestore.instance
-          .collection('users')
-          .doc(phone.trim().toLowerCase());
+    // ✅ DEBUG: Log để kiểm tra
+    print('');
+    print('🔍 [HOME] _userDocRef() called');
+    print('   CurrentUser: ${currentUser?.uid}');
+    print('   Email: ${currentUser?.email}');
+    print('   DisplayName: ${currentUser?.displayName}');
+    print('   Widget phoneNumber: ${widget.phoneNumber}');
+
+    if (currentUser != null && UserService.currentProvider() == 'google') {
+      final ref = UserService.googleUserRefByUid();
+      print('   ✅ Using Google UID-based ref: ${ref?.path}');
+      return ref;
     }
 
-    // Nếu là số điện thoại, normalize
-    final normalized = FirebaseHelper.normalizePhone(phone);
-    return FirebaseFirestore.instance.collection('users').doc(normalized);
+    // Fallback: widget.phoneNumber (legacy)
+    final phone = widget.phoneNumber;
+    if (phone == null || phone.trim().isEmpty) {
+      print('   ❌ No user ref available');
+      return null;
+    }
+
+    final ref = UserService.phoneUserRefByPhone(phone);
+    print('   ⚠️ Using phone-based ref: ${ref.path}');
+    return ref;
   }
 
   bool _looksLikePhone(String value) {
@@ -108,23 +123,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   String _displayNameFromData(Map<String, dynamic>? data) {
+    print('');
+    print('👤 [HOME] _displayNameFromData called');
+    print('   Data: $data');
+
     final name = (data?['name'] as String?)?.trim();
-    if (name != null && name.isNotEmpty) return name;
+    print('   name field: "$name"');
+
+    if (name != null && name.isNotEmpty) {
+      print('   ✅ Returning name: "$name"');
+      return name;
+    }
 
     final legacyPhoneField = (data?['phone'] as String?)?.trim();
     if (legacyPhoneField != null &&
         legacyPhoneField.isNotEmpty &&
         !_looksLikePhone(legacyPhoneField) &&
         !legacyPhoneField.contains('@')) {
+      print('   ⚠️ Returning legacy phone field: "$legacyPhoneField"');
       return legacyPhoneField;
     }
 
+    print('   ❌ No name found - returning default');
     return 'Người dùng';
   }
 
   @override
   void initState() {
     super.initState();
+
+    // Lắng nghe auth state changes để auto-refresh user data
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        setState(() {
+          // Rebuild to refresh _userDocRef() with new currentUser
+        });
+      }
+    });
 
     // Khởi tạo animation controllers
     _bannerAnimationController = AnimationController(

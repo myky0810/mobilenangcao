@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+
+import '../services/user_service.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/otp_service.dart';
+import '../data/firebase_helper.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -267,6 +271,37 @@ class _RegisterScreenState extends State<RegisterScreen>
     final fullPhoneNumber = '+84$phoneText';
 
     try {
+      // Kiểm tra số điện thoại đã tồn tại trong Firestore chưa
+      final normalizedPhone = FirebaseHelper.normalizePhone(fullPhoneNumber);
+      final userDoc = await FirebaseFirestore.instance
+          .collection(UserService.phoneUsersCollection)
+          .doc(normalizedPhone)
+          .get();
+
+      if (userDoc.exists) {
+        // Số điện thoại đã được đăng ký
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập.',
+              style: TextStyle(color: Colors.black87),
+            ),
+            backgroundColor: Colors.white,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      // Số điện thoại chưa tồn tại, gửi OTP
       // Gửi OTP qua Firestore (miễn phí, không cần cấu hình Firebase Phone Auth)
       final otpCode = await OTPService.sendOTP(fullPhoneNumber);
 

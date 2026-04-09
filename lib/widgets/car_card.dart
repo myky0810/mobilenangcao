@@ -14,9 +14,9 @@ class CarCard extends StatefulWidget {
   final List<String> gallery;
   final double rating;
   final int reviewCount;
+  final String? phoneNumber;
   final bool isNew;
   final String description;
-  final String? phoneNumber;
   final VoidCallback? onTap;
   final bool showBrandBadge;
 
@@ -31,14 +31,19 @@ class CarCard extends StatefulWidget {
     this.gallery = const [],
     this.rating = 4.5,
     this.reviewCount = 50,
+    this.phoneNumber,
     this.isNew = false,
     this.description = '',
-    this.phoneNumber,
     this.onTap,
     this.showBrandBadge = true,
   });
 
-  factory CarCard.fromMap(Map<String, dynamic> map, {String? phoneNumber, VoidCallback? onTap, bool showBrandBadge = true}) {
+  factory CarCard.fromMap(
+    Map<String, dynamic> map, {
+    String? phoneNumber,
+    VoidCallback? onTap,
+    bool showBrandBadge = true,
+  }) {
     return CarCard(
       id: map['id'] as String,
       name: map['name'] as String,
@@ -88,16 +93,20 @@ class _CarCardState extends State<CarCard> {
   }
 
   Future<void> _checkFavoriteStatus() async {
-    final favorites = await FavoriteService.getFavorites();
+    final favorites = await FavoriteService.getFavorites(
+      phoneIdentifier: widget.phoneNumber,
+    );
     if (!mounted) return;
-    
+
     setState(() {
       _isFavorite = favorites.any((fav) => fav['id'] == widget.id);
     });
   }
 
   Future<void> _loadReviewStats() async {
-    final approvedReviews = await ProductReviewService.getPublicReviews(widget.id);
+    final approvedReviews = await ProductReviewService.getPublicReviews(
+      widget.id,
+    );
     if (!mounted) return;
 
     final stats = ProductReviewService.calculateDisplayStats(
@@ -129,7 +138,10 @@ class _CarCardState extends State<CarCard> {
       };
 
       if (_isFavorite) {
-        await FavoriteService.removeFromFavorites(widget.id);
+        await FavoriteService.removeFromFavorites(
+          widget.id,
+          phoneIdentifier: widget.phoneNumber,
+        );
         if (mounted) {
           setState(() {
             _isFavorite = false;
@@ -137,7 +149,10 @@ class _CarCardState extends State<CarCard> {
           _showSnackBar('Đã xóa khỏi danh sách yêu thích');
         }
       } else {
-        await FavoriteService.addToFavorites(carData);
+        await FavoriteService.addToFavorites(
+          carData,
+          phoneIdentifier: widget.phoneNumber,
+        );
         if (mounted) {
           setState(() {
             _isFavorite = true;
@@ -172,8 +187,8 @@ class _CarCardState extends State<CarCard> {
         brand: widget.brand,
         image: widget.image,
         price: widget.price,
-        description: widget.description.isNotEmpty 
-            ? widget.description 
+        description: widget.description.isNotEmpty
+            ? widget.description
             : 'Xe ${widget.name} từ ${widget.brand} với chất lượng cao và trang bị hiện đại.',
         images: widget.gallery.isNotEmpty ? widget.gallery : [widget.image],
         reviewCount: _displayReviewCount,
@@ -182,11 +197,7 @@ class _CarCardState extends State<CarCard> {
         phoneNumber: widget.phoneNumber,
       );
 
-      await Navigator.pushNamed(
-        context,
-        '/detailcar',
-        arguments: detailData,
-      );
+      await Navigator.pushNamed(context, '/detailcar', arguments: detailData);
 
       // Refresh state when returning from detail (favorite + latest reviews).
       await _checkFavoriteStatus();
@@ -219,15 +230,19 @@ class _CarCardState extends State<CarCard> {
               children: [
                 // Car image slider
                 CarImageSlider(
-                  images: widget.gallery.isNotEmpty ? widget.gallery : [widget.image],
+                  images: widget.gallery.isNotEmpty
+                      ? widget.gallery
+                      : [widget.image],
                   height: 200,
                 ),
-                
+
                 // Gradient overlay
                 Container(
                   height: 200,
                   decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
@@ -314,11 +329,7 @@ class _CarCardState extends State<CarCard> {
                           ),
                         ),
                         const SizedBox(width: 2),
-                        const Icon(
-                          Icons.star,
-                          color: Colors.orange,
-                          size: 11,
-                        ),
+                        const Icon(Icons.star, color: Colors.orange, size: 11),
                         const SizedBox(width: 4),
                         Text(
                           '($_displayReviewCount)',
@@ -377,21 +388,17 @@ class _CarCardState extends State<CarCard> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // Brand name (if brand badge is hidden)
                   if (!widget.showBrandBadge)
                     Text(
                       widget.brand,
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
-                  
-                  if (!widget.showBrandBadge)
-                    const SizedBox(height: 8),
+
+                  if (!widget.showBrandBadge) const SizedBox(height: 8),
 
                   // Price
                   Text(
@@ -402,16 +409,13 @@ class _CarCardState extends State<CarCard> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 4),
-                  
+
                   // Price note
                   Text(
                     widget.priceNote,
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
                 ],
               ),

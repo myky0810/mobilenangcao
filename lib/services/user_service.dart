@@ -89,8 +89,13 @@ class UserService {
   static DocumentReference<Map<String, dynamic>> userRef(String identifier) {
     final trimmed = identifier.trim();
     if (_looksLikeEmail(trimmed)) {
-      // For google we always rely on uid, so this is only used as a fallback.
-      return _googleUsers.doc(trimmed.toLowerCase());
+      // Google profiles MUST be keyed by uid, not email.
+      // Using email as docId creates legacy/messy IDs in Firestore.
+      final ref = googleUserRefByUid();
+      if (ref != null) return ref;
+      // If there's no FirebaseAuth user, we can't resolve uid.
+      // Return a safe placeholder to avoid nulls, but callers should not write with it.
+      return _googleUsers.doc('_unresolved_google_uid_');
     }
     return phoneUserRefByPhone(trimmed);
   }
@@ -261,7 +266,8 @@ class UserService {
           await docRef.set({
             'uid': firebaseUser.uid,
             'name': firebaseUser.displayName ?? 'Người dùng Google',
-            'email': firebaseUser.email ?? '',
+            // Store email consistently for display/search.
+            'email': (firebaseUser.email ?? '').trim().toLowerCase(),
             'phone': firebaseUser.phoneNumber ?? '',
             'avatarUrl': firebaseUser.photoURL ?? '',
             'provider': 'google',

@@ -1,28 +1,18 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import '../services/user_service.dart';
 
 class FavoriteService {
   static const String _favoritesKey = 'user_favorites';
-  static final FirebaseFirestore _db = FirebaseFirestore.instance;
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  static String? _currentUid() => _auth.currentUser?.uid;
-
-  static CollectionReference<Map<String, dynamic>>? _favoritesRef() {
-    // Try Google UID first
-    final uid = _currentUid();
-    if (uid != null && uid.isNotEmpty) {
-      return _db
-          .collection(UserService.googleUsersCollection)
-          .doc(uid)
-          .collection('favorites');
-    }
-
-    // Otherwise we cannot resolve phone-based favorites from auth alone
-    return null;
+  static CollectionReference<Map<String, dynamic>>? _favoritesRef({
+    String? phoneIdentifier,
+  }) {
+    final profileRef = UserService.currentUserProfileRef(
+      phoneIdentifier: phoneIdentifier,
+    );
+    return profileRef?.collection('favorites');
   }
 
   static Future<List<Map<String, dynamic>>> _getLocalFavorites() async {
@@ -57,8 +47,10 @@ class FavoriteService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> _getRemoteFavorites() async {
-    final ref = _favoritesRef();
+  static Future<List<Map<String, dynamic>>> _getRemoteFavorites({
+    String? phoneIdentifier,
+  }) async {
+    final ref = _favoritesRef(phoneIdentifier: phoneIdentifier);
     if (ref == null) return [];
 
     try {
@@ -74,8 +66,11 @@ class FavoriteService {
     }
   }
 
-  static Future<void> _upsertRemoteFavorite(Map<String, dynamic> car) async {
-    final ref = _favoritesRef();
+  static Future<void> _upsertRemoteFavorite(
+    Map<String, dynamic> car, {
+    String? phoneIdentifier,
+  }) async {
+    final ref = _favoritesRef(phoneIdentifier: phoneIdentifier);
     if (ref == null) return;
 
     final normalizedCar = _normalizeFavoriteMap(car);
@@ -92,8 +87,11 @@ class FavoriteService {
     }
   }
 
-  static Future<void> _removeRemoteFavorite(String carId) async {
-    final ref = _favoritesRef();
+  static Future<void> _removeRemoteFavorite(
+    String carId, {
+    String? phoneIdentifier,
+  }) async {
+    final ref = _favoritesRef(phoneIdentifier: phoneIdentifier);
     if (ref == null) return;
 
     try {
@@ -105,16 +103,17 @@ class FavoriteService {
 
   // Lưu danh sách yêu thích
   static Future<void> saveFavorites(
-    List<Map<String, dynamic>> favorites,
-  ) async {
+    List<Map<String, dynamic>> favorites, {
+    String? phoneIdentifier,
+  }) async {
     try {
       final normalized = favorites.map(_normalizeFavoriteMap).toList();
       await _saveLocalFavorites(normalized);
 
-      final ref = _favoritesRef();
+      final ref = _favoritesRef(phoneIdentifier: phoneIdentifier);
       if (ref != null) {
         for (final car in normalized) {
-          await _upsertRemoteFavorite(car);
+          await _upsertRemoteFavorite(car, phoneIdentifier: phoneIdentifier);
         }
       }
     } catch (e) {
@@ -123,10 +122,14 @@ class FavoriteService {
   }
 
   // Lấy danh sách yêu thích
-  static Future<List<Map<String, dynamic>>> getFavorites() async {
+  static Future<List<Map<String, dynamic>>> getFavorites({
+    String? phoneIdentifier,
+  }) async {
     try {
       final localFavorites = await _getLocalFavorites();
-      final remoteFavorites = await _getRemoteFavorites();
+      final remoteFavorites = await _getRemoteFavorites(
+        phoneIdentifier: phoneIdentifier,
+      );
 
       final mergedById = <String, Map<String, dynamic>>{};
       for (final item in localFavorites) {
@@ -142,9 +145,9 @@ class FavoriteService {
       if (merged.isNotEmpty) {
         await _saveLocalFavorites(merged);
 
-        if (_favoritesRef() != null) {
+        if (_favoritesRef(phoneIdentifier: phoneIdentifier) != null) {
           for (final item in merged) {
-            await _upsertRemoteFavorite(item);
+            await _upsertRemoteFavorite(item, phoneIdentifier: phoneIdentifier);
           }
         }
       }
@@ -180,9 +183,12 @@ class FavoriteService {
   }
 
   // Thêm xe vào danh sách yêu thích
-  static Future<void> addToFavorites(Map<String, dynamic> car) async {
+  static Future<void> addToFavorites(
+    Map<String, dynamic> car, {
+    String? phoneIdentifier,
+  }) async {
     try {
-      final favorites = await getFavorites();
+      final favorites = await getFavorites(phoneIdentifier: phoneIdentifier);
       final normalizedCar = _normalizeFavoriteMap(car);
       final carId = normalizedCar['id']?.toString() ?? '';
       if (carId.isEmpty) {
@@ -192,7 +198,10 @@ class FavoriteService {
       if (!favorites.any((fav) => fav['id']?.toString() == carId)) {
         favorites.add(normalizedCar);
         await _saveLocalFavorites(favorites);
-        await _upsertRemoteFavorite(normalizedCar);
+        await _upsertRemoteFavorite(
+          normalizedCar,
+          phoneIdentifier: phoneIdentifier,
+        );
       }
     } catch (e) {
       print('Error adding to favorites: $e');
@@ -200,21 +209,27 @@ class FavoriteService {
   }
 
   // Xóa xe khỏi danh sách yêu thích
-  static Future<void> removeFromFavorites(String carId) async {
+  static Future<void> removeFromFavorites(
+    String carId, {
+    String? phoneIdentifier,
+  }) async {
     try {
-      final favorites = await getFavorites();
+      final favorites = await getFavorites(phoneIdentifier: phoneIdentifier);
       favorites.removeWhere((fav) => fav['id']?.toString() == carId);
       await _saveLocalFavorites(favorites);
-      await _removeRemoteFavorite(carId);
+      await _removeRemoteFavorite(carId, phoneIdentifier: phoneIdentifier);
     } catch (e) {
       print('Error removing from favorites: $e');
     }
   }
 
   // Kiểm tra xe có trong danh sách yêu thích không
-  static Future<bool> isFavorite(String carId) async {
+  static Future<bool> isFavorite(
+    String carId, {
+    String? phoneIdentifier,
+  }) async {
     try {
-      final favorites = await getFavorites();
+      final favorites = await getFavorites(phoneIdentifier: phoneIdentifier);
       return favorites.any((fav) => fav['id']?.toString() == carId);
     } catch (e) {
       print('Error checking favorite: $e');
@@ -223,12 +238,12 @@ class FavoriteService {
   }
 
   // Xóa tất cả yêu thích
-  static Future<void> clearFavorites() async {
+  static Future<void> clearFavorites({String? phoneIdentifier}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_favoritesKey);
 
-      final ref = _favoritesRef();
+      final ref = _favoritesRef(phoneIdentifier: phoneIdentifier);
       if (ref != null) {
         final snapshot = await ref.get();
         for (final doc in snapshot.docs) {

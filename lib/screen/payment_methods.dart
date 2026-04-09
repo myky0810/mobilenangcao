@@ -197,143 +197,157 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // ZaloPay Option
-                  _buildPaymentOption(
-                    id: 'zalopay',
-                    title: 'ZaloPay',
-                    subtitle: 'Digital payment',
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0068FF), Color(0xFF00A3FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // VietQR Option
-                  _buildPaymentOption(
-                    id: 'vietqr',
-                    title: 'VietQR',
-                    subtitle: 'QR code payment',
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1E88E5), Color(0xFF42A5F5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.qr_code,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Google Pay Option
-                  _buildPaymentOption(
-                    id: 'googlepay',
-                    title: 'Google Pay',
-                    subtitle: 'Fast, safe payment',
-                    icon: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF4285F4),
-                            Color(0xFF34A853),
-                            Color(0xFFFBBC05),
-                            Color(0xFFEA4335),
-                          ],
-                          stops: [0.0, 0.33, 0.66, 1.0],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.payment,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Security Info
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _cardColor.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _primaryColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: _primaryColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Icon(
-                            Icons.security,
-                            color: _primaryColor,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'LuxeDrive Security Suite',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: _primaryColor,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          // ZaloPay Option
+                          _buildPaymentOption(
+                            id: 'zalopay',
+                            title: 'ZaloPay',
+                            subtitle: 'Digital payment',
+                            icon: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF0068FF),
+                                    Color(0xFF00A3FF),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Your payment information is encrypted and never stored on our servers. Protected via banking-grade SSL protocols.',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: Colors.white70,
-                                  height: 1.3,
-                                ),
+                              child: const Icon(
+                                Icons.account_balance_wallet,
+                                color: Colors.white,
+                                size: 20,
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+
+                          // VietQR Option
+                          _buildPaymentOption(
+                            id: 'vietqr',
+                            title: 'VietQR',
+                            subtitle: 'QR code payment',
+                            icon: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF1E88E5),
+                                    Color(0xFF42A5F5),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.qr_code,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Google Pay Option
+                          _buildPaymentOption(
+                            id: 'googlepay',
+                            title: 'Google Pay',
+                            subtitle: 'Fast, safe payment',
+                            icon: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF4285F4),
+                                    Color(0xFF34A853),
+                                    Color(0xFFFBBC05),
+                                    Color(0xFFEA4335),
+                                  ],
+                                  stops: [0.0, 0.33, 0.66, 1.0],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.payment,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Security Info
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _cardColor.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _primaryColor.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: _primaryColor.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    Icons.security,
+                                    color: _primaryColor,
+                                    size: 18,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'LuxeDrive Security Suite',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: _primaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Your payment information is encrypted and never stored on our servers. Protected via banking-grade SSL protocols.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: Colors.white70,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-
-                  const Spacer(),
 
                   // Confirm Payment Button
                   Container(

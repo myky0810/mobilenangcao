@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../data/cars_data.dart';
@@ -87,33 +86,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final List<CarDetailData> _cars = CarsData.allCars;
 
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    // Ưu tiên: FirebaseAuth currentUser (Google/Phone login)
-    final currentUser = FirebaseAuth.instance.currentUser;
-
-    // ✅ DEBUG: Log để kiểm tra
-    print('');
-    print('🔍 [HOME] _userDocRef() called');
-    print('   CurrentUser: ${currentUser?.uid}');
-    print('   Email: ${currentUser?.email}');
-    print('   DisplayName: ${currentUser?.displayName}');
-    print('   Widget phoneNumber: ${widget.phoneNumber}');
-
-    if (currentUser != null && UserService.currentProvider() == 'google') {
-      final ref = UserService.googleUserRefByUid();
-      print('   ✅ Using Google UID-based ref: ${ref?.path}');
-      return ref;
-    }
-
-    // Fallback: widget.phoneNumber (legacy)
-    final phone = widget.phoneNumber;
-    if (phone == null || phone.trim().isEmpty) {
-      print('   ❌ No user ref available');
-      return null;
-    }
-
-    final ref = UserService.phoneUserRefByPhone(phone);
-    print('   ⚠️ Using phone-based ref: ${ref.path}');
-    return ref;
+    // Provider-safe ref resolver:
+    // - Google: users_google/{uid}
+    // - Phone (Firestore-only login): users_phone/{normalizedPhone} (requires phoneIdentifier)
+    return UserService.currentUserProfileRef(
+      phoneIdentifier: widget.phoneNumber,
+    );
   }
 
   bool _looksLikePhone(String value) {
@@ -151,15 +129,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-
-    // Lắng nghe auth state changes để auto-refresh user data
-    FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      if (mounted) {
-        setState(() {
-          // Rebuild to refresh _userDocRef() with new currentUser
-        });
-      }
-    });
 
     // Khởi tạo animation controllers
     _bannerAnimationController = AnimationController(

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Favorite item stored under `users/{uid}/favorites/{carId}`.
+/// Favorite item stored under `{userProfile}/favorites/{carId}` where:
+/// - Google profile: `users_google/{uid}`
+/// - Phone profile : `users_phone/{normalizedPhone}`
 ///
 /// Your current app stores favorites as Map (route arguments). This model gives
 /// you a typed structure for admin / future UI.

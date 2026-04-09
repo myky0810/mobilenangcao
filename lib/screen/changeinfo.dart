@@ -7,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../data/firebase_helper.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
@@ -83,50 +82,34 @@ class _InfoScreenState extends State<InfoScreen> {
 
   /// ✅ Ưu tiên FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    // Ưu tiên: FirebaseAuth currentUser UID
-    final uidRef = UserService.googleUserRefByUid();
-    if (uidRef != null) return uidRef;
-
-    // Fallback: widget.phoneNumber (legacy)
-    final identifier = widget.phoneNumber;
-    if (identifier == null || identifier.trim().isEmpty) return null;
-    return UserService.userRef(identifier);
+    return UserService.currentUserProfileRef(
+      phoneIdentifier: widget.phoneNumber,
+    );
   }
 
   Future<void> _loadUserProfile() async {
     // ✅ Debug log
     print('🔄 [ChangeInfo] _loadUserProfile() started');
     print('   widget.phoneNumber: ${widget.phoneNumber}');
-    print(
-      '   FirebaseAuth currentUser: ${FirebaseAuth.instance.currentUser?.uid}',
-    );
+    print('   provider: ${UserService.currentProvider()}');
 
     try {
       UserModel? userModel;
 
-      // Ưu tiên 1: Lấy từ FirebaseAuth UID
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        print('   ✅ Trying UID: ${currentUser.uid}');
-        final docRef = UserService.googleUserRefByUid();
-        if (docRef != null) {
-          final doc = await docRef.get();
-          if (doc.exists) {
-            userModel = UserModel.fromSnapshot(doc);
-            print('   ✅ Found user from UID: ${userModel.name}');
-          }
+      // Provider-aware: derive correct profile doc ref for google/phone.
+      final docRef = _userDocRef();
+      if (docRef != null) {
+        final doc = await docRef.get();
+        if (doc.exists) {
+          userModel = UserModel.fromSnapshot(doc);
+          print('   ✅ Found user: ${userModel.name} (ref=${docRef.path})');
+        } else {
+          print(
+            '   ⚠️ Profile doc not found (ref=${docRef.path}) - showing empty form',
+          );
         }
-      }
-
-      // Ưu tiên 2: Fallback từ phoneNumber
-      if (userModel == null &&
-          widget.phoneNumber != null &&
-          widget.phoneNumber!.isNotEmpty) {
-        print('   ⚠️ Fallback to phoneNumber: ${widget.phoneNumber}');
-        userModel = await UserService.get(widget.phoneNumber!);
-        if (userModel != null) {
-          print('   ✅ Found user from phoneNumber: ${userModel.name}');
-        }
+      } else {
+        print('   ⚠️ No profile ref resolved - showing empty form');
       }
 
       if (userModel == null) {

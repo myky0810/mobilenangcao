@@ -50,7 +50,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
       setState(() => _isLoading = true);
 
       // Lấy danh sách yêu thích từ SharedPreferences và chuyển thành CarDetailData
-      final favorites = await FavoriteService.getFavorites();
+      final favorites = await FavoriteService.getFavorites(
+        phoneIdentifier: widget.phoneNumber,
+      );
       final favoriteCars = favorites
           .map((fav) => CarDetailData.fromMap(fav))
           .toList();

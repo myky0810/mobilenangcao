@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'map_screen.dart';
 
+import '../services/user_service.dart';
+
 class BookCarScreen extends StatefulWidget {
   final Map<String, dynamic> carData;
 
@@ -509,6 +511,11 @@ class _BookCarScreenState extends State<BookCarScreen> {
 
     try {
       // Lưu dữ liệu đăng ký lái thử tạm thời (chưa có showroom)
+      final profileRef = UserService.currentUserProfileRef(
+        phoneIdentifier: widget.carData['phoneNumber']?.toString(),
+      );
+      final provider = UserService.currentProvider();
+
       final bookingData = {
         'carName': widget.carData['name'] ?? '',
         'carBrand': widget.carData['brand'] ?? '',
@@ -521,7 +528,11 @@ class _BookCarScreenState extends State<BookCarScreen> {
         'location': _selectedLocation,
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
-        'userPhone': widget.carData['phoneNumber'] ?? '',
+        // Link to the *profile* (works for both Google and phone login)
+        'userProvider': provider,
+        'userProfilePath': profileRef?.path ?? '',
+        // Keep for backward compatibility with existing screens/indexes
+        'userPhone': widget.carData['phoneNumber']?.toString().trim() ?? '',
       };
 
       if (!mounted) return;

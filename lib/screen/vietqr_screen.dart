@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../services/user_service.dart';
 import '../services/vietqr_service.dart';
 import '../services/bank_transaction_checker.dart';
 import '../services/email_service.dart';
@@ -132,8 +132,24 @@ class _VietQRScreenState extends State<VietQRScreen>
   // Lưu transaction vào Firestore với đầy đủ thông tin
   Future<void> _saveTransactionToFirestore() async {
     try {
-      // Lấy thông tin user hiện tại
-      final currentUser = FirebaseAuth.instance.currentUser;
+      final profileRef = UserService.currentUserProfileRef(
+        phoneIdentifier: widget.phoneNumber,
+      );
+      final provider = UserService.currentProvider();
+
+      // Provider-safe user info (works even when FirebaseAuth.currentUser is null)
+      String userId = '';
+      String userEmail = '';
+      String userDisplayName = '';
+      if (profileRef != null) {
+        final snap = await profileRef.get();
+        final data = snap.data();
+        if (data != null) {
+          userId = (data['uid'] ?? data['userId'] ?? '') as String;
+          userEmail = (data['email'] ?? '') as String;
+          userDisplayName = (data['name'] ?? '') as String;
+        }
+      }
 
       await FirebaseFirestore.instance
           .collection('transactions')
@@ -165,10 +181,13 @@ class _VietQRScreenState extends State<VietQRScreen>
             'showroom': widget.carData['showroom'],
 
             // Thông tin user đăng nhập
-            'userId': currentUser?.uid ?? '',
-            'userEmail': currentUser?.email ?? '',
-            'userDisplayName': currentUser?.displayName ?? '',
+            'userId': userId,
+            'userEmail': userEmail,
+            'userDisplayName': userDisplayName,
             'userPhone': widget.phoneNumber,
+            // Provider-safe linkage to the profile document
+            'userProvider': provider,
+            'userProfilePath': profileRef?.path ?? '',
 
             // Timestamps
             'createdAt': FieldValue.serverTimestamp(),
@@ -187,7 +206,7 @@ class _VietQRScreenState extends State<VietQRScreen>
       print('📧 Email: ${widget.customerEmail}');
       print('📱 Phone: ${widget.carData['customerPhone']}');
       print('🏢 Showroom: ${widget.carData['showroom']?['name'] ?? 'N/A'}');
-      print('👤 User ID: ${currentUser?.uid ?? 'N/A'}');
+      print('👤 User ID: ${userId.isNotEmpty ? userId : 'N/A'}');
       print('');
     } catch (e) {
       print('❌ Error saving transaction: $e');
@@ -335,8 +354,26 @@ class _VietQRScreenState extends State<VietQRScreen>
   /// 💾 LƯU BOOKING VÀO FIRESTORE KHI THANH TOÁN THÀNH CÔNG
   Future<void> _saveBookingToFirestore() async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
       final bookingId = 'BK${DateTime.now().millisecondsSinceEpoch}';
+
+      final profileRef = UserService.currentUserProfileRef(
+        phoneIdentifier: widget.phoneNumber,
+      );
+      final provider = UserService.currentProvider();
+
+      // Provider-safe user info (works even when FirebaseAuth.currentUser is null)
+      String userId = '';
+      String userEmail = '';
+      String userDisplayName = '';
+      if (profileRef != null) {
+        final snap = await profileRef.get();
+        final data = snap.data();
+        if (data != null) {
+          userId = (data['uid'] ?? data['userId'] ?? '') as String;
+          userEmail = (data['email'] ?? '') as String;
+          userDisplayName = (data['name'] ?? '') as String;
+        }
+      }
 
       final bookingData = {
         // ID
@@ -372,9 +409,13 @@ class _VietQRScreenState extends State<VietQRScreen>
         'showroomLng': widget.carData['showroom']?['lng'],
 
         // Thông tin user đăng nhập
-        'userId': currentUser?.uid ?? '',
-        'userEmail': currentUser?.email ?? '',
-        'userDisplayName': currentUser?.displayName ?? '',
+        'userId': userId,
+        'userEmail': userEmail,
+        'userDisplayName': userDisplayName,
+        'userPhone': widget.phoneNumber,
+        // Provider-safe linkage to the profile document
+        'userProvider': provider,
+        'userProfilePath': profileRef?.path ?? '',
 
         // Timestamps
         'createdAt': FieldValue.serverTimestamp(),

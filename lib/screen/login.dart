@@ -435,7 +435,9 @@ class _LoginEmailState extends State<LoginEmail>
         context,
         '/home',
         (route) => false,
-        arguments: email,
+        // For Google login, downstream screens should rely on FirebaseAuth uid.
+        // Passing email here can be misinterpreted as a phone identifier.
+        arguments: null,
       );
     } on GoogleSignInException catch (e) {
       print('❌ Google Sign In Exception: ${e.code} - ${e.description}');

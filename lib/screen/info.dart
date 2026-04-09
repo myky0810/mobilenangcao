@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/firebase_helper.dart';
@@ -98,25 +97,24 @@ class _InfoScreenState extends State<InfoScreen> {
   }
 
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    // ✅ Ưu tiên uid (chuẩn hoá toàn app): users/{uid}
-    final uidRef = UserService.googleUserRefByUid();
-    if (uidRef != null) return uidRef;
-
-    // Fallback: legacy identifier-based (phone/email)
-    final identifier = widget.phoneNumber;
-    if (identifier == null || identifier.trim().isEmpty) return null;
-    return UserService.userRef(identifier);
+    // Provider-aware profile ref:
+    // - Google: users_google/{uid}
+    // - Phone : users_phone/{normalizedPhone}
+    return UserService.currentUserProfileRef(
+      phoneIdentifier: widget.phoneNumber,
+    );
   }
 
   Future<void> _loadUserProfile() async {
-    // UID-first: vẫn cho phép fallback theo phoneNumber nếu chưa có currentUser
     final identifier = widget.phoneNumber;
     final hasUid = UserService.getCurrentUid() != null;
     if (!hasUid && (identifier == null || identifier.trim().isEmpty)) return;
 
     try {
-      // Sử dụng UserService.get (đã ưu tiên UID bên trong) để đồng bộ dữ liệu
-      final userModel = await UserService.get(identifier ?? '');
+      // Provider-safe: read from the resolved current profile doc.
+      final userModel = await UserService.getCurrentUser(
+        phoneIdentifier: widget.phoneNumber,
+      );
       if (userModel == null) return;
 
       final data = {
@@ -294,14 +292,13 @@ class _InfoScreenState extends State<InfoScreen> {
         updateData['avatarUrl'] = _avatarUrl;
       }
 
-      // ✅ Lưu theo UID (canonical users/{uid}) để đồng bộ với Home/Profile/ChangeInfo
-      // Nếu chưa có currentUser thì fallback sang identifier-based.
-      final identifier = widget.phoneNumber ?? '';
-      if (UserService.getCurrentUid() != null) {
-        await UserService.updateCurrentUserFields(updateData);
-      } else {
-        await UserService.updateFields(identifier, updateData);
-      }
+      // ✅ Provider-safe save
+      // - Google login: users_google/{uid}
+      // - Phone login : users_phone/{normalizedPhone}
+      await UserService.updateCurrentUserFields(
+        updateData,
+        phoneIdentifier: widget.phoneNumber,
+      );
 
       if (!mounted) return;
 
@@ -965,15 +962,14 @@ class _InfoScreenState extends State<InfoScreen> {
     if (ref == null) return;
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw 'Người dùng chưa đăng nhập';
-      }
-
       final ext = _guessImageExtension(originalFileName);
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'avatar_${timestamp}.$ext';
-      final objectPath = 'users/${user.uid}/avatars/$fileName';
+
+      // Provider-safe storage path:
+      // - Google: users_google/{uid}/avatars/...
+      // - Phone : users_phone/{normalizedPhone}/avatars/...
+      final objectPath = '${ref.path}/avatars/$fileName';
 
       final storageRef = FirebaseStorage.instance.ref().child(objectPath);
 
@@ -981,9 +977,10 @@ class _InfoScreenState extends State<InfoScreen> {
       final metadata = SettableMetadata(
         contentType: 'image/$ext',
         customMetadata: {
-          'uploadedBy': user.uid,
+          'uploadedBy': ref.id,
           'uploadedAt': DateTime.now().toIso8601String(),
           'originalFileName': originalFileName,
+          'userProfilePath': ref.path,
         },
       );
 

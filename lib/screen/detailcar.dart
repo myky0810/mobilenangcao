@@ -122,7 +122,10 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   }
 
   Future<void> _loadFavoriteState() async {
-    final favorited = await FavoriteService.isFavorite(widget.car.id);
+    final favorited = await FavoriteService.isFavorite(
+      widget.car.id,
+      phoneIdentifier: widget.car.phoneNumber,
+    );
     if (!mounted) return;
     setState(() => isFavorited = favorited);
   }
@@ -132,9 +135,15 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
     setState(() => isFavorited = nextState);
 
     if (nextState) {
-      await FavoriteService.addToFavorites(widget.car.toRouteArguments());
+      await FavoriteService.addToFavorites(
+        widget.car.toRouteArguments(),
+        phoneIdentifier: widget.car.phoneNumber,
+      );
     } else {
-      await FavoriteService.removeFromFavorites(widget.car.id);
+      await FavoriteService.removeFromFavorites(
+        widget.car.id,
+        phoneIdentifier: widget.car.phoneNumber,
+      );
     }
   }
 

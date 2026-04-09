@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_calendarcar.dart';
 
+import '../services/user_service.dart';
+
 class TestDriveScreen extends StatefulWidget {
   const TestDriveScreen({super.key, this.phoneNumber});
 
@@ -78,19 +80,32 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
 
                     // Bookings list from Firestore (lọc theo userPhone)
                     StreamBuilder<QuerySnapshot>(
-                      stream:
-                          (widget.phoneNumber != null &&
-                              widget.phoneNumber!.trim().isNotEmpty)
-                          ? FirebaseFirestore.instance
-                                .collection('test_drive_bookings')
-                                .where(
-                                  'userPhone',
-                                  isEqualTo: widget.phoneNumber!.trim(),
-                                )
-                                .snapshots()
-                          : FirebaseFirestore.instance
-                                .collection('test_drive_bookings')
-                                .snapshots(),
+                      stream: () {
+                        final profileRef = UserService.currentUserProfileRef(
+                          phoneIdentifier: widget.phoneNumber,
+                        );
+                        final profilePath = profileRef?.path ?? '';
+
+                        if (profilePath.isNotEmpty) {
+                          return FirebaseFirestore.instance
+                              .collection('test_drive_bookings')
+                              .where('userProfilePath', isEqualTo: profilePath)
+                              .snapshots();
+                        }
+
+                        // Backward compatibility: older docs used userPhone.
+                        final phone = widget.phoneNumber?.trim() ?? '';
+                        if (phone.isNotEmpty) {
+                          return FirebaseFirestore.instance
+                              .collection('test_drive_bookings')
+                              .where('userPhone', isEqualTo: phone)
+                              .snapshots();
+                        }
+
+                        return FirebaseFirestore.instance
+                            .collection('test_drive_bookings')
+                            .snapshots();
+                      }(),
                       builder: (context, snapshot) {
                         if (snapshot.hasError) {
                           // Hiện tất cả booking nếu query lỗi (fallback)
@@ -103,8 +118,20 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
                                   fallbackSnap.data!.docs.isEmpty) {
                                 return _buildEmptyState();
                               }
+
+                              final profileRef =
+                                  UserService.currentUserProfileRef(
+                                    phoneIdentifier: widget.phoneNumber,
+                                  );
+                              final profilePath = profileRef?.path ?? '';
                               final docs = fallbackSnap.data!.docs.where((doc) {
                                 final data = doc.data() as Map<String, dynamic>;
+                                if (profilePath.isNotEmpty) {
+                                  final path =
+                                      (data['userProfilePath'] as String?) ??
+                                      '';
+                                  return path == profilePath;
+                                }
                                 final up = (data['userPhone'] as String?) ?? '';
                                 final phone = widget.phoneNumber?.trim() ?? '';
                                 return phone.isEmpty || up == phone;

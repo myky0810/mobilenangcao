@@ -84,6 +84,7 @@ class EmailNotificationService {
     required String carName,
     required double amount,
     required String transactionId,
+    String? phoneIdentifier,
   }) async {
     try {
       print('');
@@ -91,33 +92,35 @@ class EmailNotificationService {
       print('┃ 📧 EMAIL SERVICE - GỬI EMAIL THẬT                ┃');
       print('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛');
 
-      // Lấy user hiện tại
-      print('🔍 Step 1: Lấy user từ FirebaseAuth...');
-      final user = FirebaseAuth.instance.currentUser;
+      // Lấy thông tin profile từ Firestore theo provider
+      print('🔍 Step 1: Đọc Firestore user profile (provider-safe)...');
 
-      if (user == null) {
-        print('❌ Chưa đăng nhập!');
-        return false;
-      }
+      final profileRef = UserService.currentUserProfileRef(
+        phoneIdentifier: phoneIdentifier,
+      );
 
-      print('✅ User UID: ${user.uid}');
-      print('   Name: ${user.displayName ?? "null"}');
-      print('   Email (Auth): ${user.email ?? "null"}');
-
-      // Lấy data từ Firestore
-      print('');
-      print('🔍 Step 2: Đọc Firestore user profile...');
-      final docRef = UserService.googleUserRefByUid();
       DocumentSnapshot<Map<String, dynamic>>? userDoc;
-      if (docRef != null) {
-        userDoc = await docRef.get();
+      if (profileRef != null) {
+        userDoc = await profileRef.get();
       }
 
       final userData = (userDoc != null && userDoc.exists)
           ? (userDoc.data() ?? {})
-          : {};
+          : <String, dynamic>{};
+
+      print('   Profile ref: ${profileRef?.path ?? "null"}');
       print('   Document exists: ${userDoc?.exists ?? false}');
       print('   Fields: ${userData.keys.toList()}');
+
+      // Auth user là optional (phone-login Firestore-only có thể null)
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print('ℹ️ FirebaseAuth.currentUser is null (phone-login flow).');
+      } else {
+        print('✅ Auth UID: ${user.uid}');
+        print('   Name (Auth): ${user.displayName ?? "null"}');
+        print('   Email (Auth): ${user.email ?? "null"}');
+      }
 
       // Tìm email
       print('');
@@ -128,7 +131,7 @@ class EmailNotificationService {
           : null;
       print('   Firestore email: $firestoreEmail');
 
-      final authEmail = user.email?.trim();
+      final authEmail = user?.email?.trim();
       print('   Auth email: $authEmail');
 
       final userEmail = (firestoreEmail != null && firestoreEmail.isNotEmpty)
@@ -155,8 +158,8 @@ class EmailNotificationService {
       } else if (userData['displayName'] is String &&
           (userData['displayName'] as String).isNotEmpty) {
         customerName = userData['displayName'];
-      } else if (user.displayName != null && user.displayName!.isNotEmpty) {
-        customerName = user.displayName!;
+      } else if ((user?.displayName ?? '').isNotEmpty) {
+        customerName = user!.displayName!;
       }
 
       print('   Tên: $customerName');

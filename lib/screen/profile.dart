@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/user_service.dart';
 
@@ -19,31 +18,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// ✅ Ưu tiên lấy user từ FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    // Ưu tiên: FirebaseAuth currentUser (Google/Phone login)
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      return UserService.googleUserRefByUid();
-    }
-
-    // Fallback: widget.phoneNumber (legacy)
-    final phone = widget.phoneNumber;
-    if (phone == null || phone.trim().isEmpty) return null;
-    return UserService.userRef(phone);
+    return UserService.currentUserProfileRef(
+      phoneIdentifier: widget.phoneNumber,
+    );
   }
 
   /// ✅ Lấy tên hiển thị từ Firestore data
   String _displayNameFromData(Map<String, dynamic>? data) {
-    final currentUser = FirebaseAuth.instance.currentUser;
-
     final name = (data?['name'] as String?)?.trim();
     if (name != null && name.isNotEmpty) {
       return name;
     }
 
-    // Fallback: FirebaseAuth displayName
-    if (currentUser?.displayName != null &&
-        currentUser!.displayName!.isNotEmpty) {
-      return currentUser.displayName!;
+    // Fallback: phoneNumber passed via route (phone-login flow)
+    final phone =
+        (data?['phoneNumber'] as String?)?.trim() ??
+        (data?['phone'] as String?)?.trim() ??
+        widget.phoneNumber?.trim();
+    if (phone != null && phone.isNotEmpty) {
+      return _formatPhoneNumber(phone);
     }
 
     return 'Người dùng';

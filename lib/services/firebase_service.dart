@@ -27,7 +27,11 @@ class FirebaseService {
     try {
       final usersCol = _usersCollectionByCurrentAuth();
       if (usersCol != null) {
-        await usersCol.doc(userId).set({
+        final uid = _auth.currentUser?.uid;
+        if (uid == null) return;
+        // Always key Google users by uid. Ignore caller-provided userId to avoid
+        // creating random/legacy doc IDs in Firestore.
+        await usersCol.doc(uid).set({
           ...userData,
           'updatedAt': FieldValue.serverTimestamp(),
           'createdAt': FieldValue.serverTimestamp(),
@@ -47,7 +51,9 @@ class FirebaseService {
     try {
       final usersCol = _usersCollectionByCurrentAuth();
       if (usersCol != null) {
-        await usersCol.doc(userId).update({
+        final uid = _auth.currentUser?.uid;
+        if (uid == null) return;
+        await usersCol.doc(uid).update({
           ...data,
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -63,7 +69,9 @@ class FirebaseService {
     try {
       final usersCol = _usersCollectionByCurrentAuth();
       if (usersCol == null) return null;
-      final doc = await usersCol.doc(userId).get();
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return null;
+      final doc = await usersCol.doc(uid).get();
       if (doc.exists) {
         return doc.data();
       }
@@ -82,7 +90,9 @@ class FirebaseService {
     if (usersCol == null) {
       return Stream.empty();
     }
-    return usersCol.doc(userId).snapshots();
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.empty();
+    return usersCol.doc(uid).snapshots();
   }
 
   /// Lưu thông tin user sau khi đăng ký
@@ -133,7 +143,11 @@ class FirebaseService {
   static Future<void> deleteUserData(String userId) async {
     try {
       final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol != null) await usersCol.doc(userId).delete();
+      if (usersCol != null) {
+        final uid = _auth.currentUser?.uid;
+        if (uid == null) return;
+        await usersCol.doc(uid).delete();
+      }
     } catch (e) {
       print('Error deleting user data: $e');
       rethrow;
@@ -145,7 +159,9 @@ class FirebaseService {
     try {
       final usersCol = _usersCollectionByCurrentAuth();
       if (usersCol == null) return false;
-      final doc = await usersCol.doc(userId).get();
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return false;
+      final doc = await usersCol.doc(uid).get();
       return doc.exists;
     } catch (e) {
       print('Error checking user exists: $e');

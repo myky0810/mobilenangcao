@@ -166,7 +166,7 @@ class _InfoScreenState extends State<InfoScreen> {
         _avatarUrl = (avatarUrl != null && avatarUrl.trim().isNotEmpty)
             ? avatarUrl.trim()
             : null;
-        final effectiveName = (name.trim().isNotEmpty)
+        final effectiveName = (name != null && name.trim().isNotEmpty)
             ? name
             : (phone != null &&
                   phone.trim().isNotEmpty &&
@@ -407,10 +407,27 @@ class _InfoScreenState extends State<InfoScreen> {
       );
 
       final newPhone = _phoneController.text.trim();
+      
+      // ✅ Validate phone format: phải là 10 chữ số (format: 0374854273)
+      if (newPhone.isNotEmpty) {
+        final cleanPhone = newPhone.replaceAll(RegExp(r'\D'), ''); // Remove non-digits
+        if (cleanPhone.length != 10 || !cleanPhone.startsWith('0')) {
+          print('❌ Invalid phone format: $newPhone (cleaned: $cleanPhone)');
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Số điện thoại phải là 10 chữ số bắt đầu bằng 0 (ví dụ: 0374854273)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
       final identifier = widget.phoneNumber ?? '';
       final normalizedPhone = newPhone.isNotEmpty
           ? FirebaseHelper.normalizePhone(newPhone)
-          : (identifier.isNotEmpty && UserService.isPhoneLogin(identifier)
+          : (identifier.isNotEmpty
                 ? FirebaseHelper.normalizePhone(identifier)
                 : '');
 
@@ -421,24 +438,27 @@ class _InfoScreenState extends State<InfoScreen> {
       final district = _selectedDistrict;
       final ward = _selectedWard;
 
-      print('📝 SAVING DATA: name=$name, phone=$normalizedPhone, email=$email');
+      print('📝 SAVING DATA: name=$name, phone=$normalizedPhone, email=$email, identifier=${widget.phoneNumber}');
 
-      // ✅ Dùng updateCurrentUserFields (sẽ tự động lưu theo UID nếu có)
-      await UserService.updateCurrentUserFields({
-        'phone': normalizedPhone,
-        'phoneNumber': normalizedPhone,
-        'name': name,
-        'email': email,
-        'gender': _selectedGender,
-        'dob': _selectedDate,
-        'provinceCode': province?.code,
-        'provinceName': province?.name,
-        'districtCode': district?.code,
-        'districtName': district?.name,
-        'wardCode': ward?.code,
-        'wardName': ward?.name,
-        'street': street,
-      });
+      // ✅ Dùng updateCurrentUserFields với phoneIdentifier để lưu vào đúng document
+      await UserService.updateCurrentUserFields(
+        {
+          'phone': normalizedPhone,
+          'phoneNumber': normalizedPhone,
+          'name': name,
+          'email': email,
+          'gender': _selectedGender,
+          'dob': _selectedDate,
+          'provinceCode': province?.code,
+          'provinceName': province?.name,
+          'districtCode': district?.code,
+          'districtName': district?.name,
+          'wardCode': ward?.code,
+          'wardName': ward?.name,
+          'street': street,
+        },
+        phoneIdentifier: widget.phoneNumber, // ✅ Truyền phone để xác định document ID
+      );
 
       print('✅ SAVE COMPLETED SUCCESSFULLY!');
 
@@ -507,10 +527,28 @@ class _InfoScreenState extends State<InfoScreen> {
 
     try {
       final newPhone = _phoneController.text.trim();
+
+      // ✅ Validate phone format: phải là 10 chữ số (format: 0374854273)
+      if (newPhone.isNotEmpty) {
+        final cleanPhone = newPhone.replaceAll(RegExp(r'\D'), ''); // Remove non-digits
+        if (cleanPhone.length != 10 || !cleanPhone.startsWith('0')) {
+          print('❌ Invalid phone format: $newPhone (cleaned: $cleanPhone)');
+          if (!mounted) return;
+          setState(() => _isSaving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Số điện thoại phải là 10 chữ số bắt đầu bằng 0 (ví dụ: 0374854273)'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
       final identifier = widget.phoneNumber ?? '';
       final normalizedPhone = newPhone.isNotEmpty
           ? FirebaseHelper.normalizePhone(newPhone)
-          : (identifier.isNotEmpty && UserService.isPhoneLogin(identifier)
+          : (identifier.isNotEmpty
                 ? FirebaseHelper.normalizePhone(identifier)
                 : '');
 
@@ -521,22 +559,25 @@ class _InfoScreenState extends State<InfoScreen> {
       final district = _selectedDistrict;
       final ward = _selectedWard;
 
-      // ✅ Dùng updateCurrentUserFields (sẽ tự động lưu theo UID nếu có)
-      await UserService.updateCurrentUserFields({
-        'phone': normalizedPhone,
-        'phoneNumber': normalizedPhone,
-        'name': name,
-        'email': email,
-        'gender': _selectedGender,
-        'dob': _selectedDate,
-        'provinceCode': province?.code,
-        'provinceName': province?.name,
-        'districtCode': district?.code,
-        'districtName': district?.name,
-        'wardCode': ward?.code,
-        'wardName': ward?.name,
-        'street': street,
-      });
+      // ✅ Dùng updateCurrentUserFields với phoneIdentifier để lưu vào đúng document
+      await UserService.updateCurrentUserFields(
+        {
+          'phone': normalizedPhone,
+          'phoneNumber': normalizedPhone,
+          'name': name,
+          'email': email,
+          'gender': _selectedGender,
+          'dob': _selectedDate,
+          'provinceCode': province?.code,
+          'provinceName': province?.name,
+          'districtCode': district?.code,
+          'districtName': district?.name,
+          'wardCode': ward?.code,
+          'wardName': ward?.name,
+          'street': street,
+        },
+        phoneIdentifier: widget.phoneNumber, // ✅ Truyền phone để xác định document ID
+      );
 
       if (mounted) {
         setState(() => _isSaving = false);
@@ -1524,7 +1565,7 @@ class _InfoScreenState extends State<InfoScreen> {
                       controller: _phoneController,
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
-                        hintText: '0123456789',
+                        hintText: 'Nhập 9 chữ số (ví dụ: 374854273) hoặc 0xxxxx',
                         hintStyle: TextStyle(
                           color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 15,
@@ -1539,7 +1580,20 @@ class _InfoScreenState extends State<InfoScreen> {
                       ),
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.next,
-                      onChanged: (value) => _checkForChanges(),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      onChanged: (value) {
+                        // Auto-format: remove leading 0 if user pastes +84 number
+                        if (value.startsWith('84') && value.length >= 2) {
+                          _phoneController.text = '0${value.substring(2)}';
+                          _phoneController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _phoneController.text.length),
+                          );
+                        }
+                        _checkForChanges();
+                      },
                     ),
                     const SizedBox(height: 24),
 

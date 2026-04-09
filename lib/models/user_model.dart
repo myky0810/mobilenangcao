@@ -1,180 +1,196 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Canonical user profile stored under Firestore provider collections:
-/// - Google: `users_google/{uid}`
-/// - Phone : `users_phone/{normalizedPhone}`
-///
-/// UNIFIED MODEL: Supports both phone and Google (email) login.
-/// - Canonical:
-///   - Google: id = FirebaseAuth uid
-///   - Phone : id = normalizedPhone
-/// - Legacy fallback: older data may still have id = email.toLowerCase() etc.
-///
-/// Notes:
-/// - Keep fields optional to avoid breaking existing writes.
-/// - 'phone' and 'phoneNumber' are aliases (for backward compatibility)
+/// User model representing a user in the `users` collection
+/// 
+/// ✅ Single collection unified structure:
+/// - Document ID: normalized phone (phone-based)
+/// - Fields: provider (google|phone), uid (optional), phone, email, name, etc.
 class UserModel {
-  final String id;
-  final String? phoneNumber;
-  final String name;
+  final String? phone;
   final String? email;
+  final String? name;
   final String? avatarUrl;
-  final String? provider; // 'google', 'phone', or null
-
-  // Extra profile fields used in Info/ChangeInfo screens
   final String? gender;
   final DateTime? dob;
   final int? provinceCode;
   final int? districtCode;
   final int? wardCode;
-
-  // Address (used in info/changeinfo/deposit screens)
   final String? street;
-  final String? wardName;
-  final String? districtName;
-  final String? provinceName;
-
+  final String? provider; // 'google' or 'phone'
+  final String? uid; // Firebase UID (for Google login)
+  final String? role; // 'user' or 'admin' (default: 'user')
   final DateTime? createdAt;
+  final DateTime? lastLogin;
   final DateTime? updatedAt;
 
-  const UserModel({
-    required this.id,
-    this.phoneNumber,
-    this.name = '',
+  UserModel({
+    this.phone,
     this.email,
+    this.name,
     this.avatarUrl,
-    this.provider,
-
     this.gender,
     this.dob,
     this.provinceCode,
     this.districtCode,
     this.wardCode,
     this.street,
-    this.wardName,
-    this.districtName,
-    this.provinceName,
+    this.provider,
+    this.uid,
+    this.role,
     this.createdAt,
+    this.lastLogin,
     this.updatedAt,
   });
 
-  /// Alias cho phoneNumber (backward compatibility)
-  String? get phone => phoneNumber;
+  /// Create UserModel from Firestore document snapshot
+  factory UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
 
-  factory UserModel.fromFirestore(Map<String, dynamic> map, String documentId) {
-    DateTime? parseTs(Object? raw) {
-      if (raw is Timestamp) return raw.toDate();
-      if (raw is DateTime) return raw;
-      if (raw is String) return DateTime.tryParse(raw);
+    DateTime? _parseDateTime(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      if (value is String) return DateTime.tryParse(value);
       return null;
     }
 
-    int? parseInt(Object? raw) {
-      if (raw == null) return null;
-      if (raw is int) return raw;
-      if (raw is num) return raw.toInt();
-      if (raw is String) return int.tryParse(raw);
+    int? _parseInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
       return null;
     }
 
     return UserModel(
-      id: documentId,
-      phoneNumber:
-          (map['phoneNumber'] as String?)?.trim() ??
-          (map['phone'] as String?)?.trim(), // Support both fields
-      name: (map['name'] as String?) ?? '',
-      email: (map['email'] as String?)?.trim(),
-      avatarUrl: (map['avatarUrl'] as String?)?.trim(),
-      provider: (map['provider'] as String?)?.trim(),
-
-      gender: (map['gender'] as String?)?.trim(),
-      dob: parseTs(map['dob']),
-      provinceCode: parseInt(map['provinceCode']),
-      districtCode: parseInt(map['districtCode']),
-      wardCode: parseInt(map['wardCode']),
-      street: (map['street'] as String?)?.trim(),
-      wardName: (map['wardName'] as String?)?.trim(),
-      districtName: (map['districtName'] as String?)?.trim(),
-      provinceName: (map['provinceName'] as String?)?.trim(),
-      createdAt: parseTs(map['createdAt']),
-      updatedAt: parseTs(map['updatedAt']),
+      phone: (data['phone'] as String?)?.trim(),
+      email: (data['email'] as String?)?.trim(),
+      name: (data['name'] as String?)?.trim(),
+      avatarUrl: (data['avatarUrl'] as String?)?.trim(),
+      gender: (data['gender'] as String?)?.trim(),
+      dob: _parseDateTime(data['dob']),
+      provinceCode: _parseInt(data['provinceCode']),
+      districtCode: _parseInt(data['districtCode']),
+      wardCode: _parseInt(data['wardCode']),
+      street: (data['street'] as String?)?.trim(),
+      provider: (data['provider'] as String?)?.trim(),
+      uid: (data['uid'] as String?)?.trim(),
+      role: (data['role'] as String?)?.trim() ?? 'user',
+      createdAt: _parseDateTime(data['createdAt']),
+      lastLogin: _parseDateTime(data['lastLogin']),
+      updatedAt: _parseDateTime(data['updatedAt']),
     );
   }
 
-  factory UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? <String, dynamic>{};
-    return UserModel.fromFirestore(data, doc.id);
+  /// Create UserModel from JSON map
+  factory UserModel.fromMap(Map<String, dynamic> data) {
+    DateTime? _parseDateTime(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is DateTime) return value;
+      if (value is String) return DateTime.tryParse(value);
+      return null;
+    }
+
+    int? _parseInt(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
+      return null;
+    }
+
+    return UserModel(
+      phone: (data['phone'] as String?)?.trim(),
+      email: (data['email'] as String?)?.trim(),
+      name: (data['name'] as String?)?.trim(),
+      avatarUrl: (data['avatarUrl'] as String?)?.trim(),
+      gender: (data['gender'] as String?)?.trim(),
+      dob: _parseDateTime(data['dob']),
+      provinceCode: _parseInt(data['provinceCode']),
+      districtCode: _parseInt(data['districtCode']),
+      wardCode: _parseInt(data['wardCode']),
+      street: (data['street'] as String?)?.trim(),
+      provider: (data['provider'] as String?)?.trim(),
+      uid: (data['uid'] as String?)?.trim(),
+      role: (data['role'] as String?)?.trim() ?? 'user',
+      createdAt: _parseDateTime(data['createdAt']),
+      lastLogin: _parseDateTime(data['lastLogin']),
+      updatedAt: _parseDateTime(data['updatedAt']),
+    );
   }
 
-  Map<String, dynamic> toMap({bool includeTimestamps = true}) {
+  /// Convert UserModel to Map for Firestore storage
+  Map<String, dynamic> toMap() {
     return {
-      'phoneNumber': phoneNumber,
-      'phone': phoneNumber, // Lưu cả 2 fields cho backward compatibility
-      'name': name,
+      'phone': phone,
       'email': email,
+      'name': name,
       'avatarUrl': avatarUrl,
-      'provider': provider,
-
       'gender': gender,
-      'dob': dob != null ? Timestamp.fromDate(dob!) : null,
+      'dob': dob,
       'provinceCode': provinceCode,
       'districtCode': districtCode,
       'wardCode': wardCode,
       'street': street,
-      'wardName': wardName,
-      'districtName': districtName,
-      'provinceName': provinceName,
-      if (includeTimestamps) 'updatedAt': FieldValue.serverTimestamp(),
-      if (includeTimestamps && createdAt == null)
-        'createdAt': FieldValue.serverTimestamp(),
+      'provider': provider,
+      'uid': uid,
+      'role': role ?? 'user',
+      'createdAt': createdAt,
+      'lastLogin': lastLogin,
+      'updatedAt': updatedAt,
     };
   }
 
+  /// Create a copy of UserModel with updated fields
   UserModel copyWith({
-    String? id,
-    String? phoneNumber,
-    String? name,
+    String? phone,
     String? email,
+    String? name,
     String? avatarUrl,
-    String? provider,
-    String? street,
-    String? wardName,
-    String? districtName,
-    String? provinceName,
     String? gender,
     DateTime? dob,
     int? provinceCode,
     int? districtCode,
     int? wardCode,
+    String? street,
+    String? provider,
+    String? uid,
+    String? role,
     DateTime? createdAt,
+    DateTime? lastLogin,
     DateTime? updatedAt,
   }) {
     return UserModel(
-      id: id ?? this.id,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      name: name ?? this.name,
+      phone: phone ?? this.phone,
       email: email ?? this.email,
+      name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      provider: provider ?? this.provider,
-      street: street ?? this.street,
-      wardName: wardName ?? this.wardName,
-      districtName: districtName ?? this.districtName,
-      provinceName: provinceName ?? this.provinceName,
       gender: gender ?? this.gender,
       dob: dob ?? this.dob,
       provinceCode: provinceCode ?? this.provinceCode,
       districtCode: districtCode ?? this.districtCode,
       wardCode: wardCode ?? this.wardCode,
+      street: street ?? this.street,
+      provider: provider ?? this.provider,
+      uid: uid ?? this.uid,
+      role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
+      lastLogin: lastLogin ?? this.lastLogin,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  String get fullAddress {
-    final parts = [street, wardName, districtName, provinceName]
-        .where((e) => e != null && e.trim().isNotEmpty)
-        .map((e) => e!.trim())
-        .toList();
-    return parts.join(', ');
+  @override
+  String toString() {
+    return 'UserModel(phone: $phone, name: $name, email: $email, provider: $provider, role: $role)';
+  }
+
+  /// Check if user is admin
+  bool isAdmin() {
+    return role == 'admin';
+  }
+
+  /// Check if user has specific role
+  bool hasRole(String role) {
+    return this.role == role;
   }
 }

@@ -1,22 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/user_service.dart';
 
 /// Service để quản lý dữ liệu user trong Firestore
 class FirebaseService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static const String _cleanupFlagKey = 'legacy_deposit_cleanup_done_v1';
+  static const String _usersCollection = 'users';
 
-  // Collection users
-  // Provider-aware users collection reference getter
-  static CollectionReference<Map<String, dynamic>>?
-  _usersCollectionByCurrentAuth() {
-    final uid = _auth.currentUser?.uid;
-    if (uid != null)
-      return _firestore.collection(UserService.googleUsersCollection);
-    return null;
+  // Collection users reference getter
+  static CollectionReference<Map<String, dynamic>>
+  get _usersCollectionRef {
+    return _firestore.collection(_usersCollection);
   }
 
   /// Lưu thông tin user vào Firestore
@@ -25,18 +21,12 @@ class FirebaseService {
     required Map<String, dynamic> userData,
   }) async {
     try {
-      final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol != null) {
-        final uid = _auth.currentUser?.uid;
-        if (uid == null) return;
-        // Always key Google users by uid. Ignore caller-provided userId to avoid
-        // creating random/legacy doc IDs in Firestore.
-        await usersCol.doc(uid).set({
-          ...userData,
-          'updatedAt': FieldValue.serverTimestamp(),
-          'createdAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
+      // ✅ NEW: Single collection 'users' with phone-based document ID
+      await _usersCollectionRef.doc(userId).set({
+        ...userData,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       print('Error saving user data: $e');
       rethrow;
@@ -49,15 +39,10 @@ class FirebaseService {
     required Map<String, dynamic> data,
   }) async {
     try {
-      final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol != null) {
-        final uid = _auth.currentUser?.uid;
-        if (uid == null) return;
-        await usersCol.doc(uid).update({
-          ...data,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
+      await _usersCollectionRef.doc(userId).update({
+        ...data,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       print('Error updating user data: $e');
       rethrow;
@@ -67,11 +52,7 @@ class FirebaseService {
   /// Lấy thông tin user theo ID
   static Future<Map<String, dynamic>?> getUserData(String userId) async {
     try {
-      final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol == null) return null;
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) return null;
-      final doc = await usersCol.doc(uid).get();
+      final doc = await _usersCollectionRef.doc(userId).get();
       if (doc.exists) {
         return doc.data();
       }
@@ -86,13 +67,7 @@ class FirebaseService {
   static Stream<DocumentSnapshot<Map<String, dynamic>>> getUserDataStream(
     String userId,
   ) {
-    final usersCol = _usersCollectionByCurrentAuth();
-    if (usersCol == null) {
-      return Stream.empty();
-    }
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return Stream.empty();
-    return usersCol.doc(uid).snapshots();
+    return _usersCollectionRef.doc(userId).snapshots();
   }
 
   /// Lưu thông tin user sau khi đăng ký
@@ -111,6 +86,7 @@ class FirebaseService {
             'name': name ?? 'Người dùng',
             'email': email,
             'photoURL': currentUser.photoURL,
+            'role': 'user',
           },
         );
       }
@@ -131,6 +107,7 @@ class FirebaseService {
           'photoURL': user.photoURL,
           'phone': user.phoneNumber,
           'provider': 'google',
+          'role': 'user',
         },
       );
     } catch (e) {
@@ -142,12 +119,7 @@ class FirebaseService {
   /// Xóa dữ liệu user
   static Future<void> deleteUserData(String userId) async {
     try {
-      final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol != null) {
-        final uid = _auth.currentUser?.uid;
-        if (uid == null) return;
-        await usersCol.doc(uid).delete();
-      }
+      await _usersCollectionRef.doc(userId).delete();
     } catch (e) {
       print('Error deleting user data: $e');
       rethrow;
@@ -157,11 +129,7 @@ class FirebaseService {
   /// Kiểm tra user đã tồn tại chưa
   static Future<bool> userExists(String userId) async {
     try {
-      final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol == null) return false;
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) return false;
-      final doc = await usersCol.doc(uid).get();
+      final doc = await _usersCollectionRef.doc(userId).get();
       return doc.exists;
     } catch (e) {
       print('Error checking user exists: $e');
@@ -172,9 +140,7 @@ class FirebaseService {
   /// Lấy danh sách tất cả users (admin only)
   static Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
-      final usersCol = _usersCollectionByCurrentAuth();
-      if (usersCol == null) return [];
-      final snapshot = await usersCol.get();
+      final snapshot = await _usersCollectionRef.get();
       return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
     } catch (e) {
       print('Error getting all users: $e');
@@ -185,18 +151,13 @@ class FirebaseService {
   /// Tìm user theo số điện thoại
   static Future<Map<String, dynamic>?> getUserByPhone(String phone) async {
     try {
-      // For phone-based lookup, use the phone collection
-      final phoneRef = FirebaseFirestore.instance.collection(
-        UserService.phoneUsersCollection,
-      );
-      final snapshot = await phoneRef
-          .where('phone', isEqualTo: phone)
-          .limit(1)
-          .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        final doc = snapshot.docs.first;
-        return {'id': doc.id, ...doc.data()};
+      // ✅ NEW: Single collection 'users' with phone-based doc ID
+      final doc = await _usersCollectionRef.doc(phone).get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          return {'id': doc.id, ...data};
+        }
       }
       return null;
     } catch (e) {

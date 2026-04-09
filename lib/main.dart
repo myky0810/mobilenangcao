@@ -14,7 +14,7 @@ import 'package:doan_cuoiki/screen/loginhaspass.dart';
 import 'package:doan_cuoiki/screen/homescreen.dart';
 import 'package:doan_cuoiki/screen/profile.dart';
 import 'package:doan_cuoiki/screen/infomation.dart';
-import 'package:doan_cuoiki/screen/info.dart';
+import 'package:doan_cuoiki/screen/changeinfo.dart';
 import 'package:doan_cuoiki/screen/changepass.dart';
 import 'package:doan_cuoiki/screen/newcar.dart';
 import 'package:doan_cuoiki/screen/favorite.dart';

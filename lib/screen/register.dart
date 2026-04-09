@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../services/user_service.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/otp_service.dart';
@@ -274,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       // Kiểm tra số điện thoại đã tồn tại trong Firestore chưa
       final normalizedPhone = FirebaseHelper.normalizePhone(fullPhoneNumber);
       final userDoc = await FirebaseFirestore.instance
-          .collection(UserService.phoneUsersCollection)
+          .collection('users')
           .doc(normalizedPhone)
           .get();
 

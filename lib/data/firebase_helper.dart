@@ -5,22 +5,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-/// Firestore-only auth (phone + password) per your requirement.
+/// ✅ Unified Phone + Google Authentication Helper
 ///
-/// Collection: `users_phone`
-/// Document id: normalized phone (unique)
+/// Collection: `users` (single collection for all users)
+/// Document ID: normalized phone (consistent across both methods)
 /// Fields:
 /// - phone: normalized phone
-/// - passwordSalt: random salt (base64)
-/// - passwordHash: sha256(salt + password) (hex)
+/// - provider: 'google' or 'phone'
+/// - uid: Firebase UID (optional for Google)
+/// - passwordSalt: random salt (base64) - only for phone provider
+/// - passwordHash: sha256(salt + password) (hex) - only for phone provider
 /// - createdAt: server timestamp
+/// - lastLogin: server timestamp
 class FirebaseHelper {
   FirebaseHelper._();
 
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static CollectionReference<Map<String, dynamic>> get _users =>
-      _db.collection('users_phone');
+      _db.collection('users');
 
   static String normalizePhone(String input) {
     var p = input.trim().replaceAll(' ', '');
@@ -36,12 +39,25 @@ class FirebaseHelper {
     return base64UrlEncode(data);
   }
 
+  /// ✅ Public method: Generate secure salt for password hashing
+  static String generateSalt({int bytes = 16}) {
+    return _randomSaltBase64(bytes: bytes);
+  }
+
   static String _hashPassword({
     required String saltBase64,
     required String pass,
   }) {
     final bytes = utf8.encode('$saltBase64$pass');
     return sha256.convert(bytes).toString();
+  }
+
+  /// ✅ Public method: Hash password with salt
+  static String hashPassword({
+    required String salt,
+    required String password,
+  }) {
+    return _hashPassword(saltBase64: salt, pass: password);
   }
 
   static Future<bool> phoneExists(String phone) async {
@@ -73,6 +89,7 @@ class FirebaseHelper {
         'phone': normalized,
         'passwordSalt': salt,
         'passwordHash': hash,
+        'role': 'user',
         'createdAt': FieldValue.serverTimestamp(),
       });
     });

@@ -6,7 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../services/user_service.dart';
+import '../services/google_phone_registration.dart';
+import 'google_phone_registration_screen.dart';
 
 class LoginEmail extends StatefulWidget {
   const LoginEmail({super.key});
@@ -418,27 +419,46 @@ class _LoginEmailState extends State<LoginEmail>
       final uid = user.uid.trim();
 
       print(
-        '💾 Saving to Firestore: email=$email, name=$displayName, uid=$uid',
+        '💾 Google authenticated: email=$email, name=$displayName, uid=$uid',
       );
 
-      // ✅ GỌI HÀM saveUserToFirestore từ UserService
-      await UserService.saveUserToFirestore(user, 'google');
-      print('✅ Saved to Firestore via UserService');
+      // ✅ Check if this Google account already has a phone registered
+      final phoneForThisUid =
+          await GooglePhoneRegistration.getPhoneByGoogleUid(uid);
 
-      print('🎉 Google login successful! Navigating to home...');
+      if (phoneForThisUid != null) {
+        // ✅ Already registered → just update lastLogin
+        print('✅ Google account found with phone: $phoneForThisUid');
+        await GooglePhoneRegistration.recordGoogleLogin(user);
 
-      if (!mounted) return;
-      setState(() => _isGoogleLoading = false);
+        print('🎉 Google login successful! Navigating to home...');
 
-      // Navigate to home screen
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/home',
-        (route) => false,
-        // For Google login, downstream screens should rely on FirebaseAuth uid.
-        // Passing email here can be misinterpreted as a phone identifier.
-        arguments: null,
-      );
+        if (!mounted) return;
+        setState(() => _isGoogleLoading = false);
+
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: phoneForThisUid,
+        );
+      } else {
+        // ❌ First time Google login → navigate to phone registration screen
+        print('📱 First time Google login → navigating to phone registration screen');
+
+        if (!mounted) return;
+        setState(() => _isGoogleLoading = false);
+
+        // Navigate to phone registration screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GooglePhoneRegistrationScreen(
+              firebaseUser: user,
+            ),
+          ),
+        );
+      }
     } on GoogleSignInException catch (e) {
       print('❌ Google Sign In Exception: ${e.code} - ${e.description}');
       if (!mounted) return;

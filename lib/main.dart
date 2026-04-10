@@ -35,6 +35,7 @@ import 'package:doan_cuoiki/screen/calendar_drive.dart';
 import 'package:doan_cuoiki/screen/AIChat.dart';
 import 'package:doan_cuoiki/screen/deposit_screen.dart';
 import 'package:doan_cuoiki/screen/mycar.dart';
+import 'package:doan_cuoiki/screen/elite_members.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/car_data_service.dart';
@@ -271,6 +272,11 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments;
           final phoneNumber = args is String ? args : null;
           return MyCarScreen(phoneNumber: phoneNumber);
+        },
+        EliteMembersScreen.routeName: (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return EliteMembersScreen(phoneNumber: phoneNumber);
         },
       },
     );

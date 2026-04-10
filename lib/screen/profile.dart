@@ -302,6 +302,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               thickness: 1,
                               height: 1,
                             ),
+                            // Bảo hành xe
+                            _buildMenuItem(
+                              icon: Icons.verified_user_outlined,
+                              title: 'Bảo hành xe',
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/warranty',
+                                  arguments: widget.phoneNumber,
+                                );
+                              },
+                              showArrow: true,
+                            ),
+                            const Divider(
+                              color: Color(0xFF4a4a4a),
+                              thickness: 1,
+                              height: 1,
+                            ),
                             // Cho phép đăng nhập Face ID (không sử dụng)
                             _buildSwitchMenuItem(
                               icon: Icons.face_outlined,

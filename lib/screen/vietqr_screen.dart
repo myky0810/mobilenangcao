@@ -7,6 +7,8 @@ import '../services/user_service.dart';
 import '../services/vietqr_service.dart';
 import '../services/bank_transaction_checker.dart';
 import '../services/email_service.dart';
+import '../services/warranty_service.dart';
+import '../services/garage_service.dart';
 
 class VietQRScreen extends StatefulWidget {
   final String carName;
@@ -440,6 +442,41 @@ class _VietQRScreenState extends State<VietQRScreen>
             'bookingId': bookingId,
             'updatedAt': FieldValue.serverTimestamp(),
           });
+
+      // ✅ TỰ TẠO WARRANTY PENDING KHI ĐẶT CỌC THÀNH CÔNG
+      final warrantyPhone = widget.phoneNumber.trim();
+      if (warrantyPhone.isNotEmpty) {
+        try {
+          await WarrantyService.createPendingWarranty(
+            userId: warrantyPhone,
+            carName: widget.carName,
+            carBrand: widget.carData['carBrand'] ?? '',
+            carImage: widget.carData['carImage'] ?? '',
+            showroomName: widget.carData['showroom']?['name'] ?? '',
+            showroomAddress: widget.carData['showroom']?['address'] ?? '',
+            bookingId: bookingId,
+            transactionId: _transactionId,
+          );
+          print('✅ Pending warranty created for $warrantyPhone');
+        } catch (e) {
+          print('⚠️ Warranty creation failed (non-blocking): $e');
+        }
+
+        // ✅ TỰ THÊM XE VÀO GARAGE (MY CAR) KHI ĐẶT CỌC THÀNH CÔNG
+        try {
+          await GarageService.addPurchasedCar(
+            userId: warrantyPhone,
+            carName: widget.carName,
+            carBrand: widget.carData['carBrand'] ?? '',
+            carImage: widget.carData['carImage'] ?? '',
+            bookingId: bookingId,
+            showroomName: widget.carData['showroom']?['name'] ?? '',
+          );
+          print('✅ Car added to garage for $warrantyPhone');
+        } catch (e) {
+          print('⚠️ Garage add failed (non-blocking): $e');
+        }
+      }
 
       print('');
       print('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓');

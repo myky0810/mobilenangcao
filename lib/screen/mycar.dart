@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/firebase_helper.dart';
 import '../services/garage_service.dart';
+import '../screen/elite_members.dart';
 import '../widgets/floating_car_bottom_nav.dart';
 
 class MyCarScreen extends StatefulWidget {
@@ -122,146 +123,133 @@ class _MyCarScreenState extends State<MyCarScreen> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'My Garage',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Curated Collection',
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: const [
+        Text(
+          'My Garage',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(height: 2),
       ],
     );
   }
 
   Widget _buildMemberStatusCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: _cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF3B82C8), Color(0xFF1E5A9E)],
+    final phoneArg = widget.phoneNumber;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            EliteMembersScreen.routeName,
+            arguments: phoneArg,
+          );
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10131B),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 26,
+                offset: const Offset(0, 14),
               ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.badge_rounded, color: Colors.white),
+            ],
           ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          child: Row(
+            children: const [
+              Icon(Icons.workspace_premium_rounded, color: Color(0xFF2F6FED)),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   'MEMBER STATUS',
                   style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Elite Member',
-                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
                     fontWeight: FontWeight.w900,
+                    letterSpacing: 0.2,
                   ),
                 ),
-              ],
-            ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.white54),
+            ],
           ),
-          const Icon(Icons.chevron_right_rounded, color: Colors.white54),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildAddNewVehicleCard() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 18, 14, 18),
-      decoration: BoxDecoration(
-        color: _cardSurface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          final phoneArg = _normalizedPhone;
+          Navigator.pushReplacementNamed(
+            context,
+            '/newcar',
+            arguments: phoneArg,
+          );
+        },
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 18, 14, 18),
+          decoration: BoxDecoration(
+            color: _cardSurface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 26,
+                offset: const Offset(0, 14),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.06),
-              border: Border.all(color: Colors.white12),
-            ),
-            child: const Icon(Icons.add, color: Colors.white70),
+          child: Column(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.06),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: const Icon(Icons.add, color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Add New Vehicle',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Register a new LuxeDrive compatible car',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          const Text(
-            'Add New Vehicle',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Register a new LuxeDrive compatible car',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white38,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -331,6 +319,8 @@ class _GarageVehicleCard extends StatelessWidget {
 
     final statusColor = status.toUpperCase().contains('ACTIVE')
         ? const Color(0xFF2F6FED)
+        : status.toUpperCase().contains('ORDERED')
+        ? const Color(0xFFFF9800)
         : const Color(0xFF7C6CFF);
 
     return Container(
@@ -357,7 +347,25 @@ class _GarageVehicleCard extends StatelessWidget {
                 Positioned.fill(
                   child: Opacity(
                     opacity: 0.92,
-                    child: Image.network(imageUrl, fit: BoxFit.cover),
+                    child: imageUrl.startsWith('assets/')
+                        ? Image.asset(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset(
+                                  'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg',
+                                  fit: BoxFit.cover,
+                                ),
+                          )
+                        : Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.asset(
+                                  'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg',
+                                  fit: BoxFit.cover,
+                                ),
+                          ),
                   ),
                 ),
                 Positioned.fill(
@@ -383,16 +391,18 @@ class _GarageVehicleCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.15),
+                      // Tăng độ tương phản để nhìn rõ trạng thái
+                      color: statusColor.withValues(alpha: 0.42),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: statusColor.withValues(alpha: 0.45),
+                        color: statusColor.withValues(alpha: 0.98),
+                        width: 1.5,
                       ),
                     ),
                     child: Text(
                       status.toUpperCase(),
                       style: TextStyle(
-                        color: statusColor.withValues(alpha: 0.95),
+                        color: Colors.white.withValues(alpha: 0.98),
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.7,
@@ -418,11 +428,11 @@ class _GarageVehicleCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Icon(
-                  Icons.mode_edit_outline_rounded,
-                  color: statusColor.withValues(alpha: 0.9),
-                  size: 16,
+                  Icons.verified_rounded,
+                  color: const Color(0xFF2F6FED),
+                  size: 18,
                 ),
               ],
             ),

@@ -1,6 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
+import '../data/firebase_helper.dart';
+import '../services/warranty_service.dart';
+import '../widgets/floating_car_bottom_nav.dart';
 
 class WarrantyScreen extends StatefulWidget {
   final String? phoneNumber;
@@ -12,839 +17,215 @@ class WarrantyScreen extends StatefulWidget {
 }
 
 class _WarrantyScreenState extends State<WarrantyScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _carNameController = TextEditingController();
-  final _vinController = TextEditingController();
-  final _issueController = TextEditingController();
-  final _historySearchController = TextEditingController();
+  // ── Colors ──
+  static const _bg = Color(0xFF0A0E1A);
+  static const _card = Color(0xFF141822);
+  static const _accent = Color(0xFF3B82F6);
+  static const _cardSurface = Color(0xFF14161B);
 
-  DateTime? _purchaseDate;
-  bool _isSubmitting = false;
-  int _activeNavIndex = 3;
-  String _selectedStatusFilter = 'all';
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.phoneNumber != null && widget.phoneNumber!.isNotEmpty) {
-      _phoneController.text = widget.phoneNumber!;
-    }
+  String? get _userId {
+    final phone = widget.phoneNumber;
+    if (phone == null || phone.trim().isEmpty) return null;
+    return FirebaseHelper.normalizePhone(phone);
   }
 
-  @override
-  void dispose() {
-    _fullNameController.dispose();
-    _phoneController.dispose();
-    _carNameController.dispose();
-    _vinController.dispose();
-    _issueController.dispose();
-    _historySearchController.dispose();
-    super.dispose();
-  }
+  // ─── Activate a pending warranty ────────────────────────────────────
+  void _showActivatePendingDialog(Map<String, dynamic> warranty) {
+    final vinCtrl = TextEditingController();
+    final odoCtrl = TextEditingController();
+    final plateCtrl = TextEditingController();
+    DateTime? date;
+    final pendingId = (warranty['id'] ?? '').toString();
 
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
+    showModalBottomSheet(
       context: context,
-      initialDate: _purchaseDate ?? now,
-      firstDate: DateTime(now.year - 10),
-      lastDate: now,
-    );
-
-    if (picked != null) {
-      setState(() {
-        _purchaseDate = picked;
-      });
-    }
-  }
-
-  Future<void> _submitWarranty() async {
-    if (_isSubmitting) return;
-    if (!_formKey.currentState!.validate()) return;
-    if (_purchaseDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ngày mua xe')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      await FirebaseFirestore.instance.collection('warranties').add({
-        'fullName': _fullNameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'carName': _carNameController.text.trim(),
-        'vinOrPlate': _vinController.text.trim(),
-        'issueDescription': _issueController.text.trim(),
-        'purchaseDate': DateFormat('yyyy-MM-dd').format(_purchaseDate!),
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
-        'source': 'mobile_app',
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gửi yêu cầu bảo hành thành công')),
-      );
-      _formKey.currentState!.reset();
-      _fullNameController.clear();
-      _carNameController.clear();
-      _vinController.clear();
-      _issueController.clear();
-      if (widget.phoneNumber == null || widget.phoneNumber!.isEmpty) {
-        _phoneController.clear();
-      }
-      setState(() {
-        _purchaseDate = null;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể gửi bảo hành, vui lòng thử lại'),
-        ),
-      );
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _isSubmitting = false;
-      });
-    }
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'processing':
-        return Colors.orange;
-      case 'done':
-        return Colors.green;
-      case 'rejected':
-        return Colors.redAccent;
-      default:
-        return Colors.blueGrey;
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'processing':
-        return 'Đang xử lý';
-      case 'done':
-        return 'Đã hoàn tất';
-      case 'rejected':
-        return 'Từ chối';
-      default:
-        return 'Chờ tiếp nhận';
-    }
-  }
-
-  void _showWarrantyDetails(Map<String, dynamic> data) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF121B28),
+      isScrollControlled: true,
+      backgroundColor: _card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (context) {
-        final status = (data['status'] ?? 'pending').toString();
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
                   width: 44,
                   height: 5,
-                  margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        (data['carName'] ?? '').toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _statusColor(status).withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        _statusLabel(status),
-                        style: TextStyle(
-                          color: _statusColor(status),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'VIN/Biển số: ${(data['vinOrPlate'] ?? '').toString()}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ngày mua: ${(data['purchaseDate'] ?? '--').toString()}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Mô tả lỗi:',
-                  style: TextStyle(
-                    color: Colors.grey[300],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  (data['issueDescription'] ?? '').toString(),
-                  style: const TextStyle(color: Colors.white70, height: 1.35),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatusFilters() {
-    final filters = <Map<String, String>>[
-      {'value': 'all', 'label': 'Tất cả'},
-      {'value': 'pending', 'label': 'Chờ tiếp nhận'},
-      {'value': 'processing', 'label': 'Đang xử lý'},
-      {'value': 'done', 'label': 'Hoàn tất'},
-      {'value': 'rejected', 'label': 'Từ chối'},
-    ];
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: filters.map((item) {
-        final selected = _selectedStatusFilter == item['value'];
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedStatusFilter = item['value']!;
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected
-                  ? const Color(0xFF3b82c8)
-                  : const Color(0xFF1a1a1a),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: selected ? const Color(0xFF3b82c8) : Colors.white12,
               ),
-            ),
-            child: Text(
-              item['label']!,
-              style: TextStyle(
-                color: selected ? Colors.white : Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildHistorySection() {
-    final phone = _phoneController.text.trim();
-    if (phone.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: const Text(
-          'Nhập số điện thoại để xem lịch sử bảo hành.',
-          style: TextStyle(color: Colors.white60),
-        ),
-      );
-    }
-
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('warranties')
-          .where('phone', isEqualTo: phone)
-          .limit(30)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        final docs =
-            (snapshot.data?.docs ??
-                  <QueryDocumentSnapshot<Map<String, dynamic>>>[])
-              ..sort((a, b) {
-                final aTs = a.data()['createdAt'];
-                final bTs = b.data()['createdAt'];
-                final aMs = aTs is Timestamp ? aTs.millisecondsSinceEpoch : 0;
-                final bMs = bTs is Timestamp ? bTs.millisecondsSinceEpoch : 0;
-                return bMs.compareTo(aMs);
-              });
-
-        final keyword = _historySearchController.text.trim().toLowerCase();
-
-        final filteredDocs = docs
-            .where((doc) {
-              if (_selectedStatusFilter == 'all') return true;
-              return (doc.data()['status'] ?? 'pending').toString() ==
-                  _selectedStatusFilter;
-            })
-            .where((doc) {
-              if (keyword.isEmpty) return true;
-              final carName = (doc.data()['carName'] ?? '')
-                  .toString()
-                  .toLowerCase();
-              return carName.contains(keyword);
-            })
-            .toList();
-
-        final pendingCount = docs
-            .where((doc) => (doc.data()['status'] ?? 'pending') == 'pending')
-            .length;
-        final processingCount = docs
-            .where((doc) => (doc.data()['status'] ?? '') == 'processing')
-            .length;
-        final doneCount = docs
-            .where((doc) => (doc.data()['status'] ?? '') == 'done')
-            .length;
-
-        if (docs.isEmpty) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1a1a1a),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white12),
-            ),
-            child: const Text(
-              'Chưa có yêu cầu bảo hành nào.',
-              style: TextStyle(color: Colors.white60),
-            ),
-          );
-        }
-
-        return Column(
-          children: [
-            Row(
-              children: [
-                _buildStatTile('Chờ', pendingCount, Colors.blueGrey),
-                const SizedBox(width: 8),
-                _buildStatTile('Xử lý', processingCount, Colors.orange),
-                const SizedBox(width: 8),
-                _buildStatTile('Xong', doneCount, Colors.green),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildStatusFilters(),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _historySearchController,
-              style: const TextStyle(color: Colors.white),
-              onChanged: (_) {
-                setState(() {});
-              },
-              decoration: InputDecoration(
-                hintText: 'Tìm theo tên xe',
-                hintStyle: const TextStyle(color: Colors.white38),
-                filled: true,
-                fillColor: const Color(0xFF1a1a1a),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.white12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.white12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF3b82c8),
-                    width: 1.5,
-                  ),
-                ),
-                suffixIcon: _historySearchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                        onPressed: () {
-                          _historySearchController.clear();
-                          setState(() {});
-                        },
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white54,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (filteredDocs.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1a1a1a),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: const Text(
-                  'Không có dữ liệu phù hợp bộ lọc.',
-                  style: TextStyle(color: Colors.white60),
-                ),
-              ),
-            ...filteredDocs.map((doc) {
-              final data = doc.data();
-              final status = (data['status'] ?? 'pending').toString();
-              final createdAtRaw = data['createdAt'];
-              final createdAt = createdAtRaw is Timestamp
-                  ? DateFormat('dd/MM/yyyy HH:mm').format(createdAtRaw.toDate())
-                  : '--';
-
-              return GestureDetector(
-                onTap: () => _showWarrantyDetails(data),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1a1a1a),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              (data['carName'] ?? '').toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _statusColor(
-                                status,
-                              ).withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              _statusLabel(status),
-                              style: TextStyle(
-                                color: _statusColor(status),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'VIN/Biển số: ${(data['vinOrPlate'] ?? '').toString()}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Lỗi: ${(data['issueDescription'] ?? '').toString()}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            'Tạo lúc: $createdAt',
-                            style: const TextStyle(
-                              color: Colors.white38,
-                              fontSize: 11,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: Colors.white30,
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildStatTile(String label, int count, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Column(
-          children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white60, fontSize: 11),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _onNavTap(int index) {
-    setState(() {
-      _activeNavIndex = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(
-          context,
-          '/home',
-          arguments: widget.phoneNumber,
-        );
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(
-          context,
-          '/newcar',
-          arguments: widget.phoneNumber,
-        );
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(
-          context,
-          '/mycar',
-          arguments: widget.phoneNumber,
-        );
-        break;
-      case 3:
-        Navigator.pushReplacementNamed(
-          context,
-          '/favorite',
-          arguments: widget.phoneNumber,
-        );
-        break;
-      case 4:
-        Navigator.pushReplacementNamed(
-          context,
-          '/profile',
-          arguments: widget.phoneNumber,
-        );
-        break;
-    }
-  }
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white30),
-      filled: true,
-      fillColor: const Color(0xFF1a1a1a),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white12),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.white12),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF3b82c8), width: 2),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 18, 32, 47),
-        elevation: 0,
-        title: const Text(
-          'BẢO HÀNH',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+              const SizedBox(height: 16),
               const Text(
-                'Gửi yêu cầu bảo hành',
+                'Kích hoạt bảo hành',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Nhập thông tin xe và lỗi để trung tâm hỗ trợ nhanh hơn.',
-                style: TextStyle(color: Colors.white60, fontSize: 13),
+              const SizedBox(height: 4),
+              Text(
+                (warranty['carName'] ?? '').toString(),
+                style: const TextStyle(
+                  color: _accent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _fullNameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Họ và tên'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Nhập họ tên'
-                    : null,
+              const SizedBox(height: 18),
+              _buildSheetField(
+                vinCtrl,
+                'VIN (17 ký tự)',
+                TextInputType.text,
+                maxLength: 17,
+                enforceUppercase: true,
+                onlyAlnum: true,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Số điện thoại'),
-                onChanged: (_) {
-                  setState(() {});
-                },
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Nhập số điện thoại'
-                    : null,
+              const SizedBox(height: 10),
+              _buildSheetField(
+                plateCtrl,
+                'Biển số (tuỳ chọn)',
+                TextInputType.text,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _carNameController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Tên xe'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Nhập tên xe'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _vinController,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Số VIN hoặc biển số'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Nhập VIN/biển số'
-                    : null,
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              _buildSheetField(odoCtrl, 'Số ODO (km)', TextInputType.number),
+              const SizedBox(height: 10),
               InkWell(
-                onTap: _pickDate,
+                onTap: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: date ?? now,
+                    firstDate: DateTime(now.year - 10),
+                    lastDate: now,
+                    builder: (c, child) => Theme(
+                      data: ThemeData.dark().copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: _accent,
+                          surface: _card,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) setSheetState(() => date = picked);
+                },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
+                    horizontal: 14,
+                    vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1a1a1a),
+                    color: const Color(0xFF1A1F2E),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white12),
                   ),
                   child: Text(
-                    _purchaseDate == null
-                        ? 'Chọn ngày mua xe'
-                        : DateFormat('dd/MM/yyyy').format(_purchaseDate!),
+                    date == null
+                        ? 'Chọn ngày mua/nhận xe'
+                        : DateFormat('dd/MM/yyyy').format(date!),
                     style: TextStyle(
-                      color: _purchaseDate == null
-                          ? Colors.white30
-                          : Colors.white,
+                      color: date == null ? Colors.white30 : Colors.white,
                       fontSize: 14,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _issueController,
-                maxLines: 4,
-                style: const TextStyle(color: Colors.white),
-                decoration: _inputDecoration('Mô tả lỗi cần bảo hành'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Nhập mô tả lỗi bảo hành'
-                    : null,
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 50,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitWarranty,
+                  onPressed: () async {
+                    final vin = vinCtrl.text.trim().toUpperCase();
+                    final odoText = odoCtrl.text.trim();
+
+                    // Validate required fields.
+                    // Theo yêu cầu: nếu thiếu input fields -> hiển thị đúng message chung.
+                    if (vin.isEmpty || odoText.isEmpty || date == null) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: const Text('Vui lòng nhập đầy đủ thông tin'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFFF59E0B),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                            ),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (vin.length != 17) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: const Text('VIN phải đủ 17 ký tự'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFFF59E0B),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.18),
+                            ),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final userId = _userId;
+                    if (userId == null) return;
+
+                    await WarrantyService.activatePendingWarranty(
+                      userId: userId,
+                      pendingDocId: pendingId,
+                      vin: vin,
+                      purchaseDate: DateFormat('yyyy-MM-dd').format(date!),
+                      odoAtActivation: odoText,
+                      licensePlate: plateCtrl.text.trim(),
+                    );
+
+                    if (!ctx.mounted) return;
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text('🎉 Kích hoạt bảo hành thành công!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3b82c8),
-                    foregroundColor: Colors.white,
+                    backgroundColor: _accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text(
-                          'GỬI BẢO HÀNH',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                  child: const Text(
+                    'KÍCH HOẠT',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 26),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Lịch sử bảo hành',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(() {});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã làm mới danh sách')),
-                      );
-                    },
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Làm mới'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF7eb7f0),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Lọc theo trạng thái và tìm theo tên xe.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-              const SizedBox(height: 10),
-              _buildHistorySection(),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: const BoxDecoration(color: Colors.transparent),
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1a1a1a),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, -3),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(Icons.home_rounded, 0),
-              // NewCar -> đổi thành kính lúp (search)
-              _buildNavItem(Icons.search_rounded, 1),
-              // My Car -> icon xe ở giữa
-              _buildNavItem(Icons.directions_car_rounded, 2),
-              _buildNavItem(Icons.favorite_rounded, 3),
-              _buildNavItem(Icons.person_rounded, 4),
             ],
           ),
         ),
@@ -852,29 +233,1247 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
-    final isActive = _activeNavIndex == index;
-    return GestureDetector(
-      onTap: () => _onNavTap(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [const Color(0xFF3b82c8), const Color(0xFF1e5a9e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
+  Widget _buildSheetField(
+    TextEditingController ctrl,
+    String hint,
+    TextInputType type, {
+    int? maxLength,
+    bool enforceUppercase = false,
+    bool onlyAlnum = false,
+  }) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: type,
+      inputFormatters: [
+        if (maxLength != null) LengthLimitingTextInputFormatter(maxLength),
+        if (onlyAlnum)
+          FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+        if (enforceUppercase) _upperCaseTextFormatter(),
+      ],
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white30),
+        filled: true,
+        fillColor: const Color(0xFF1A1F2E),
+        counterText: '',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white12),
         ),
-        child: Icon(
-          icon,
-          color: isActive ? Colors.white : Colors.grey[600],
-          size: isActive ? 28 : 26,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _accent, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+      ),
+    );
+  }
+
+  /// Formatter: auto upper-case while typing.
+  /// (Used for VIN input)
+  ///
+  /// Note: This doesn't validate VIN rules; only normalizes casing.
+  static TextInputFormatter _upperCaseTextFormatter() =>
+      TextInputFormatter.withFunction((oldValue, newValue) {
+        final upper = newValue.text.toUpperCase();
+        return newValue.copyWith(
+          text: upper,
+          selection: newValue.selection,
+          composing: TextRange.empty,
+        );
+      });
+
+  // ─── Warranty details (full-screen modal) ───────────────────────────
+  void _showWarrantyDetails(Map<String, dynamic> w) {
+    final explicitImg = (w['imageUrl'] ?? w['carImage'] ?? '').toString();
+    final carBrand = (w['carBrand'] ?? '').toString();
+    final headerImg = _resolveWarrantyHeaderImage(
+      explicit: explicitImg,
+      brand: carBrand,
+    );
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.65),
+        pageBuilder: (ctx, anim, _) {
+          return FadeTransition(
+            opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
+            child: _WarrantyDetailsSheet(
+              warranty: w,
+              headerImage: headerImg,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // _buildInfoRow removed (details UI moved to a dedicated full-screen sheet)
+
+  // ─── BUILD ──────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'BẢO HÀNH XE',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: _buildWarrantyList(),
+      bottomNavigationBar: FloatingCarBottomNav(
+        currentIndex: -1,
+        onTap: (index) {
+          final phone = widget.phoneNumber;
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/home', arguments: phone);
+          } else if (index == 1) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/newcar',
+              arguments: phone,
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/mycar', arguments: phone);
+          } else if (index == 3) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/favorite',
+              arguments: phone,
+            );
+          } else if (index == 4) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/profile',
+              arguments: phone,
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // WARRANTY LIST
+  // ═══════════════════════════════════════════════════════════════════
+  Widget _buildWarrantyList() {
+    final userId = _userId;
+    if (userId == null) {
+      return const Center(
+        child: Text(
+          'Bạn cần đăng nhập để xem bảo hành.',
+          style: TextStyle(color: Colors.white60),
+        ),
+      );
+    }
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: WarrantyService.streamWarranties(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(color: _accent));
+        }
+
+        final warranties = snapshot.data ?? [];
+        if (warranties.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.shield_outlined, color: Colors.white24, size: 64),
+                const SizedBox(height: 14),
+                const Text(
+                  'Chưa có bảo hành nào',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Hãy đặt cọc mua xe để tự động nhận bảo hành',
+                  style: TextStyle(color: Colors.white30, fontSize: 12),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
+          itemCount: warranties.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final w = warranties[index];
+            return _buildWarrantyCard(w);
+          },
+        );
+      },
+    );
+  }
+
+  // ─── Warranty card ──────────────────────────────────────────────────
+  Widget _buildWarrantyCard(Map<String, dynamic> w) {
+    final status = (w['status'] ?? 'pending').toString();
+    final carName = (w['carName'] ?? '').toString();
+    final vin = (w['vin'] ?? '').toString();
+    final carBrand = (w['carBrand'] ?? '').toString();
+
+    // Data binding: ưu tiên field warranty, nếu thiếu fallback theo schema garageVehicles.
+    // warranty fields: odoAtActivation, showroomName
+    // garage vehicles fields: odometerValue / showroom (nếu có)
+    final odo = ((w['odoAtActivation'] ?? w['odometerValue']) ?? '').toString();
+    final showroomName = ((w['showroomName'] ?? w['showroom']) ?? '')
+        .toString();
+    final showroomAddress = ((w['showroomAddress'] ?? '') ?? '').toString();
+
+    // Image binding (từ DB). Nếu không có thì dùng fallback theo brand để tránh 2 xe khác nhau bị trùng ảnh.
+    final imageUrl = (w['imageUrl'] ?? w['carImage'] ?? '').toString();
+    final headerImage = _resolveWarrantyHeaderImage(
+      explicit: imageUrl,
+      brand: carBrand,
+    );
+
+    final isPending = status == 'pending';
+    final isActive = status == 'active';
+
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    if (isActive) {
+      statusColor = Colors.green;
+      statusLabel = 'Đang hoạt động';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isPending) {
+      statusColor = Colors.orange;
+      statusLabel = 'Chờ kích hoạt';
+      statusIcon = Icons.hourglass_bottom_rounded;
+    } else {
+      statusColor = Colors.red;
+      statusLabel = 'Hết hạn';
+      statusIcon = Icons.cancel_rounded;
+    }
+
+    // End date
+    String endDateStr = '--';
+    final endDateRaw = w['endDate'];
+    if (endDateRaw is Timestamp) {
+      endDateStr = DateFormat('dd/MM/yyyy').format(endDateRaw.toDate());
+    }
+
+    // UI theo thiết kế ảnh: image header + status pill + tiles + expiry + button
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isPending
+            ? () => _showActivatePendingDialog(w)
+            : () => _showWarrantyDetails(w),
+        borderRadius: BorderRadius.circular(22),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: _cardSurface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.45),
+                blurRadius: 26,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 210,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Opacity(
+                          opacity: 0.92,
+                          child: headerImage.startsWith('assets/')
+                              ? Image.asset(
+                                  headerImage,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      _fallbackHeaderImage(),
+                                )
+                              : (headerImage.isNotEmpty
+                                    ? Image.network(
+                                        headerImage,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                _fallbackHeaderImage(),
+                                      )
+                                    : _fallbackHeaderImage()),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.05),
+                                Colors.black.withValues(alpha: 0.78),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 14,
+                        top: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            // Tăng độ tương phản để nhìn rõ hơn trên nền tối
+                            color: statusColor.withValues(alpha: 0.30),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: statusColor.withValues(alpha: 0.90),
+                              width: 1.3,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                statusIcon,
+                                color: Colors.white.withValues(alpha: 0.98),
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                statusLabel.toUpperCase(),
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.98),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              carName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            if (vin.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'VIN: $vin',
+                                style: const TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F1116),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Icon(
+                          Icons.verified_rounded,
+                          color: _accent,
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _InfoTile(
+                          icon: Icons.speed_rounded,
+                          label: 'ODOMETER',
+                          value: odo.isNotEmpty ? odo : '--',
+                          suffix: odo.isNotEmpty ? ' km' : '',
+                          accent: _accent,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _InfoTile(
+                          icon: Icons.store_mall_directory_rounded,
+                          label: 'SHOWROOM',
+                          value: showroomName.isNotEmpty ? showroomName : '--',
+                          subValue: showroomAddress.isNotEmpty
+                              ? showroomAddress
+                              : '',
+                          accent: const Color(0xFF7C6CFF),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'HẾT HẠN BẢO HÀNH',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              endDateStr,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () => _showWarrantyDetails(w),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2F6FED),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              'CHI TIẾT',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _fallbackHeaderImage() {
+    return Image.asset(
+      'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg',
+      fit: BoxFit.cover,
+    );
+  }
+
+  String _resolveWarrantyHeaderImage({
+    required String explicit,
+    required String brand,
+  }) {
+    final cleaned = explicit.trim();
+    if (cleaned.isNotEmpty) return cleaned;
+
+    final b = brand.toLowerCase().trim();
+    if (b.contains('bmw')) {
+      return 'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg';
+    }
+    if (b.contains('mercedes') || b.contains('benz')) {
+      return 'assets/images/products/Mercedes-Benz-G63_AMG-2025-1280-038bcbee2f3dd71d41f1185ec519c69811.jpg';
+    }
+    if (b.contains('toyota')) {
+      return 'assets/images/products/Toyota-Land_Cruiser_EU-Version-2021-1280-25e61cd74c005244b365b541306e5e4e7d.jpg';
+    }
+    if (b.contains('tesla')) {
+      return 'assets/images/products/Tesla-Model_3-2024-1280-3f2af9ab7a564be8488ad85f205963fdf3.jpg';
+    }
+    if (b.contains('volvo')) {
+      return 'assets/images/products/Volvo-XC40_Recharge-2023-1280-20af6e11057d63aefa0b99ee4160b33035.jpg';
+    }
+    if (b.contains('hyundai')) {
+      return 'assets/images/products/Honda-HR-V-2022-1280-0d18f82a2522a27da20b770cf282f814e9.jpg';
+    }
+    if (b.contains('mazda')) {
+      return 'assets/images/products/Honda-Civic_Type_R-2023-1280-0a7fadf5d63cbc17ac4879b01396aa6be2.jpg';
+    }
+
+    // fallback cuối cùng
+    return 'assets/images/RR.jpg';
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.accent,
+    this.subValue = '',
+    this.suffix = '',
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String subValue;
+  final String suffix;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1116),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 16,
+                  color: accent.withValues(alpha: 0.95),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white38,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                if (suffix.isNotEmpty)
+                  TextSpan(
+                    text: suffix,
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (subValue.trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              subValue,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WarrantyDetailsSheet extends StatelessWidget {
+  const _WarrantyDetailsSheet({
+    required this.warranty,
+    required this.headerImage,
+  });
+
+  final Map<String, dynamic> warranty;
+  final String headerImage;
+
+  static const _bg = Color(0xFF0B0F1A);
+  static const _card = Color(0xFF121A2B);
+  static const _accent = Color(0xFF2F6FED);
+
+  @override
+  Widget build(BuildContext context) {
+    final status = (warranty['status'] ?? 'pending').toString();
+    final vinRaw = (warranty['vin'] ?? '').toString();
+    final vinMasked = _maskVin(vinRaw);
+
+    final bookingId = (warranty['bookingId'] ?? '').toString().trim();
+    final transactionId = (warranty['transactionId'] ?? '').toString().trim();
+
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _loadDepositOverlay(
+        bookingId: bookingId,
+        transactionId: transactionId,
+      ),
+      builder: (context, snap) {
+        final overlay = snap.data;
+
+        final carName =
+            overlay?['carName']?.toString() ?? (warranty['carName'] ?? '').toString();
+        final carBrand =
+            overlay?['carBrand']?.toString() ?? (warranty['carBrand'] ?? '').toString();
+        final carImage = overlay?['carImage']?.toString() ??
+            overlay?['imageUrl']?.toString() ??
+            (warranty['imageUrl'] ?? warranty['carImage'] ?? '').toString();
+
+        final resolvedHeader = carImage.trim().isNotEmpty
+            ? carImage.trim()
+            : headerImage;
+
+        final carModelYear = (overlay?['carModelYear'] ?? warranty['carModelYear'] ?? '').toString();
+        final edition = (overlay?['edition'] ??
+                overlay?['carEdition'] ??
+                warranty['edition'] ??
+                warranty['carEdition'] ??
+                '')
+            .toString();
+
+        final odo = _stringOrEmpty(
+          warranty['odoAtActivation'] ?? warranty['odometerValue'],
+        );
+
+        final showroomName = _pickShowroomName(overlay, warranty);
+        final showroomAddress = _pickShowroomAddress(overlay, warranty);
+
+        final expStr = _formatDate(
+          warranty['endDate'],
+          fallback: (warranty['expiryDate'] ?? '').toString(),
+          fmt: 'dd/MM/yyyy',
+        );
+
+        final title = _joinTitle(carBrand, carName, carModelYear);
+        final subtitle = edition.isNotEmpty ? edition : ' ';
+
+        return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+          child: Material(
+            color: _bg,
+            borderRadius: BorderRadius.circular(22),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    _HeaderImage(image: resolvedHeader),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                          height: 1.08,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        subtitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                _StatusPill(status: status),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _DetailsTile(
+                                    label: 'VIN NUMBER',
+                                    value: vinMasked.isNotEmpty ? vinMasked : '--',
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _DetailsTile(
+                                    label: 'ODOMETER',
+                                    value: odo.isNotEmpty ? odo : '--',
+                                    subValue: odo.isNotEmpty ? 'km' : '',
+                                    alignEnd: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _DetailsTile(
+                                    label: 'SHOWROOM',
+                                    value: showroomName.isNotEmpty ? showroomName : '--',
+                                    subValue: showroomAddress,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _DetailsTile(
+                                    label: 'EXPIRES ON',
+                                    value: expStr,
+                                    valueColor: const Color(0xFF55A7FF),
+                                    alignEnd: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Coverage Breakdown',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {},
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: _accent,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 6,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'View Policy',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            _CoverageItem(
+                              icon: Icons.settings_suggest_rounded,
+                              title: 'Powertrain & Engine',
+                              subtitle: 'Full coverage for core mechanics',
+                            ),
+                            const SizedBox(height: 10),
+                            _CoverageItem(
+                              icon: Icons.bolt_rounded,
+                              title: 'Electrical Systems',
+                              subtitle: 'Sensors, wiring, and battery systems',
+                            ),
+                            const SizedBox(height: 10),
+                            _CoverageItem(
+                              icon: Icons.health_and_safety_rounded,
+                              title: 'Roadside Assistance',
+                              subtitle: '24/7 support and emergency support',
+                            ),
+                            const SizedBox(height: 10),
+                            _CoverageItem(
+                              icon: Icons.format_paint_rounded,
+                              title: 'Corrosion & Paint',
+                              subtitle: '12-year anti-perforation warranty',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: _TopBackButton(onTap: () => Navigator.pop(context)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+      },
+    );
+  }
+
+  static String _stringOrEmpty(Object? v) => v == null ? '' : v.toString();
+
+  static String _formatDate(
+    Object? raw, {
+    required String fallback,
+    required String fmt,
+  }) {
+    if (raw is Timestamp) {
+      return DateFormat(fmt).format(raw.toDate());
+    }
+    if (raw is DateTime) {
+      return DateFormat(fmt).format(raw);
+    }
+    final f = fallback.trim();
+    if (f.isNotEmpty) return f;
+    return '--';
+  }
+
+  static String _joinTitle(String brand, String name, String year) {
+    final b = brand.trim();
+    final n = name.trim();
+    final y = year.trim();
+    final base = [b, n].where((e) => e.isNotEmpty).join(' ');
+    if (y.isEmpty) return base.isNotEmpty ? base : 'Warranty Details';
+    return base.isNotEmpty ? '$base\n$y' : y;
+  }
+
+  static String _maskVin(String vin) {
+    final v = vin.trim();
+    if (v.isEmpty) return '';
+    // style: ABC123XYZ456 (short masked look) OR keep 17 chars and mask middle
+    if (v.length <= 12) return v;
+    if (v.length == 17) {
+      final start = v.substring(0, 3);
+      final end = v.substring(14);
+      return '$start••••••••••$end';
+    }
+    final start = v.substring(0, 3);
+    final end = v.substring(v.length - 3);
+    return '$start••••••$end';
+  }
+
+  /// Load deposit data to keep banner + car info consistent with Deposit pages.
+  ///
+  /// Priority:
+  /// 1) If bookingId exists: try find `deposits` where depositId == bookingId OR bookingId == bookingId.
+  /// 2) If transactionId exists: try find `deposits` where transactionId == transactionId.
+  ///
+  /// Returns null if nothing found.
+  static Future<Map<String, dynamic>?> _loadDepositOverlay({
+    required String bookingId,
+    required String transactionId,
+  }) async {
+    final db = FirebaseFirestore.instance;
+    final deps = db.collection('deposits');
+
+    Future<Map<String, dynamic>?> firstMatch(Query<Map<String, dynamic>> q) async {
+      final snap = await q.limit(1).get();
+      if (snap.docs.isEmpty) return null;
+      return snap.docs.first.data();
+    }
+
+    if (bookingId.isNotEmpty) {
+      // some flows store bookingId in depositId
+      final byDepositId = await firstMatch(
+        deps.where('depositId', isEqualTo: bookingId),
+      );
+      if (byDepositId != null) return byDepositId;
+
+      final byBookingId = await firstMatch(
+        deps.where('bookingId', isEqualTo: bookingId),
+      );
+      if (byBookingId != null) return byBookingId;
+    }
+
+    if (transactionId.isNotEmpty) {
+      final byTxn = await firstMatch(
+        deps.where('transactionId', isEqualTo: transactionId),
+      );
+      if (byTxn != null) return byTxn;
+    }
+
+    return null;
+  }
+
+  static String _pickShowroomName(
+    Map<String, dynamic>? deposit,
+    Map<String, dynamic> warranty,
+  ) {
+    final d = deposit;
+    final fromMap = d != null && d['showroom'] is Map
+        ? (d['showroom'] as Map)['name']?.toString()
+        : null;
+    return (fromMap ?? d?['showroomName'] ?? warranty['showroomName'] ?? '')
+        .toString();
+  }
+
+  static String _pickShowroomAddress(
+    Map<String, dynamic>? deposit,
+    Map<String, dynamic> warranty,
+  ) {
+    final d = deposit;
+    final fromMap = d != null && d['showroom'] is Map
+        ? (d['showroom'] as Map)['address']?.toString()
+        : null;
+    return (fromMap ?? d?['showroomAddress'] ?? warranty['showroomAddress'] ?? '')
+        .toString();
+  }
+}
+
+class _HeaderImage extends StatelessWidget {
+  const _HeaderImage({required this.image});
+
+  final String image;
+
+  @override
+  Widget build(BuildContext context) {
+    final img = image.trim();
+    Widget child;
+    if (img.startsWith('http://') || img.startsWith('https://')) {
+      child = Image.network(img, fit: BoxFit.cover);
+    } else {
+      child = Image.asset(img, fit: BoxFit.cover);
+    }
+
+    return SizedBox(
+      height: 220,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          child,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.05),
+                  Colors.black.withValues(alpha: 0.55),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopBackButton extends StatelessWidget {
+  const _TopBackButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.35),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: const SizedBox(
+          width: 42,
+          height: 42,
+          child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = status.toLowerCase().trim();
+    final isActive = s == 'active';
+    final bg = isActive
+        ? const Color(0xFF0B7F5E).withValues(alpha: 0.94)
+        : const Color(0xFFB45309).withValues(alpha: 0.92);
+    final border = isActive
+        ? const Color(0xFF16D6A5).withValues(alpha: 0.55)
+        : const Color(0xFFFFC06B).withValues(alpha: 0.55);
+
+    final text = isActive ? 'ACTIVE' : s.toUpperCase();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: border, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isActive ? Icons.check_circle_rounded : Icons.hourglass_bottom_rounded,
+            color: Colors.white,
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailsTile extends StatelessWidget {
+  const _DetailsTile({
+    required this.label,
+    required this.value,
+    this.subValue = '',
+    this.valueColor,
+    this.alignEnd = false,
+  });
+
+  final String label;
+  final String value;
+  final String subValue;
+  final Color? valueColor;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final alignment = alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: _WarrantyDetailsSheet._card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: alignment,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.7,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+            style: TextStyle(
+              color: valueColor ?? Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              height: 1.15,
+            ),
+          ),
+          if (subValue.trim().isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              subValue,
+              textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CoverageItem extends StatelessWidget {
+  const _CoverageItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {},
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: _WarrantyDetailsSheet._card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _WarrantyDetailsSheet._accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _WarrantyDetailsSheet._accent.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Icon(icon, color: _WarrantyDetailsSheet._accent, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white30),
+          ],
         ),
       ),
     );

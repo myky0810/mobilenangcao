@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Import VietQRScreen from correct file
 import 'vietqr_screen.dart';
+import '../services/warranty_service.dart';
+import '../services/garage_service.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   final double amount;
@@ -695,6 +697,42 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           await FirebaseFirestore.instance
               .collection('deposits')
               .add(depositData);
+
+          // ✅ TỰ TẠO WARRANTY PENDING KHI ĐẶT CỌC THÀNH CÔNG
+          final phone = (widget.bookingData?['userPhone'] ?? '')
+              .toString()
+              .trim();
+          if (phone.isNotEmpty) {
+            try {
+              await WarrantyService.createPendingWarranty(
+                userId: phone,
+                carName: widget.carName,
+                carBrand: widget.bookingData?['carBrand'] ?? '',
+                carImage: widget.bookingData?['carImage'] ?? '',
+                showroomName: widget.bookingData?['showroom']?['name'] ?? '',
+                showroomAddress:
+                    widget.bookingData?['showroom']?['address'] ?? '',
+                bookingId: depositData['depositId'] ?? '',
+                transactionId: '',
+              );
+            } catch (e) {
+              debugPrint('⚠️ Warranty creation failed: $e');
+            }
+
+            // ✅ TỰ THÊM XE VÀO GARAGE (MY CAR)
+            try {
+              await GarageService.addPurchasedCar(
+                userId: phone,
+                carName: widget.carName,
+                carBrand: widget.bookingData?['carBrand'] ?? '',
+                carImage: widget.bookingData?['carImage'] ?? '',
+                bookingId: depositData['depositId'] ?? '',
+                showroomName: widget.bookingData?['showroom']?['name'] ?? '',
+              );
+            } catch (e) {
+              debugPrint('⚠️ Garage add failed: $e');
+            }
+          }
         }
 
         // Show success dialog

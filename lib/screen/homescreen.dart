@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Brand selector state
   final List<CarBrand> _brands = [
-  CarBrand(name: 'Volvo', assetPath: 'assets/images/icons8-volvo-100.png'),
+    CarBrand(name: 'Volvo', assetPath: 'assets/images/icons8-volvo-100.png'),
     CarBrand(name: 'BMW', assetPath: 'assets/images/icons8-bmw-48.png'),
     CarBrand(
       name: 'Mercedes',
@@ -81,9 +81,9 @@ class _HomeScreenState extends State<HomeScreen>
     ),
     CarBrand(name: 'Tesla', assetPath: 'assets/images/icons8-tesla-48.png'),
     CarBrand(name: 'Toyota', assetPath: 'assets/images/icons8-toyota-48.png'),
-  CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
-  CarBrand(name: 'Hyundai', assetPath: 'assets/images/icons8-hyundai-48.png'),
-  CarBrand(name: 'Tất cả', icon: Icons.apps_rounded),
+    CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
+    CarBrand(name: 'Hyundai', assetPath: 'assets/images/icons8-hyundai-48.png'),
+    CarBrand(name: 'Tất cả', icon: Icons.apps_rounded),
   ];
   int _selectedBrandIndex = 0;
 

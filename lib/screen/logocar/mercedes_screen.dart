@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../navigation_observer.dart';
 import '../../services/car_data_service.dart';
 import '../../widgets/car_card.dart';
+import '../../widgets/floating_car_bottom_nav.dart';
 
 class MercedesScreen extends StatefulWidget {
   const MercedesScreen({super.key, this.phoneNumber});
@@ -13,7 +14,6 @@ class MercedesScreen extends StatefulWidget {
 }
 
 class _MercedesScreenState extends State<MercedesScreen> with RouteAware {
-  int _activeNavIndex = 0;
   late List<Map<String, dynamic>> _mercedesCars;
 
   @override
@@ -25,7 +25,10 @@ class _MercedesScreenState extends State<MercedesScreen> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute<dynamic>);
+    routeObserver.subscribe(
+      this,
+      ModalRoute.of(context)! as PageRoute<dynamic>,
+    );
   }
 
   @override
@@ -51,7 +54,28 @@ class _MercedesScreenState extends State<MercedesScreen> with RouteAware {
       backgroundColor: const Color(0xFF333333),
       appBar: _buildAppBar(),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: FloatingCarBottomNav(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 0) return;
+
+          final routes = <int, String>{
+            0: '/home',
+            1: '/newcar',
+            2: '/mycar',
+            3: '/favorite',
+            4: '/profile',
+          };
+          final route = routes[index];
+          if (route == null) return;
+
+          Navigator.pushReplacementNamed(
+            context,
+            route,
+            arguments: widget.phoneNumber,
+          );
+        },
+      ),
     );
   }
 
@@ -85,115 +109,6 @@ class _MercedesScreenState extends State<MercedesScreen> with RouteAware {
           phoneNumber: widget.phoneNumber,
         );
       },
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: const BoxDecoration(color: Colors.transparent),
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.person_rounded, 3),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, int index) {
-    final isActive = _activeNavIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        if (_activeNavIndex == index) return;
-        setState(() {
-          _activeNavIndex = index;
-        });
-
-        // Navigate to different screens
-        if (index == 0) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/home',
-            arguments: widget.phoneNumber,
-          );
-        } else if (index == 1) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/newcar',
-            arguments: widget.phoneNumber,
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/favorite',
-            arguments: widget.phoneNumber,
-          );
-        } else if (index == 3) {
-          Navigator.pushReplacementNamed(
-            context,
-            '/profile',
-            arguments: widget.phoneNumber,
-          );
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? const LinearGradient(
-                  colors: [Color(0xFF3b82c8), Color(0xFF1e5a9e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF3b82c8).withOpacity(0.6),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: AnimatedScale(
-            scale: isActive ? 1.1 : 1.0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            child: Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.white54,
-              size: isActive ? 26 : 24,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

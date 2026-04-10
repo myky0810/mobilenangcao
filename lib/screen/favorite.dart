@@ -3,6 +3,7 @@ import 'package:doan_cuoiki/models/car_detail.dart';
 import '../navigation_observer.dart';
 import '../services/favorite_service.dart';
 import '../widgets/car_card.dart';
+import '../widgets/floating_car_bottom_nav.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key, this.phoneNumber});
@@ -14,21 +15,14 @@ class FavoriteScreen extends StatefulWidget {
 }
 
 class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
-  int _activeNavIndex = 2; // Favorite được chọn (index 2)
   List<CarDetailData> _favoriteCars = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFavoriteCars();
-  }
+  int _activeNavIndex = 3;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
-    if (route is PageRoute<dynamic>) {
+    if (route is PageRoute) {
       routeObserver.subscribe(this, route);
     }
   }
@@ -41,82 +35,33 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
 
   @override
   void didPopNext() {
-    if (!mounted) return;
-    _loadFavoriteCars();
+    _loadFavorites();
   }
 
-  Future<void> _loadFavoriteCars() async {
-    try {
-      setState(() => _isLoading = true);
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
 
-      // Lấy danh sách yêu thích từ SharedPreferences và chuyển thành CarDetailData
-      final favorites = await FavoriteService.getFavorites(
-        phoneIdentifier: widget.phoneNumber,
-      );
-      final favoriteCars = favorites
-          .map((fav) => CarDetailData.fromMap(fav))
-          .toList();
-
-      if (!mounted) return;
-      setState(() {
-        _favoriteCars = favoriteCars;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi khi tải danh sách yêu thích: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  Future<void> _loadFavorites() async {
+    final favorites = await FavoriteService.getFavorites(
+      phoneIdentifier: widget.phoneNumber,
+    );
+    if (!mounted) return;
+    setState(() {
+      _favoriteCars = favorites
+          .map((m) => CarDetailData.fromMap(m))
+          .toList(growable: false);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF101B28),
-      appBar: _buildAppBar(),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _buildBody(),
+      backgroundColor: const Color(0xFF0F172A),
+      body: SafeArea(child: _buildBody()),
       bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: const Color(0xFF0E1623),
-      elevation: 0,
-      title: const Text(
-        'Sản phẩm yêu thích',
-        style: TextStyle(
-          color: Color(0xFF8AACFF),
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: false,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white12),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/RR.jpg'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -217,71 +162,33 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: const BoxDecoration(color: Colors.transparent),
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: const Color(0xFF121B28),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: const [
-            BoxShadow(
-              color: Color.fromRGBO(0, 0, 0, 0.3),
-              blurRadius: 12,
-              offset: Offset(0, -3),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2), // Active
-            _buildNavItem(Icons.verified_user_rounded, 3),
-            _buildNavItem(Icons.person_rounded, 4),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, int index) {
-    final isActive = _activeNavIndex == index;
-
-    return GestureDetector(
-      onTap: () {
+    return FloatingCarBottomNav(
+      currentIndex: _activeNavIndex,
+      backgroundColor: const Color(0xFF121B28),
+      onTap: (index) {
         if (_activeNavIndex == index) return;
-        setState(() {
-          _activeNavIndex = index;
-        });
-
-        // Điều hướng tới các màn hình tương ứng.
+        setState(() => _activeNavIndex = index);
         if (index == 0) {
-          // Điều hướng về màn hình Trang chủ.
           Navigator.pushReplacementNamed(
             context,
             '/home',
             arguments: widget.phoneNumber,
           );
         } else if (index == 1) {
-          // Điều hướng tới màn hình xe mới.
           Navigator.pushReplacementNamed(
             context,
             '/newcar',
             arguments: widget.phoneNumber,
           );
-        } else if (index == 3) {
-          // Điều hướng tới màn hình bảo hành.
+        } else if (index == 2) {
           Navigator.pushReplacementNamed(
             context,
-            '/warranty',
+            '/mycar',
             arguments: widget.phoneNumber,
           );
+        } else if (index == 3) {
+          // already on Favorite
         } else if (index == 4) {
-          // Điều hướng tới màn hình hồ sơ.
           Navigator.pushReplacementNamed(
             context,
             '/profile',
@@ -289,44 +196,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
           );
         }
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? const LinearGradient(
-                  colors: [Color(0xFF3b82c8), Color(0xFF1e5a9e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
-          boxShadow: isActive
-              ? const [
-                  BoxShadow(
-                    color: Color.fromRGBO(59, 130, 200, 0.6),
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: AnimatedScale(
-            scale: isActive ? 1.1 : 1.0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            child: Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.white54,
-              size: isActive ? 26 : 24,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

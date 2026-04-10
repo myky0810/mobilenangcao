@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,7 +7,6 @@ import '../services/user_service.dart';
 import '../services/vietqr_service.dart';
 import '../services/bank_transaction_checker.dart';
 import '../services/email_service.dart';
-import 'homescreen.dart'; // ✅ Import HomeScreen để navigate
 
 class VietQRScreen extends StatefulWidget {
   final String carName;
@@ -483,6 +481,9 @@ class _VietQRScreenState extends State<VietQRScreen>
             carName: widget.carName,
             amount: widget.amount,
             transactionId: _transactionId,
+            showroom: (widget.carData['showroom'] is Map)
+                ? Map<String, dynamic>.from(widget.carData['showroom'])
+                : null,
           );
 
       print('');
@@ -622,13 +623,14 @@ class _VietQRScreenState extends State<VietQRScreen>
                       // Đóng dialog trước
                       Navigator.of(context).pop();
 
-                      // ✅ FORCE RECREATE HomeScreen để refresh user data
-                      // Clear toàn bộ back stack và tạo HomeScreen mới
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
+                      // ✅ Quay về Home nhưng phải giữ lại "ngữ cảnh đăng nhập"
+                      // Nhiều nơi trong app phụ thuộc vào arguments (phoneNumber)
+                      // để đọc profile hiện tại, nên không được tạo HomeScreen() trống.
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/home',
                         (route) => false,
+                        arguments: widget.phoneNumber,
                       );
                     },
                     style: ElevatedButton.styleFrom(

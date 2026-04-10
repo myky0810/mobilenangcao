@@ -34,6 +34,7 @@ import 'package:doan_cuoiki/screen/app_info.dart';
 import 'package:doan_cuoiki/screen/calendar_drive.dart';
 import 'package:doan_cuoiki/screen/AIChat.dart';
 import 'package:doan_cuoiki/screen/deposit_screen.dart';
+import 'package:doan_cuoiki/screen/mycar.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/car_data_service.dart';
@@ -112,7 +113,7 @@ class MyApp extends StatelessWidget {
               ModalRoute.of(context)!.settings.arguments as String?;
           return InfomationScreen(phoneNumber: phoneNumber);
         },
-        '/info': (context) {
+        '/changeinfo': (context) {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return InfoScreen(phoneNumber: phoneNumber);
@@ -265,6 +266,11 @@ class MyApp extends StatelessWidget {
             carPrice: args['carPrice'],
             phoneNumber: args['phoneNumber'],
           );
+        },
+        '/mycar': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final phoneNumber = args is String ? args : null;
+          return MyCarScreen(phoneNumber: phoneNumber);
         },
       },
     );

@@ -25,7 +25,10 @@ class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)! as PageRoute<dynamic>);
+    routeObserver.subscribe(
+      this,
+      ModalRoute.of(context)! as PageRoute<dynamic>,
+    );
   }
 
   @override
@@ -110,9 +113,10 @@ class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.person_rounded, 3),
+            _buildNavItem(Icons.search_rounded, 1),
+            _buildNavItem(Icons.directions_car_rounded, 2),
+            _buildNavItem(Icons.favorite_rounded, 3),
+            _buildNavItem(Icons.person_rounded, 4),
           ],
         ),
       ),
@@ -145,10 +149,16 @@ class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
         } else if (index == 2) {
           Navigator.pushReplacementNamed(
             context,
-            '/favorite',
+            '/mycar',
             arguments: widget.phoneNumber,
           );
         } else if (index == 3) {
+          Navigator.pushReplacementNamed(
+            context,
+            '/favorite',
+            arguments: widget.phoneNumber,
+          );
+        } else if (index == 4) {
           Navigator.pushReplacementNamed(
             context,
             '/profile',

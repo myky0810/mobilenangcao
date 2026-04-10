@@ -106,23 +106,22 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       } catch (_) {
-        // Fallback: thử dùng vị trí cuối cùng
-        final lastKnown = await Geolocator.getLastKnownPosition();
+        // Requirement: bắt buộc GPS realtime, không dùng lastKnown.
         if (!mounted) return;
-        if (lastKnown != null) {
-          setState(() {
-            _currentPosition = lastKnown;
-            _isRequestingLocation = false;
-            _locationError = 'Đang dùng vị trí gần nhất của thiết bị';
-          });
-          await _loadNearbyShowroomsFromApi();
-        } else {
-          setState(() {
-            _locationError =
-                'Không thể lấy vị trí hiện tại. Đang hiển thị bản đồ mặc định.';
-            _isRequestingLocation = false;
-          });
-        }
+        setState(() {
+          _currentPosition = null;
+          _isRequestingLocation = false;
+          _locationError =
+              'Không thể lấy vị trí GPS hiện tại. Vui lòng bật GPS và thử lại.';
+          _locationPermissionGranted = false;
+          _showrooms = [];
+          _nearestShowrooms = [];
+          _selectedShowroom = null;
+          _markers = <Marker>{};
+          _polylines = <Polyline>{};
+          _routeOptions = [];
+          _selectedRouteIndex = 0;
+        });
         return;
       }
 
@@ -171,14 +170,25 @@ class _MapScreenState extends State<MapScreen> {
 
         if (cachedShowrooms.isNotEmpty) {
           if (!mounted) return;
-          _showrooms = _filterByPreferredBrand(cachedShowrooms);
+          // fetchNearbyShowrooms đã filter theo brand ở service.
+          // Requirement: nếu không có showroom cho brand trong 300km => không hiển thị showroom khác hãng.
+          _showrooms = cachedShowrooms;
           if (_showrooms.isEmpty) {
-            _showrooms = cachedShowrooms;
-            _locationError =
-                'Không có showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật, đang hiển thị showroom gần nhất';
-          } else {
-            _locationError = null;
+            setState(() {
+              _nearestShowrooms = [];
+              _selectedShowroom = null;
+              _locationError =
+                  'Không tìm thấy showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật của bạn';
+              _isLoadingShowrooms = false;
+              _markers = _buildOnlyUserMarker();
+              _polylines = <Polyline>{};
+              _routeOptions = [];
+              _selectedRouteIndex = 0;
+            });
+            return;
           }
+
+          _locationError = null;
           _updateNearestShowrooms();
           _selectedShowroom = _nearestShowrooms.isNotEmpty
               ? _nearestShowrooms.first
@@ -214,18 +224,17 @@ class _MapScreenState extends State<MapScreen> {
               'Không tìm thấy showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật của bạn';
           _isLoadingShowrooms = false;
           _markers = _buildOnlyUserMarker();
+          _polylines = <Polyline>{};
+          _routeOptions = [];
+          _selectedRouteIndex = 0;
         });
         return;
       }
 
-      _showrooms = _filterByPreferredBrand(apiShowrooms);
-      if (_showrooms.isEmpty) {
-        _showrooms = apiShowrooms;
-        _locationError =
-            'Không có showroom ${widget.preferredBrand ?? ''} trong bán kính 300km từ vị trí GPS thật, đang hiển thị showroom gần nhất';
-      } else {
-        _locationError = null;
-      }
+      // fetchNearbyShowrooms đã filter theo brand ở service.
+      // Requirement: không fallback sang hãng khác.
+      _showrooms = apiShowrooms;
+      _locationError = null;
       _updateNearestShowrooms();
       _selectedShowroom = _nearestShowrooms.isNotEmpty
           ? _nearestShowrooms.first
@@ -279,21 +288,6 @@ class _MapScreenState extends State<MapScreen> {
         duration: Duration(seconds: 2),
       ),
     );
-  }
-
-  List<Map<String, dynamic>> _filterByPreferredBrand(
-    List<Map<String, dynamic>> input,
-  ) {
-    final preferred = widget.preferredBrand?.trim();
-    if (preferred == null || preferred.isEmpty) return input;
-
-    final normalizedPreferred = preferred.toLowerCase();
-    return input.where((showroom) {
-      final brand = (showroom['brand'] as String? ?? '').toLowerCase();
-      final name = (showroom['name'] as String? ?? '').toLowerCase();
-      return brand.contains(normalizedPreferred) ||
-          name.contains(normalizedPreferred);
-    }).toList();
   }
 
   void _setShowroomMarkers() {

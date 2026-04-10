@@ -22,6 +22,7 @@ class EmailNotificationService {
     required String carName,
     required double amount,
     required String transactionId,
+    Map<String, dynamic>? showroom,
   }) async {
     try {
       print('');
@@ -54,6 +55,7 @@ class EmailNotificationService {
         transactionId: transactionId,
         depositDate: now,
         expiryDate: expiryDate,
+        showroom: showroom,
       );
 
       print('');
@@ -85,6 +87,7 @@ class EmailNotificationService {
     required double amount,
     required String transactionId,
     String? phoneIdentifier,
+    Map<String, dynamic>? showroom,
   }) async {
     try {
       print('');
@@ -187,6 +190,7 @@ class EmailNotificationService {
         transactionId: transactionId,
         depositDate: now,
         expiryDate: expiryDate,
+        showroom: showroom,
       );
 
       print('');
@@ -221,6 +225,7 @@ class EmailNotificationService {
     required String transactionId,
     required DateTime depositDate,
     required DateTime expiryDate,
+    Map<String, dynamic>? showroom,
   }) async {
     try {
       print('📤 Kết nối Gmail SMTP...');
@@ -247,6 +252,27 @@ class EmailNotificationService {
         decimalDigits: 0,
       ).format(amount);
 
+      final Map<String, dynamic>? showroomMap =
+          (showroom is Map<String, dynamic>) ? showroom : null;
+
+      final showroomName = (showroomMap?['name']?.toString().trim() ?? '');
+      final showroomAddress =
+          (showroomMap?['address']?.toString().trim() ?? '');
+      final showroomLat = showroomMap?['lat'];
+      final showroomLng = showroomMap?['lng'];
+
+      String directionsUrl = '';
+      final lat = (showroomLat is num) ? showroomLat.toDouble() : null;
+      final lng = (showroomLng is num) ? showroomLng.toDouble() : null;
+      if (lat != null && lng != null) {
+        directionsUrl =
+            'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+      } else if (showroomAddress.isNotEmpty) {
+        final encoded = Uri.encodeComponent(showroomAddress);
+        directionsUrl =
+            'https://www.google.com/maps/dir/?api=1&destination=$encoded&travelmode=driving';
+      }
+
       // Nội dung email PLAIN TEXT
       final subject = 'Xác nhận đặt cọc xe $carName - LuxeDrive';
       final body =
@@ -264,6 +290,11 @@ CHI TIẾT ĐẶT CỌC
 - Ngày đặt cọc: $depositDateStr
 - Hiệu lực đến: $expiryDateStr
 - Mã giao dịch: $transactionId
+
+SHOWROOM ĐÃ CHỌN
+- Tên showroom: ${showroomName.isNotEmpty ? showroomName : 'N/A'}
+- Địa chỉ: ${showroomAddress.isNotEmpty ? showroomAddress : 'N/A'}
+${directionsUrl.isNotEmpty ? '- Chỉ đường Google Maps: $directionsUrl' : ''}
 
 LƯU Ý
 Xe sẽ được giữ chỗ đến hết ngày $expiryDateStr. Vui lòng liên hệ trước thời hạn này để hoàn tất thủ tục.

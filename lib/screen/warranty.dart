@@ -105,7 +105,9 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể gửi bảo hành, vui lòng thử lại')),
+        const SnackBar(
+          content: Text('Không thể gửi bảo hành, vui lòng thử lại'),
+        ),
       );
     } finally {
       if (!mounted) return;
@@ -254,7 +256,9 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFF3b82c8) : const Color(0xFF1a1a1a),
+              color: selected
+                  ? const Color(0xFF3b82c8)
+                  : const Color(0xFF1a1a1a),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
                 color: selected ? const Color(0xFF3b82c8) : Colors.white12,
@@ -308,33 +312,43 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
           );
         }
 
-        final docs = (snapshot.data?.docs ?? <QueryDocumentSnapshot<Map<String, dynamic>>>[])
-          ..sort((a, b) {
-            final aTs = a.data()['createdAt'];
-            final bTs = b.data()['createdAt'];
-            final aMs = aTs is Timestamp ? aTs.millisecondsSinceEpoch : 0;
-            final bMs = bTs is Timestamp ? bTs.millisecondsSinceEpoch : 0;
-            return bMs.compareTo(aMs);
-          });
+        final docs =
+            (snapshot.data?.docs ??
+                  <QueryDocumentSnapshot<Map<String, dynamic>>>[])
+              ..sort((a, b) {
+                final aTs = a.data()['createdAt'];
+                final bTs = b.data()['createdAt'];
+                final aMs = aTs is Timestamp ? aTs.millisecondsSinceEpoch : 0;
+                final bMs = bTs is Timestamp ? bTs.millisecondsSinceEpoch : 0;
+                return bMs.compareTo(aMs);
+              });
 
         final keyword = _historySearchController.text.trim().toLowerCase();
 
-        final filteredDocs = docs.where((doc) {
-          if (_selectedStatusFilter == 'all') return true;
-          return (doc.data()['status'] ?? 'pending').toString() ==
-              _selectedStatusFilter;
-        }).where((doc) {
-          if (keyword.isEmpty) return true;
-          final carName = (doc.data()['carName'] ?? '').toString().toLowerCase();
-          return carName.contains(keyword);
-        }).toList();
+        final filteredDocs = docs
+            .where((doc) {
+              if (_selectedStatusFilter == 'all') return true;
+              return (doc.data()['status'] ?? 'pending').toString() ==
+                  _selectedStatusFilter;
+            })
+            .where((doc) {
+              if (keyword.isEmpty) return true;
+              final carName = (doc.data()['carName'] ?? '')
+                  .toString()
+                  .toLowerCase();
+              return carName.contains(keyword);
+            })
+            .toList();
 
-        final pendingCount =
-            docs.where((doc) => (doc.data()['status'] ?? 'pending') == 'pending').length;
-        final processingCount =
-            docs.where((doc) => (doc.data()['status'] ?? '') == 'processing').length;
-        final doneCount =
-            docs.where((doc) => (doc.data()['status'] ?? '') == 'done').length;
+        final pendingCount = docs
+            .where((doc) => (doc.data()['status'] ?? 'pending') == 'pending')
+            .length;
+        final processingCount = docs
+            .where((doc) => (doc.data()['status'] ?? '') == 'processing')
+            .length;
+        final doneCount = docs
+            .where((doc) => (doc.data()['status'] ?? '') == 'done')
+            .length;
 
         if (docs.isEmpty) {
           return Container(
@@ -391,7 +405,10 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFF3b82c8), width: 1.5),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF3b82c8),
+                    width: 1.5,
+                  ),
                 ),
                 suffixIcon: _historySearchController.text.isEmpty
                     ? null
@@ -423,90 +440,99 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                 ),
               ),
             ...filteredDocs.map((doc) {
-            final data = doc.data();
-            final status = (data['status'] ?? 'pending').toString();
-            final createdAtRaw = data['createdAt'];
-            final createdAt = createdAtRaw is Timestamp
-                ? DateFormat('dd/MM/yyyy HH:mm').format(createdAtRaw.toDate())
-                : '--';
+              final data = doc.data();
+              final status = (data['status'] ?? 'pending').toString();
+              final createdAtRaw = data['createdAt'];
+              final createdAt = createdAtRaw is Timestamp
+                  ? DateFormat('dd/MM/yyyy HH:mm').format(createdAtRaw.toDate())
+                  : '--';
 
-            return GestureDetector(
-              onTap: () => _showWarrantyDetails(data),
-              child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1a1a1a),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+              return GestureDetector(
+                onTap: () => _showWarrantyDetails(data),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1a1a1a),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          (data['carName'] ?? '').toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              (data['carName'] ?? '').toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _statusColor(status).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          _statusLabel(status),
-                          style: TextStyle(
-                            color: _statusColor(status),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _statusColor(
+                                status,
+                              ).withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              _statusLabel(status),
+                              style: TextStyle(
+                                color: _statusColor(status),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'VIN/Biển số: ${(data['vinOrPlate'] ?? '').toString()}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Lỗi: ${(data['issueDescription'] ?? '').toString()}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
+                      const SizedBox(height: 8),
                       Text(
-                        'Tạo lúc: $createdAt',
+                        'VIN/Biển số: ${(data['vinOrPlate'] ?? '').toString()}',
                         style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 11,
+                          color: Colors.white70,
+                          fontSize: 12,
                         ),
                       ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Colors.white30,
-                        size: 18,
+                      const SizedBox(height: 4),
+                      Text(
+                        'Lỗi: ${(data['issueDescription'] ?? '').toString()}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            'Tạo lúc: $createdAt',
+                            style: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Colors.white30,
+                            size: 18,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ));
-          }).toList(),
+                ),
+              );
+            }).toList(),
           ],
         );
       },
@@ -566,11 +592,16 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
       case 2:
         Navigator.pushReplacementNamed(
           context,
-          '/favorite',
+          '/mycar',
           arguments: widget.phoneNumber,
         );
         break;
       case 3:
+        Navigator.pushReplacementNamed(
+          context,
+          '/favorite',
+          arguments: widget.phoneNumber,
+        );
         break;
       case 4:
         Navigator.pushReplacementNamed(
@@ -647,8 +678,9 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                 controller: _fullNameController,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('Họ và tên'),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nhập họ tên' : null,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Nhập họ tên'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -659,31 +691,37 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                 onChanged: (_) {
                   setState(() {});
                 },
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nhập số điện thoại' : null,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Nhập số điện thoại'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _carNameController,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('Tên xe'),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nhập tên xe' : null,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Nhập tên xe'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _vinController,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('Số VIN hoặc biển số'),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nhập VIN/biển số' : null,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Nhập VIN/biển số'
+                    : null,
               ),
               const SizedBox(height: 12),
               InkWell(
                 onTap: _pickDate,
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1a1a1a),
                     borderRadius: BorderRadius.circular(12),
@@ -694,7 +732,9 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                         ? 'Chọn ngày mua xe'
                         : DateFormat('dd/MM/yyyy').format(_purchaseDate!),
                     style: TextStyle(
-                      color: _purchaseDate == null ? Colors.white30 : Colors.white,
+                      color: _purchaseDate == null
+                          ? Colors.white30
+                          : Colors.white,
                       fontSize: 14,
                     ),
                   ),
@@ -729,7 +769,9 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(
@@ -797,9 +839,11 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(Icons.home_rounded, 0),
-              _buildNavItem(Icons.directions_car_rounded, 1),
-              _buildNavItem(Icons.favorite_rounded, 2),
-              _buildNavItem(Icons.verified_user_rounded, 3),
+              // NewCar -> đổi thành kính lúp (search)
+              _buildNavItem(Icons.search_rounded, 1),
+              // My Car -> icon xe ở giữa
+              _buildNavItem(Icons.directions_car_rounded, 2),
+              _buildNavItem(Icons.favorite_rounded, 3),
               _buildNavItem(Icons.person_rounded, 4),
             ],
           ),

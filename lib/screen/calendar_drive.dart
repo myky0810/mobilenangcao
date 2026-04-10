@@ -206,7 +206,11 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/newcar');
+                              Navigator.pushNamed(
+                                context,
+                                '/newcar',
+                                arguments: widget.phoneNumber,
+                              );
                             },
                             child: Container(
                               width: 60,
@@ -228,7 +232,11 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
                           const SizedBox(height: 14),
                           GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(context, '/newcar');
+                              Navigator.pushNamed(
+                                context,
+                                '/newcar',
+                                arguments: widget.phoneNumber,
+                              );
                             },
                             child: const Text(
                               'Book another drive?',
@@ -451,11 +459,17 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
                       child: _buildFilledButton(
                         status == 'completed' ? 'LEAVE A REVIEW' : 'DETAILS  →',
                         onTap: () {
+                          final bookingData = <String, dynamic>{
+                            ...data,
+                            // Needed by DetailCalendarCarScreen to cancel booking reliably
+                            'id': docId,
+                          };
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  DetailCalendarCarScreen(bookingData: data),
+                              builder: (context) => DetailCalendarCarScreen(
+                                bookingData: bookingData,
+                              ),
                             ),
                           );
                         },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:doan_cuoiki/widgets/floating_car_bottom_nav.dart';
 
 import '../data/cars_data.dart';
 import '../models/car_detail.dart';
@@ -11,40 +12,15 @@ import '../services/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
-
   final String? phoneNumber;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  int _selectedBrandIndex = 0; // Mercedes được chọn mặc định
-  int _currentBannerIndex = 0; // Để theo dõi banner hiện tại
-  late AnimationController _bannerAnimationController;
-  late AnimationController _slideAnimationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  bool _hasShownNotification =
-      false; // Flag để tránh hiện notification nhiều lần
-
-  final List<CarBrand> _brands = [
-    CarBrand(
-      name: 'Mercedes',
-      assetPath: 'assets/images/icons8-mercedes-benz-48.png',
-    ),
-    CarBrand(name: 'Tesla', assetPath: 'assets/images/icons8-tesla-48.png'),
-    CarBrand(name: 'BMW', assetPath: 'assets/images/icons8-bmw-48.png'),
-    CarBrand(name: 'Toyota', assetPath: 'assets/images/icons8-toyota-48.png'),
-    CarBrand(name: 'Volvo', assetPath: 'assets/images/icons8-volvo-100.png'),
-    // theo yêu cầu: đổi Bugatti -> Mazda
-    CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
-    CarBrand(name: 'Huyndai', assetPath: 'assets/images/icons8-hyundai-48.png'),
-    CarBrand(name: 'Thêm', icon: Icons.more_horiz),
-  ];
-
-  // Banner data cho animation
-  final List<BannerData> _banners = [
+class _HomeScreenState extends State<HomeScreen>
+    with RouteAware, TickerProviderStateMixin {
+  static final List<BannerData> _bannerData = [
     BannerData(
       badge: '🚗 CAR EXPO 2026',
       title: 'Future\nDriving',
@@ -82,6 +58,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       subtitleColor: Color(0xFF22C55E),
     ),
   ];
+
+  // Backward-compatible alias (many places below refer to _banners).
+  late final List<BannerData> _banners = _bannerData;
+
+  // Banner animations
+  late final AnimationController _bannerAnimationController;
+  late final AnimationController _slideAnimationController;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slideAnimation;
+
+  int _currentBannerIndex = 0;
+  bool _hasShownNotification = false;
+
+  // Brand selector state
+  final List<CarBrand> _brands = [
+  CarBrand(name: 'Volvo', assetPath: 'assets/images/icons8-volvo-100.png'),
+    CarBrand(name: 'BMW', assetPath: 'assets/images/icons8-bmw-48.png'),
+    CarBrand(
+      name: 'Mercedes',
+      assetPath: 'assets/images/icons8-mercedes-benz-48.png',
+    ),
+    CarBrand(name: 'Tesla', assetPath: 'assets/images/icons8-tesla-48.png'),
+    CarBrand(name: 'Toyota', assetPath: 'assets/images/icons8-toyota-48.png'),
+  CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
+  CarBrand(name: 'Hyundai', assetPath: 'assets/images/icons8-hyundai-48.png'),
+  CarBrand(name: 'Tất cả', icon: Icons.apps_rounded),
+  ];
+  int _selectedBrandIndex = 0;
 
   late final List<CarDetailData> _cars = CarsData.allCars;
 
@@ -220,7 +224,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         onTap: () {
           overlayEntry.remove();
           // Chuyển đến trang profile để xem lịch
-          Navigator.pushNamed(context, '/profile');
+          Navigator.pushNamed(
+            context,
+            '/profile',
+            arguments: widget.phoneNumber,
+          );
         },
       ),
     );
@@ -819,7 +827,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         } else if (brand.name == 'Mazda') {
           Navigator.pushNamed(context, '/mazda', arguments: widget.phoneNumber);
-        } else if (brand.name == 'Huyndai') {
+        } else if (brand.name == 'Hyundai') {
           Navigator.pushNamed(
             context,
             '/hyundai',
@@ -936,71 +944,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: const BoxDecoration(color: Colors.transparent),
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.verified_user_rounded, 3),
-            _buildNavItem(Icons.person_rounded, 4),
-          ],
-        ),
-      ),
-    );
-  }
+    return FloatingCarBottomNav(
+      currentIndex: _activeNavIndex,
+      onTap: (index) {
+        if (_activeNavIndex == index) return;
+        setState(() => _activeNavIndex = index);
 
-  int _activeNavIndex = 0;
-
-  Widget _buildNavItem(IconData icon, int index) {
-    final isActive = _activeNavIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activeNavIndex = index;
-        });
-        // Navigate to different screens based on icon
-        if (index == 1) {
-          // Navigate to NewCar screen
+        if (index == 0) {
+          // already on Home
+        } else if (index == 1) {
           Navigator.pushReplacementNamed(
             context,
             '/newcar',
             arguments: widget.phoneNumber,
           );
         } else if (index == 2) {
-          // Navigate to favorite screen
+          Navigator.pushReplacementNamed(
+            context,
+            '/mycar',
+            arguments: widget.phoneNumber,
+          );
+        } else if (index == 3) {
           Navigator.pushReplacementNamed(
             context,
             '/favorite',
             arguments: widget.phoneNumber,
           );
-        } else if (index == 3) {
-          // Navigate to warranty screen
-          Navigator.pushReplacementNamed(
-            context,
-            '/warranty',
-            arguments: widget.phoneNumber,
-          );
         } else if (index == 4) {
-          // Navigate to profile screen
           Navigator.pushReplacementNamed(
             context,
             '/profile',
@@ -1008,46 +978,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           );
         }
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [const Color(0xFF3b82c8), const Color(0xFF1e5a9e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF3b82c8).withValues(alpha: 0.6),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: AnimatedScale(
-            scale: isActive ? 1.1 : 1.0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            child: Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.grey[600],
-              size: isActive ? 28 : 26,
-            ),
-          ),
-        ),
-      ),
     );
   }
+
+  int _activeNavIndex = 0;
 }
 
 class CarBrand {

@@ -4,6 +4,7 @@ import 'package:doan_cuoiki/models/car_detail.dart';
 import '../data/cars_data.dart';
 import '../navigation_observer.dart';
 import '../widgets/car_card.dart';
+import '../widgets/floating_car_bottom_nav.dart';
 
 enum PriceSortOption { none, ascending, descending }
 
@@ -1014,32 +1015,9 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.verified_user_rounded, 3),
-            _buildNavItem(Icons.person_rounded, 4),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, int index) {
-    final isActive = _activeNavIndex == index;
-    return GestureDetector(
-      onTap: () {
+    return FloatingCarBottomNav(
+      currentIndex: _activeNavIndex,
+      onTap: (index) {
         if (_activeNavIndex == index) return;
         setState(() => _activeNavIndex = index);
         Future.delayed(const Duration(milliseconds: 120), () {
@@ -1051,17 +1029,17 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
               arguments: widget.phoneNumber,
             );
           } else if (index == 1) {
-            // Đang ở màn hình xe mới, không cần điều hướng.
+            // already on NewCar
           } else if (index == 2) {
             Navigator.pushReplacementNamed(
               context,
-              '/favorite',
+              '/mycar',
               arguments: widget.phoneNumber,
             );
           } else if (index == 3) {
             Navigator.pushReplacementNamed(
               context,
-              '/warranty',
+              '/favorite',
               arguments: widget.phoneNumber,
             );
           } else if (index == 4) {
@@ -1073,25 +1051,6 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
           }
         });
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? const LinearGradient(
-                  colors: [Color(0xFF3B82C8), Color(0xFF1E5A9E)],
-                )
-              : null,
-        ),
-        child: Icon(
-          icon,
-          color: isActive ? Colors.white : Colors.white54,
-          size: isActive ? 26 : 24,
-        ),
-      ),
     );
   }
 }

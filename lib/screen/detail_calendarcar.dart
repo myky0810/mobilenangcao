@@ -1,6 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../data/firebase_helper.dart';
+import '../services/user_service.dart';
 
 class DetailCalendarCarScreen extends StatelessWidget {
   final Map<String, dynamic> bookingData;
@@ -32,6 +36,202 @@ class DetailCalendarCarScreen extends StatelessWidget {
     print('📄 Full booking data keys: ${bookingData.keys.toList()}');
     if (googleMapsUrl.isEmpty) {
       print('❌ Google Maps URL is empty! Full data: $bookingData');
+    }
+
+    Future<bool> showCancelDialog() async {
+      final result = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1a1a1a),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            title: Text(
+              'Cancel booking?',
+              style: GoogleFonts.leagueSpartan(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to cancel this test drive booking?',
+              style: GoogleFonts.leagueSpartan(
+                color: Colors.white70,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                child: Text(
+                  'CANCEL',
+                  style: GoogleFonts.leagueSpartan(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3b82c8),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'CONFIRM',
+                  style: GoogleFonts.leagueSpartan(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+      return result == true;
+    }
+
+    Future<void> cancelBooking() async {
+      final shouldCancel = await showCancelDialog();
+      if (!shouldCancel) return;
+
+      final bookingId = (bookingData['id'] as String?)?.trim() ?? '';
+      final userPhoneRaw =
+          (bookingData['userPhone'] as String?)?.trim() ??
+          (bookingData['phone'] as String?)?.trim() ??
+          '';
+      final normalizedPhone = userPhoneRaw.isNotEmpty
+          ? FirebaseHelper.normalizePhone(userPhoneRaw)
+          : '';
+
+      try {
+        // 1) Delete the booking document (authoritative booking storage)
+        if (bookingId.isNotEmpty) {
+          await FirebaseFirestore.instance
+              .collection('test_drive_bookings')
+              .doc(bookingId)
+              .delete();
+        } else {
+          // Backward compatibility: if we don't have docId, do a best-effort delete.
+          // (This should be rare — CalendarDrive can pass docId now.)
+          final profileRef = UserService.currentUserProfileRef(
+            phoneIdentifier: normalizedPhone,
+          );
+          final profilePath = profileRef?.path ?? '';
+
+          Query query = FirebaseFirestore.instance.collection(
+            'test_drive_bookings',
+          );
+          if (profilePath.isNotEmpty) {
+            query = query.where('userProfilePath', isEqualTo: profilePath);
+          } else if (normalizedPhone.isNotEmpty) {
+            query = query.where('userPhone', isEqualTo: normalizedPhone);
+          }
+
+          // Match by immutable-ish fields from bookingData
+          final date = (bookingData['date'] as String?) ?? '';
+          final time = (bookingData['time'] as String?) ?? '';
+          final carName = (bookingData['carName'] as String?) ?? '';
+          final carBrand = (bookingData['carBrand'] as String?) ?? '';
+
+          final snap = await query.limit(50).get();
+          final matches = snap.docs.where((doc) {
+            final m = doc.data() as Map<String, dynamic>;
+            return (m['date'] ?? '') == date &&
+                (m['time'] ?? '') == time &&
+                (m['carName'] ?? '') == carName &&
+                (m['carBrand'] ?? '') == carBrand;
+          }).toList();
+
+          for (final doc in matches) {
+            await doc.reference.delete();
+          }
+        }
+
+        // 2) Also remove the booking field on user profile (as you requested)
+        if (normalizedPhone.isNotEmpty) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(normalizedPhone)
+              .set({
+                'testDriveBooking': FieldValue.delete(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+        }
+
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              padding: EdgeInsets.zero,
+              content: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F2A1C),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: const Color(0xFF22C55E).withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Color(0xFF22C55E),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Booking canceled successfully.',
+                        style: GoogleFonts.leagueSpartan(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to cancel booking. Please try again.',
+                style: GoogleFonts.leagueSpartan(),
+              ),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+      }
     }
 
     return Scaffold(
@@ -286,11 +486,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(
-                              context,
-                            ).popUntil((route) => route.isFirst);
-                          },
+                          onPressed: cancelBooking,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF3b82c8),
                             foregroundColor: Colors.white,
@@ -301,7 +497,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'BACK TO HOME',
+                            'CANCEL BOOKING',
                             style: GoogleFonts.leagueSpartan(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,

@@ -134,26 +134,19 @@ class _DepositScreenState extends State<DepositScreen> {
 
       final showroomService = ShowroomApiService();
 
-      // Thêm timeout cho API call
-      debugPrint('🌐 Đang gọi API tìm showroom...');
-      final showrooms = await showroomService
-          .fetchNearbyShowrooms(
-            latitude: position.latitude,
-            longitude: position.longitude,
-            radiusInMeters: 300000,
-            limit: 10,
-            brand: widget.carBrand,
-          )
-          .timeout(
-            const Duration(seconds: 8),
-            onTimeout: () {
-              debugPrint('⏰ API timeout - trả về list rỗng');
-              // Nếu timeout, trả về list rỗng
-              return <Map<String, dynamic>>[];
-            },
-          );
+      debugPrint('🌐 Đang gọi API tìm showroom (GPS thật, bán kính 300km)...');
+      final showrooms = await showroomService.fetchNearbyShowrooms(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        radiusInMeters: 300000,
+        limit: 30,
+        // Yêu cầu: chỉ lấy showroom đúng hãng xe khách hàng đã chọn
+        brand: widget.carBrand,
+      );
 
-      debugPrint('✅ Tìm thấy ${showrooms.length} showroom từ API');
+      debugPrint(
+        '✅ API trả về ${showrooms.length} showroom (ưu tiên ${widget.carBrand}, nếu không có sẽ lấy gần nhất trong 300km)',
+      );
 
       final showroomsWithDistance = _withDistanceSorted(
         showrooms,
@@ -162,12 +155,10 @@ class _DepositScreenState extends State<DepositScreen> {
       );
 
       if (showroomsWithDistance.isEmpty) {
-        debugPrint(
-          '❌ Không có showroom nào trong bán kính 300km từ OpenStreetMap',
-        );
+        debugPrint('❌ Không có showroom nào trong bán kính 300km từ GPS');
         if (mounted) {
           _showSnackBar(
-            'Không tìm thấy showroom ${widget.carBrand} trong bán kính 300km từ vị trí GPS của bạn.',
+            'Không tìm thấy showroom nào trong bán kính 300km từ vị trí GPS của bạn.',
             isError: true,
           );
         }
@@ -175,42 +166,8 @@ class _DepositScreenState extends State<DepositScreen> {
         return;
       }
 
-      List<Map<String, dynamic>> filteredShowrooms = showroomsWithDistance;
-      if (widget.carBrand.isNotEmpty && filteredShowrooms.isNotEmpty) {
-        final brandFiltered = showroomsWithDistance.where((s) {
-          final brand = (s['brand'] ?? '').toString().toLowerCase();
-          return brand.contains(widget.carBrand.toLowerCase());
-        }).toList();
-
-        // Chỉ dùng filter nếu có kết quả
-        if (brandFiltered.isNotEmpty) {
-          filteredShowrooms = brandFiltered;
-        }
-      }
-
-      // Sort lại lần nữa sau filter để vẫn đảm bảo gần nhất nằm trên cùng
-      if (filteredShowrooms.isNotEmpty) {
-        filteredShowrooms = _withDistanceSorted(
-          filteredShowrooms,
-          userLat: position.latitude,
-          userLng: position.longitude,
-        );
-
-        debugPrint(
-          '✅ Hiển thị ${filteredShowrooms.length} showroom sau filter',
-        );
-
-        if (mounted) {
-          _showShowroomSelector(filteredShowrooms);
-        }
-      } else {
-        debugPrint('❌ Không có showroom nào sau filter');
-        if (mounted) {
-          _showSnackBar(
-            'Không tìm thấy showroom nào. Vui lòng thử lại hoặc liên hệ hotline.',
-            isError: true,
-          );
-        }
+      if (mounted) {
+        _showShowroomSelector(showroomsWithDistance);
       }
     } catch (e) {
       debugPrint('❌ Lỗi tìm showroom: $e');
@@ -443,7 +400,9 @@ class _DepositScreenState extends State<DepositScreen> {
       'address': _addressController.text.trim(),
       'notes': _notesController.text.trim(),
       'depositAmount': depositAmount,
-      'showroom': _selectedShowroom,
+      'showroom': (_selectedShowroom == null)
+          ? null
+          : Map<String, dynamic>.from(_selectedShowroom!),
       'createdAt': DateTime.now().toIso8601String(),
     };
 

@@ -42,11 +42,13 @@ class ShowroomApiService {
       }
     }
 
-    // Gọi OpenStreetMap API để tìm showroom
-    final allShowrooms = await _searchFromOSM(
-      latitude,
-      longitude,
-      radiusInMeters,
+    // Gọi OpenStreetMap API để tìm showroom.
+    // Overpass đôi khi trả rỗng/timeout khi radius quá lớn, nên mình retry
+    // với radius nhỏ dần nhưng vẫn đảm bảo kết quả nằm trong radiusInMeters.
+    final allShowrooms = await _searchFromOSMWithAdaptiveRadius(
+      latitude: latitude,
+      longitude: longitude,
+      maxRadiusInMeters: radiusInMeters,
     );
 
     if (allShowrooms.isEmpty) {
@@ -71,26 +73,27 @@ class ShowroomApiService {
       showroom['distance'] = distance;
     }
 
-    // Lọc theo brand nếu có
+    // Lọc theo brand nếu có.
+    // User requirement mới: "miễn sao vẫn gọi được showroom" -> nếu không có
+    // đúng brand trong 300km thì fallback sang showroom gần nhất bất kỳ trong 300km.
     List<Map<String, dynamic>> filteredShowrooms = allShowrooms;
     if (brand != null && brand.isNotEmpty) {
       final normalizedBrand = brand.trim().toLowerCase();
-      filteredShowrooms = allShowrooms.where((showroom) {
+      final brandMatches = allShowrooms.where((showroom) {
         final showroomBrand = (showroom['brand'] as String? ?? '')
             .toLowerCase();
         final showroomName = (showroom['name'] as String? ?? '').toLowerCase();
-
-        // Check nếu brand hoặc name chứa tên hãng xe
         return showroomBrand.contains(normalizedBrand) ||
             showroomName.contains(normalizedBrand);
       }).toList();
 
-      if (filteredShowrooms.isEmpty) {
+      if (brandMatches.isNotEmpty) {
+        filteredShowrooms = brandMatches;
+      } else {
         log(
-          '⚠️ Không tìm thấy showroom cho brand "$brand" trong bán kính ${radiusInMeters / 1000}km',
+          '⚠️ Không có showroom brand "$brand" trong 300km, fallback sang showroom gần nhất bất kỳ',
         );
-        log('💡 Có ${allShowrooms.length} showroom khác hãng trong khu vực');
-        return []; // Trả về rỗng theo yêu cầu - không dùng fallback
+        filteredShowrooms = allShowrooms;
       }
     }
 
@@ -109,6 +112,40 @@ class ShowroomApiService {
       '✅ Trả về ${results.length} showroom, gần nhất: ${((results.first['distance'] as double) / 1000).toStringAsFixed(1)}km',
     );
     return results;
+  }
+
+  /// Adaptive radius search: chạy query với các bán kính nhỏ dần để tránh
+  /// tình trạng Overpass trả rỗng/timeout khi radius quá lớn.
+  Future<List<Map<String, dynamic>>> _searchFromOSMWithAdaptiveRadius({
+    required double latitude,
+    required double longitude,
+    required int maxRadiusInMeters,
+  }) async {
+    // Luôn đảm bảo kết quả nằm trong maxRadiusInMeters.
+    final candidates =
+        <int>{
+            maxRadiusInMeters,
+            200000,
+            150000,
+            100000,
+            75000,
+            50000,
+            30000,
+            20000,
+            10000,
+          }.where((r) => r <= maxRadiusInMeters).toList()
+          ..sort((a, b) => b.compareTo(a));
+
+    for (final radius in candidates) {
+      final results = await _searchFromOSM(latitude, longitude, radius);
+      if (results.isNotEmpty) {
+        log(
+          '✅ OSM results: ${results.length} showroom (adaptive radius ${radius / 1000}km)',
+        );
+        return results;
+      }
+    }
+    return [];
   }
 
   /// Tìm kiếm showroom từ OpenStreetMap Overpass API

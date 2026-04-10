@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/floating_car_bottom_nav.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -48,23 +49,39 @@ class _BookCarScreenState extends State<BookCarScreen> {
     // Handle navigation based on index
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(
+          context,
+          '/home',
+          arguments: widget.carData['phoneNumber'],
+        );
         break;
       case 1:
-        Navigator.pushReplacementNamed(context, '/newcar');
+        Navigator.pushReplacementNamed(
+          context,
+          '/newcar',
+          arguments: widget.carData['phoneNumber'],
+        );
         break;
       case 2:
-        Navigator.pushReplacementNamed(context, '/favorite');
+        Navigator.pushReplacementNamed(
+          context,
+          '/mycar',
+          arguments: widget.carData['phoneNumber'],
+        );
         break;
       case 3:
         Navigator.pushReplacementNamed(
           context,
-          '/warranty',
+          '/favorite',
           arguments: widget.carData['phoneNumber'],
         );
         break;
       case 4:
-        Navigator.pushReplacementNamed(context, '/profile');
+        Navigator.pushReplacementNamed(
+          context,
+          '/profile',
+          arguments: widget.carData['phoneNumber'],
+        );
         break;
     }
   }
@@ -1059,34 +1076,9 @@ class _BookCarScreenState extends State<BookCarScreen> {
 
   // Bottom Navigation from HomeScreen
   Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: const BoxDecoration(color: Colors.transparent),
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home_rounded, 0),
-            _buildNavItem(Icons.directions_car_rounded, 1),
-            _buildNavItem(Icons.favorite_rounded, 2),
-            _buildNavItem(Icons.verified_user_rounded, 3),
-            _buildNavItem(Icons.person_rounded, 4),
-          ],
-        ),
-      ),
+    return FloatingCarBottomNav(
+      currentIndex: _activeNavIndex,
+      onTap: (index) => _onNavTap(index),
     );
   }
 

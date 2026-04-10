@@ -623,7 +623,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               carName: widget.carName,
               amount: widget.amount,
               carData: widget.bookingData ?? {},
-              phoneNumber: widget.bookingData?['phoneNumber'] ?? '',
+              // bookingData is built in DepositScreen and uses key 'userPhone'.
+              // If we pass empty here, VietQR->Home will lose user context.
+              phoneNumber:
+                  (widget.bookingData?['userPhone'] ??
+                          widget.bookingData?['phoneNumber'] ??
+                          '')
+                      .toString(),
               customerEmail:
                   widget.bookingData?['customerEmail'] ?? '', // ✅ Truyền email
             ),

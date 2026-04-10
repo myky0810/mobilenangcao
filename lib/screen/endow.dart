@@ -45,7 +45,9 @@ class _EndowScreenState extends State<EndowScreen> {
 
   void _listenToNotifications() {
     _notificationSubscription?.cancel();
-    _notificationSubscription = _notificationService.notificationStream.listen((notifications) {
+    _notificationSubscription = _notificationService.notificationStream.listen((
+      notifications,
+    ) {
       _loadNotifications();
     });
   }
@@ -119,35 +121,6 @@ class _EndowScreenState extends State<EndowScreen> {
   }
 
   Widget _buildLoadingBody() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: Colors.orange),
-          SizedBox(height: 16),
-          Text('Đang tải ưu đãi...', style: TextStyle(color: Colors.white)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_notificationsByDate.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.notifications_off, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Chưa có thông báo nào',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
-        ),
-      );
-    }
-
     return RefreshIndicator(
       onRefresh: _loadNotifications,
       backgroundColor: const Color(0xFF333333),
@@ -177,6 +150,12 @@ class _EndowScreenState extends State<EndowScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildBody() {
+    // Current UI is built in _buildLoadingBody() (it already includes RefreshIndicator + sections).
+    // Keep this wrapper so the Scaffold can toggle _isLoading cleanly.
+    return _buildLoadingBody();
   }
 
   Widget _buildSectionHeader(String title) {
@@ -323,11 +302,10 @@ class _EndowScreenState extends State<EndowScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                if (notification.carModel != null)
-                  Text(
-                    notification.carModel!,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
+                Text(
+                  notification.carModel ?? '',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
                 const Spacer(),
                 Row(
                   children: [

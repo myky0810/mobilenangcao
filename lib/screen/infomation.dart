@@ -294,7 +294,7 @@ class _InfomationScreenState extends State<InfomationScreen> {
                       // Điều hướng tới trang thay đổi thông tin
                       final result = await Navigator.pushNamed(
                         context,
-                        '/info',
+                        '/changeinfo',
                         arguments: widget.phoneNumber,
                       );
 

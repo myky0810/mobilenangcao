@@ -69,8 +69,10 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          title: const Text('Elite Members',
-              style: TextStyle(fontWeight: FontWeight.w900)),
+          title: const Text(
+            'Elite Members',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
         ),
         body: userId == null
             ? const _CenteredMessage(
@@ -98,10 +100,11 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
                   final nextTier = tier.next;
                   final nextTarget = nextTier?.minSpendVnd;
                   final progress =
-                      (nextTier == null || nextTarget == null || nextTarget <= 0)
-                          ? 1.0
-                          : (stats.investmentTotalVnd / nextTarget)
-                              .clamp(0.0, 1.0);
+                      (nextTier == null ||
+                          nextTarget == null ||
+                          nextTarget <= 0)
+                      ? 1.0
+                      : (stats.investmentTotalVnd / nextTarget).clamp(0.0, 1.0);
 
                   return _EliteDashboard(
                     stats: stats,
@@ -133,10 +136,9 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
       for (final doc in snap.docs) {
         final data = doc.data();
 
-        final rawPhone = (data['customerPhone'] ??
-                data['userPhone'] ??
-                data['phoneNumber'])
-            ?.toString();
+        final rawPhone =
+            (data['customerPhone'] ?? data['userPhone'] ?? data['phoneNumber'])
+                ?.toString();
         if (rawPhone == null) continue;
 
         if (FirebaseHelper.normalizePhone(rawPhone) != userId) continue;
@@ -147,10 +149,12 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
             : double.tryParse(amountRaw.toString()) ?? 0.0;
         total += amount;
 
-        final dt = _parseDepositDate(data['depositDate'] ??
-            data['paidAt'] ??
-            data['createdAt'] ??
-            data['date']);
+        final dt = _parseDepositDate(
+          data['depositDate'] ??
+              data['paidAt'] ??
+              data['createdAt'] ??
+              data['date'],
+        );
         if (dt != null) {
           if (last == null || dt.isAfter(last)) last = dt;
           activities.add(_MemberActivity(date: dt, amountVnd: amount));
@@ -232,7 +236,10 @@ class _EliteDashboard extends StatelessWidget {
           totalSpendVnd: stats.investmentTotalVnd,
         ),
         const SizedBox(height: 12),
-        _ActivityCard(lastActiveAt: stats.lastActiveAt, activities: stats.activities),
+        _ActivityCard(
+          lastActiveAt: stats.lastActiveAt,
+          activities: stats.activities,
+        ),
         const SizedBox(height: 12),
         const _PerksCard(),
       ],
@@ -269,8 +276,11 @@ class _GoldStatusCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.workspace_premium_rounded,
-                color: Colors.black, size: 28),
+            child: const Icon(
+              Icons.workspace_premium_rounded,
+              color: Colors.black,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -404,11 +414,14 @@ class _ProgressCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('Tiến độ',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14)),
+              const Text(
+                'Tiến độ',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
+              ),
               const Spacer(),
               Text(
                 '${(progress * 100).round()}%',
@@ -416,7 +429,7 @@ class _ProgressCard extends StatelessWidget {
                   color: tier.color,
                   fontWeight: FontWeight.w900,
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -453,8 +466,9 @@ class _ActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final df = DateFormat('dd/MM/yyyy');
     final moneyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
-    final lastText =
-        lastActiveAt == null ? 'Chưa có giao dịch' : df.format(lastActiveAt!);
+    final lastText = lastActiveAt == null
+        ? 'Chưa có giao dịch'
+        : df.format(lastActiveAt!);
 
     return _DarkCard(
       child: Column(
@@ -462,11 +476,14 @@ class _ActivityCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('Hoạt động gần đây',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14)),
+              const Text(
+                'Hoạt động gần đây',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
+              ),
               const Spacer(),
               Text(
                 lastText,
@@ -481,9 +498,7 @@ class _ActivityCard extends StatelessWidget {
           if (activities.isEmpty)
             Text(
               'Chưa có dữ liệu.',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
             )
           else
             ...activities.map((a) {
@@ -526,11 +541,14 @@ class _PerksCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Quyền lợi',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14)),
+          const Text(
+            'Quyền lợi',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 10),
           const _PerkLine(
             icon: Icons.local_offer_rounded,
@@ -638,9 +656,7 @@ class _CenteredMessage extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.60),
-              ),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.60)),
             ),
           ],
         ),
@@ -658,10 +674,10 @@ class _MemberSpendStats {
   });
 
   const _MemberSpendStats.zero()
-      : investmentTotalVnd = 0,
-        points = 0,
-        lastActiveAt = null,
-        activities = const [];
+    : investmentTotalVnd = 0,
+      points = 0,
+      lastActiveAt = null,
+      activities = const [];
 
   final double investmentTotalVnd;
   final int points;
@@ -677,17 +693,24 @@ class _MemberActivity {
 
 enum _MemberTier {
   silver(label: 'Silver', minSpendVnd: 0, color: Color(0xFFB9C1CC), badge: 'S'),
-  gold(label: 'Gold', minSpendVnd: 200000000, color: Color(0xFFFFC857), badge: 'G'),
+  gold(
+    label: 'Gold',
+    minSpendVnd: 200000000,
+    color: Color(0xFFFFC857),
+    badge: 'G',
+  ),
   platinum(
-      label: 'Platinum',
-      minSpendVnd: 500000000,
-      color: Color(0xFF8FE3FF),
-      badge: 'P'),
+    label: 'Platinum',
+    minSpendVnd: 500000000,
+    color: Color(0xFF8FE3FF),
+    badge: 'P',
+  ),
   diamond(
-      label: 'Diamond',
-      minSpendVnd: 1000000000,
-      color: Color(0xFFB38CFF),
-      badge: 'D');
+    label: 'Diamond',
+    minSpendVnd: 1000000000,
+    color: Color(0xFFB38CFF),
+    badge: 'D',
+  );
 
   const _MemberTier({
     required this.label,

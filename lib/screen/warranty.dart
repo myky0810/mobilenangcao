@@ -307,10 +307,7 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
         pageBuilder: (ctx, anim, _) {
           return FadeTransition(
             opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
-            child: _WarrantyDetailsSheet(
-              warranty: w,
-              headerImage: headerImg,
-            ),
+            child: _WarrantyDetailsSheet(warranty: w, headerImage: headerImg),
           );
         },
       ),
@@ -914,10 +911,13 @@ class _WarrantyDetailsSheet extends StatelessWidget {
         final overlay = snap.data;
 
         final carName =
-            overlay?['carName']?.toString() ?? (warranty['carName'] ?? '').toString();
+            overlay?['carName']?.toString() ??
+            (warranty['carName'] ?? '').toString();
         final carBrand =
-            overlay?['carBrand']?.toString() ?? (warranty['carBrand'] ?? '').toString();
-        final carImage = overlay?['carImage']?.toString() ??
+            overlay?['carBrand']?.toString() ??
+            (warranty['carBrand'] ?? '').toString();
+        final carImage =
+            overlay?['carImage']?.toString() ??
             overlay?['imageUrl']?.toString() ??
             (warranty['imageUrl'] ?? warranty['carImage'] ?? '').toString();
 
@@ -925,13 +925,16 @@ class _WarrantyDetailsSheet extends StatelessWidget {
             ? carImage.trim()
             : headerImage;
 
-        final carModelYear = (overlay?['carModelYear'] ?? warranty['carModelYear'] ?? '').toString();
-        final edition = (overlay?['edition'] ??
-                overlay?['carEdition'] ??
-                warranty['edition'] ??
-                warranty['carEdition'] ??
-                '')
-            .toString();
+        final carModelYear =
+            (overlay?['carModelYear'] ?? warranty['carModelYear'] ?? '')
+                .toString();
+        final edition =
+            (overlay?['edition'] ??
+                    overlay?['carEdition'] ??
+                    warranty['edition'] ??
+                    warranty['carEdition'] ??
+                    '')
+                .toString();
 
         final odo = _stringOrEmpty(
           warranty['odoAtActivation'] ?? warranty['odometerValue'],
@@ -950,175 +953,184 @@ class _WarrantyDetailsSheet extends StatelessWidget {
         final subtitle = edition.isNotEmpty ? edition : ' ';
 
         return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-          child: Material(
-            color: _bg,
-            borderRadius: BorderRadius.circular(22),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              children: [
-                Column(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+              child: Material(
+                color: _bg,
+                borderRadius: BorderRadius.circular(22),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
                   children: [
-                    _HeaderImage(image: resolvedHeader),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                    Column(
+                      children: [
+                        _HeaderImage(image: resolvedHeader),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900,
+                                              height: 1.08,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            subtitle,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white54,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _StatusPill(status: status),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _DetailsTile(
+                                        label: 'VIN NUMBER',
+                                        value: vinMasked.isNotEmpty
+                                            ? vinMasked
+                                            : '--',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _DetailsTile(
+                                        label: 'ODOMETER',
+                                        value: odo.isNotEmpty ? odo : '--',
+                                        subValue: odo.isNotEmpty ? 'km' : '',
+                                        alignEnd: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _DetailsTile(
+                                        label: 'SHOWROOM',
+                                        value: showroomName.isNotEmpty
+                                            ? showroomName
+                                            : '--',
+                                        subValue: showroomAddress,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _DetailsTile(
+                                        label: 'EXPIRES ON',
+                                        value: expStr,
+                                        valueColor: const Color(0xFF55A7FF),
+                                        alignEnd: true,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 18),
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Coverage Breakdown',
+                                        style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 20,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w900,
-                                          height: 1.08,
                                         ),
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        subtitle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white54,
+                                    ),
+                                    TextButton(
+                                      onPressed: () {},
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: _accent,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 6,
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'View Policy',
+                                        style: TextStyle(
                                           fontSize: 12,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                _StatusPill(status: status),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _DetailsTile(
-                                    label: 'VIN NUMBER',
-                                    value: vinMasked.isNotEmpty ? vinMasked : '--',
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _DetailsTile(
-                                    label: 'ODOMETER',
-                                    value: odo.isNotEmpty ? odo : '--',
-                                    subValue: odo.isNotEmpty ? 'km' : '',
-                                    alignEnd: true,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _DetailsTile(
-                                    label: 'SHOWROOM',
-                                    value: showroomName.isNotEmpty ? showroomName : '--',
-                                    subValue: showroomAddress,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _DetailsTile(
-                                    label: 'EXPIRES ON',
-                                    value: expStr,
-                                    valueColor: const Color(0xFF55A7FF),
-                                    alignEnd: true,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Text(
-                                    'Coverage Breakdown',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w900,
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                TextButton(
-                                  onPressed: () {},
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: _accent,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 6,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'View Policy',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
+                                const SizedBox(height: 10),
+                                _CoverageItem(
+                                  icon: Icons.settings_suggest_rounded,
+                                  title: 'Powertrain & Engine',
+                                  subtitle: 'Full coverage for core mechanics',
+                                ),
+                                const SizedBox(height: 10),
+                                _CoverageItem(
+                                  icon: Icons.bolt_rounded,
+                                  title: 'Electrical Systems',
+                                  subtitle:
+                                      'Sensors, wiring, and battery systems',
+                                ),
+                                const SizedBox(height: 10),
+                                _CoverageItem(
+                                  icon: Icons.health_and_safety_rounded,
+                                  title: 'Roadside Assistance',
+                                  subtitle:
+                                      '24/7 support and emergency support',
+                                ),
+                                const SizedBox(height: 10),
+                                _CoverageItem(
+                                  icon: Icons.format_paint_rounded,
+                                  title: 'Corrosion & Paint',
+                                  subtitle: '12-year anti-perforation warranty',
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            _CoverageItem(
-                              icon: Icons.settings_suggest_rounded,
-                              title: 'Powertrain & Engine',
-                              subtitle: 'Full coverage for core mechanics',
-                            ),
-                            const SizedBox(height: 10),
-                            _CoverageItem(
-                              icon: Icons.bolt_rounded,
-                              title: 'Electrical Systems',
-                              subtitle: 'Sensors, wiring, and battery systems',
-                            ),
-                            const SizedBox(height: 10),
-                            _CoverageItem(
-                              icon: Icons.health_and_safety_rounded,
-                              title: 'Roadside Assistance',
-                              subtitle: '24/7 support and emergency support',
-                            ),
-                            const SizedBox(height: 10),
-                            _CoverageItem(
-                              icon: Icons.format_paint_rounded,
-                              title: 'Corrosion & Paint',
-                              subtitle: '12-year anti-perforation warranty',
-                            ),
-                          ],
+                          ),
                         ),
+                      ],
+                    ),
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: _TopBackButton(
+                        onTap: () => Navigator.pop(context),
                       ),
                     ),
                   ],
                 ),
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: _TopBackButton(onTap: () => Navigator.pop(context)),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        );
       },
     );
   }
@@ -1179,7 +1191,9 @@ class _WarrantyDetailsSheet extends StatelessWidget {
     final db = FirebaseFirestore.instance;
     final deps = db.collection('deposits');
 
-    Future<Map<String, dynamic>?> firstMatch(Query<Map<String, dynamic>> q) async {
+    Future<Map<String, dynamic>?> firstMatch(
+      Query<Map<String, dynamic>> q,
+    ) async {
       final snap = await q.limit(1).get();
       if (snap.docs.isEmpty) return null;
       return snap.docs.first.data();
@@ -1228,7 +1242,10 @@ class _WarrantyDetailsSheet extends StatelessWidget {
     final fromMap = d != null && d['showroom'] is Map
         ? (d['showroom'] as Map)['address']?.toString()
         : null;
-    return (fromMap ?? d?['showroomAddress'] ?? warranty['showroomAddress'] ?? '')
+    return (fromMap ??
+            d?['showroomAddress'] ??
+            warranty['showroomAddress'] ??
+            '')
         .toString();
   }
 }
@@ -1322,7 +1339,9 @@ class _StatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isActive ? Icons.check_circle_rounded : Icons.hourglass_bottom_rounded,
+            isActive
+                ? Icons.check_circle_rounded
+                : Icons.hourglass_bottom_rounded,
             color: Colors.white,
             size: 16,
           ),
@@ -1359,7 +1378,9 @@ class _DetailsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alignment = alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    final alignment = alignEnd
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../data/firebase_helper.dart';
+import '../services/members_stats_service.dart';
 import '../widgets/floating_car_bottom_nav.dart';
 
 class EliteMembersScreen extends StatefulWidget {
@@ -20,6 +21,8 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
   static const _bgTop = Color(0xFF070A12);
   static const _bgBottom = Color(0xFF050511);
 
+  // We treat Elite Members as part of the "MyCar" area but it's a separate
+  // route. Keep the center item highlighted.
   int _activeNavIndex = 2;
 
   String? get _userId {
@@ -30,21 +33,35 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
 
   void _onBottomNavTap(int index) {
     setState(() => _activeNavIndex = index);
+    final phoneArg = widget.phoneNumber;
     switch (index) {
       case 0:
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (r) => false);
+        // Don't clear the whole navigation stack here.
+        // Clearing the stack can drop route arguments (phoneNumber) and make
+        // screens look "logged out" when the user navigates back.
+        Navigator.of(
+          context,
+        ).pushReplacementNamed('/home', arguments: phoneArg);
         break;
       case 1:
-        Navigator.of(context).pushNamed('/newcar');
+        Navigator.of(
+          context,
+        ).pushReplacementNamed('/newcar', arguments: phoneArg);
         break;
       case 2:
-        Navigator.of(context).pushNamed('/mycar');
+        Navigator.of(
+          context,
+        ).pushReplacementNamed('/mycar', arguments: phoneArg);
         break;
       case 3:
-        Navigator.of(context).pushNamed('/favorite');
+        Navigator.of(
+          context,
+        ).pushReplacementNamed('/favorite', arguments: phoneArg);
         break;
       case 4:
-        Navigator.of(context).pushNamed('/profile');
+        Navigator.of(
+          context,
+        ).pushReplacementNamed('/profile', arguments: phoneArg);
         break;
     }
   }
@@ -124,45 +141,51 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
   }
 
   Stream<_MemberSpendStats> _streamMemberSpendStats(String userId) {
-    final q = FirebaseFirestore.instance
-        .collection('deposits')
-        .where('paymentStatus', isEqualTo: 'paid');
+    final ref = MembersStatsService.summaryRef(userId);
+    return ref.snapshots().asyncMap((doc) async {
+      final data = doc.data();
 
-    return q.snapshots().map((snap) {
-      var total = 0.0;
-      DateTime? last;
-      final activities = <_MemberActivity>[];
-
-      for (final doc in snap.docs) {
-        final data = doc.data();
-
-        final rawPhone =
-            (data['customerPhone'] ?? data['userPhone'] ?? data['phoneNumber'])
-                ?.toString();
-        if (rawPhone == null) continue;
-
-        if (FirebaseHelper.normalizePhone(rawPhone) != userId) continue;
-
-        final amountRaw = data['depositAmount'] ?? data['amount'] ?? 0;
-        final amount = (amountRaw is num)
-            ? amountRaw.toDouble()
-            : double.tryParse(amountRaw.toString()) ?? 0.0;
-        total += amount;
-
-        final dt = _parseDepositDate(
-          data['depositDate'] ??
-              data['paidAt'] ??
-              data['createdAt'] ??
-              data['date'],
+      // If admin summary doesn't exist yet, create it once.
+      if (data == null) {
+        await MembersStatsService.recomputeAndPersist(userId: userId);
+        return const _MemberSpendStats(
+          investmentTotalVnd: 0,
+          points: 0,
+          lastActiveAt: null,
+          activities: [],
         );
-        if (dt != null) {
-          if (last == null || dt.isAfter(last)) last = dt;
-          activities.add(_MemberActivity(date: dt, amountVnd: amount));
-        }
       }
 
-      activities.sort((a, b) => b.date.compareTo(a.date));
-      final points = (total / 100000).floor();
+      final total = (data['totalInvestmentVnd'] is num)
+          ? (data['totalInvestmentVnd'] as num).toDouble()
+          : double.tryParse('${data['totalInvestmentVnd']}') ?? 0.0;
+      final points = (data['points'] is num)
+          ? (data['points'] as num).toInt()
+          : int.tryParse('${data['points']}') ?? 0;
+
+      final lastTs = data['lastActiveAt'] as Timestamp?;
+      final last = lastTs?.toDate();
+
+      final rawActivities = (data['recentActivities'] as List?) ?? const [];
+      final activities = <_MemberActivity>[];
+      for (final item in rawActivities) {
+        if (item is! Map) continue;
+        final ts = item['date'];
+        final dt = _parseDepositDate(ts);
+        if (dt == null) continue;
+
+        final type = (item['type'] ?? '').toString();
+        if (type == 'deposit') {
+          final amountRaw = item['amountVnd'] ?? 0;
+          final amount = (amountRaw is num)
+              ? amountRaw.toDouble()
+              : double.tryParse(amountRaw.toString()) ?? 0.0;
+          activities.add(_MemberActivity(date: dt, amountVnd: amount));
+        } else {
+          // Test-drive activity.
+          activities.add(_MemberActivity(date: dt, amountVnd: 0));
+        }
+      }
 
       return _MemberSpendStats(
         investmentTotalVnd: total,
@@ -297,11 +320,29 @@ class _GoldStatusCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  'ID: $userId',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.60),
-                    fontSize: 12,
+                InkWell(
+                  onTap: () => _showTierDetails(context),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'ID: $userId',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.60),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -324,6 +365,153 @@ class _GoldStatusCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showTierDetails(BuildContext context) {
+    final moneyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF070A12),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) {
+        Widget line(_MemberTier t, {required bool isCurrent}) {
+          final next = t.next;
+          final needsText = (next == null)
+              ? 'Hạng cao nhất'
+              : 'Cần ${moneyFmt.format(next.minSpendVnd)} tổng đầu tư để lên ${next.label}';
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isCurrent
+                    ? t.color.withValues(alpha: 0.65)
+                    : Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: t.color.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      t.badge,
+                      style: TextStyle(
+                        color: t.color,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tổng đầu tư tối thiểu: ${moneyFmt.format(t.minSpendVnd)}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.62),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        needsText,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isCurrent)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      color: t.color.withValues(alpha: 0.18),
+                    ),
+                    child: Text(
+                      'HIỆN TẠI',
+                      style: TextStyle(
+                        color: t.color,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }
+
+        final tiers = _MemberTier.values;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Chi tiết tăng hạng',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Bấm vào ID để xem. Mốc hạng dựa trên tổng đầu tư (đặt cọc/ thanh toán).',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.62),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final t in tiers) line(t, isCurrent: t == tier),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -692,24 +880,24 @@ class _MemberActivity {
 }
 
 enum _MemberTier {
-  silver(label: 'Silver', minSpendVnd: 0, color: Color(0xFFB9C1CC), badge: 'S'),
-  gold(
-    label: 'Gold',
-    minSpendVnd: 200000000,
-    color: Color(0xFFFFC857),
-    badge: 'G',
+  dong(label: 'Đồng', minSpendVnd: 0, color: Color(0xFFB87333), badge: 'Đ'),
+  silver(
+    label: 'Bạc',
+    minSpendVnd: 5000000000,
+    color: Color(0xFFB9C1CC),
+    badge: 'B',
   ),
-  platinum(
-    label: 'Platinum',
-    minSpendVnd: 500000000,
-    color: Color(0xFF8FE3FF),
-    badge: 'P',
+  gold(
+    label: 'Vàng',
+    minSpendVnd: 20000000000,
+    color: Color(0xFFFFC857),
+    badge: 'V',
   ),
   diamond(
-    label: 'Diamond',
-    minSpendVnd: 1000000000,
+    label: 'Kim Cương',
+    minSpendVnd: 50000000000,
     color: Color(0xFFB38CFF),
-    badge: 'D',
+    badge: 'K',
   );
 
   const _MemberTier({
@@ -726,18 +914,18 @@ enum _MemberTier {
 
   static _MemberTier fromSpend(double spend) {
     if (spend >= _MemberTier.diamond.minSpendVnd) return _MemberTier.diamond;
-    if (spend >= _MemberTier.platinum.minSpendVnd) return _MemberTier.platinum;
     if (spend >= _MemberTier.gold.minSpendVnd) return _MemberTier.gold;
-    return _MemberTier.silver;
+    if (spend >= _MemberTier.silver.minSpendVnd) return _MemberTier.silver;
+    return _MemberTier.dong;
   }
 
   _MemberTier? get next {
     switch (this) {
+      case _MemberTier.dong:
+        return _MemberTier.silver;
       case _MemberTier.silver:
         return _MemberTier.gold;
       case _MemberTier.gold:
-        return _MemberTier.platinum;
-      case _MemberTier.platinum:
         return _MemberTier.diamond;
       case _MemberTier.diamond:
         return null;

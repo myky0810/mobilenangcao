@@ -14,259 +14,301 @@ class TestDriveScreen extends StatefulWidget {
 }
 
 class _TestDriveScreenState extends State<TestDriveScreen> {
+  // Use Deposit palette
+  static const Color _showroomTop = Color(0xFF1E2A47);
+  static const Color _showroomMid = Color(0xFF1E2A47);
+  static const Color _showroomBase = Color(0xFF1E2A47);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: _showroomBase,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header with back button and title
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_showroomTop, _showroomMid, _showroomBase],
                 ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'My Test Drives',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Spartan',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 40), // Balance the back button
-                ],
               ),
             ),
 
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-
-                    // Bookings list from Firestore (lọc theo userPhone)
-                    StreamBuilder<QuerySnapshot>(
-                      stream: () {
-                        final profileRef = UserService.currentUserProfileRef(
-                          phoneIdentifier: widget.phoneNumber,
-                        );
-                        final profilePath = profileRef?.path ?? '';
-
-                        if (profilePath.isNotEmpty) {
-                          return FirebaseFirestore.instance
-                              .collection('test_drive_bookings')
-                              .where('userProfilePath', isEqualTo: profilePath)
-                              .snapshots();
-                        }
-
-                        // Backward compatibility: older docs used userPhone.
-                        final phone = widget.phoneNumber?.trim() ?? '';
-                        if (phone.isNotEmpty) {
-                          return FirebaseFirestore.instance
-                              .collection('test_drive_bookings')
-                              .where('userPhone', isEqualTo: phone)
-                              .snapshots();
-                        }
-
-                        return FirebaseFirestore.instance
-                            .collection('test_drive_bookings')
-                            .snapshots();
-                      }(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          // Hiện tất cả booking nếu query lỗi (fallback)
-                          return StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('test_drive_bookings')
-                                .snapshots(),
-                            builder: (context, fallbackSnap) {
-                              if (!fallbackSnap.hasData ||
-                                  fallbackSnap.data!.docs.isEmpty) {
-                                return _buildEmptyState();
-                              }
-
-                              final profileRef =
-                                  UserService.currentUserProfileRef(
-                                    phoneIdentifier: widget.phoneNumber,
-                                  );
-                              final profilePath = profileRef?.path ?? '';
-                              final docs = fallbackSnap.data!.docs.where((doc) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                if (profilePath.isNotEmpty) {
-                                  final path =
-                                      (data['userProfilePath'] as String?) ??
-                                      '';
-                                  return path == profilePath;
-                                }
-                                final up = (data['userPhone'] as String?) ?? '';
-                                final phone = widget.phoneNumber?.trim() ?? '';
-                                return phone.isEmpty || up == phone;
-                              }).toList();
-                              docs.sort((a, b) {
-                                final at =
-                                    (a.data()
-                                        as Map<String, dynamic>)['createdAt'];
-                                final bt =
-                                    (b.data()
-                                        as Map<String, dynamic>)['createdAt'];
-                                if (at == null && bt == null) return 0;
-                                if (at == null) return 1;
-                                if (bt == null) return -1;
-                                return (bt as dynamic).compareTo(at as dynamic);
-                              });
-                              if (docs.isEmpty) return _buildEmptyState();
-                              return Column(
-                                children: docs.map((doc) {
-                                  final data =
-                                      doc.data() as Map<String, dynamic>;
-                                  return _buildBookingCard(data, doc.id);
-                                }).toList(),
-                              );
-                            },
-                          );
-                        }
-
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(40),
-                              child: CircularProgressIndicator(
-                                color: Colors.white54,
-                              ),
-                            ),
-                          );
-                        }
-
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return _buildEmptyState();
-                        }
-
-                        // Sort bằng Dart (không cần Firestore index)
-                        final docs = List.from(snapshot.data!.docs);
-                        docs.sort((a, b) {
-                          final at =
-                              (a.data() as Map<String, dynamic>)['createdAt'];
-                          final bt =
-                              (b.data() as Map<String, dynamic>)['createdAt'];
-                          if (at == null && bt == null) return 0;
-                          if (at == null) return 1;
-                          if (bt == null) return -1;
-                          return (bt as dynamic).compareTo(at as dynamic);
-                        });
-
-                        return Column(
-                          children: docs.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-                            return _buildBookingCard(data, doc.id);
-                          }).toList(),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Book another drive section
-                    Center(
-                      child: Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/newcar',
-                                arguments: widget.phoneNumber,
-                              );
-                            },
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.06),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.directions_car_outlined,
-                                color: Colors.white.withValues(alpha: 0.3),
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/newcar',
-                                arguments: widget.phoneNumber,
-                              );
-                            },
-                            child: const Text(
-                              'Book another drive?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'Spartan',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Experience the latest\ninnovations in electric mobility.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white38,
-                              fontFamily: 'Spartan',
-                              fontSize: 12,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
+            Column(
+              children: [
+                // Header with back button and title
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        width: 1,
                       ),
                     ),
-
-                    const SizedBox(height: 40),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.10),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Lịch lái thử',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Spartan',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 40), // Balance the back button
+                    ],
+                  ),
                 ),
-              ),
+
+                // Content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 24),
+
+                        // Bookings list from Firestore (lọc theo userPhone)
+                        StreamBuilder<QuerySnapshot>(
+                          stream: () {
+                            final profileRef =
+                                UserService.currentUserProfileRef(
+                                  phoneIdentifier: widget.phoneNumber,
+                                );
+                            final profilePath = profileRef?.path ?? '';
+
+                            if (profilePath.isNotEmpty) {
+                              return FirebaseFirestore.instance
+                                  .collection('test_drive_bookings')
+                                  .where(
+                                    'userProfilePath',
+                                    isEqualTo: profilePath,
+                                  )
+                                  .snapshots();
+                            }
+
+                            // Backward compatibility: older docs used userPhone.
+                            final phone = widget.phoneNumber?.trim() ?? '';
+                            if (phone.isNotEmpty) {
+                              return FirebaseFirestore.instance
+                                  .collection('test_drive_bookings')
+                                  .where('userPhone', isEqualTo: phone)
+                                  .snapshots();
+                            }
+
+                            return FirebaseFirestore.instance
+                                .collection('test_drive_bookings')
+                                .snapshots();
+                          }(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              // Hiện tất cả booking nếu query lỗi (fallback)
+                              return StreamBuilder<QuerySnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('test_drive_bookings')
+                                    .snapshots(),
+                                builder: (context, fallbackSnap) {
+                                  if (!fallbackSnap.hasData ||
+                                      fallbackSnap.data!.docs.isEmpty) {
+                                    return _buildEmptyState();
+                                  }
+
+                                  final profileRef =
+                                      UserService.currentUserProfileRef(
+                                        phoneIdentifier: widget.phoneNumber,
+                                      );
+                                  final profilePath = profileRef?.path ?? '';
+                                  final docs = fallbackSnap.data!.docs.where((
+                                    doc,
+                                  ) {
+                                    final data =
+                                        doc.data() as Map<String, dynamic>;
+                                    if (profilePath.isNotEmpty) {
+                                      final path =
+                                          (data['userProfilePath']
+                                              as String?) ??
+                                          '';
+                                      return path == profilePath;
+                                    }
+                                    final up =
+                                        (data['userPhone'] as String?) ?? '';
+                                    final phone =
+                                        widget.phoneNumber?.trim() ?? '';
+                                    return phone.isEmpty || up == phone;
+                                  }).toList();
+                                  docs.sort((a, b) {
+                                    final at =
+                                        (a.data()
+                                            as Map<
+                                              String,
+                                              dynamic
+                                            >)['createdAt'];
+                                    final bt =
+                                        (b.data()
+                                            as Map<
+                                              String,
+                                              dynamic
+                                            >)['createdAt'];
+                                    if (at == null && bt == null) return 0;
+                                    if (at == null) return 1;
+                                    if (bt == null) return -1;
+                                    return (bt as dynamic).compareTo(
+                                      at as dynamic,
+                                    );
+                                  });
+                                  if (docs.isEmpty) return _buildEmptyState();
+                                  return Column(
+                                    children: docs.map((doc) {
+                                      final data =
+                                          doc.data() as Map<String, dynamic>;
+                                      return _buildBookingCard(data, doc.id);
+                                    }).toList(),
+                                  );
+                                },
+                              );
+                            }
+
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(40),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white54,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (!snapshot.hasData ||
+                                snapshot.data!.docs.isEmpty) {
+                              return _buildEmptyState();
+                            }
+
+                            // Sort bằng Dart (không cần Firestore index)
+                            final docs = List.from(snapshot.data!.docs);
+                            docs.sort((a, b) {
+                              final at =
+                                  (a.data()
+                                      as Map<String, dynamic>)['createdAt'];
+                              final bt =
+                                  (b.data()
+                                      as Map<String, dynamic>)['createdAt'];
+                              if (at == null && bt == null) return 0;
+                              if (at == null) return 1;
+                              if (bt == null) return -1;
+                              return (bt as dynamic).compareTo(at as dynamic);
+                            });
+
+                            return Column(
+                              children: docs.map((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                return _buildBookingCard(data, doc.id);
+                              }).toList(),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // Đặt lịch lái thử khác
+                        Center(
+                          child: Column(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/newcar',
+                                    arguments: widget.phoneNumber,
+                                  );
+                                },
+                                child: Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withValues(alpha: 0.06),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.directions_car_outlined,
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/newcar',
+                                    arguments: widget.phoneNumber,
+                                  );
+                                },
+                                child: const Text(
+                                  'Đặt lịch lái thử khác?',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontFamily: 'Spartan',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Trải nghiệm những mẫu xe mới\nvà công nghệ hiện đại nhất.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontFamily: 'Spartan',
+                                  fontSize: 12,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -312,7 +354,7 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
 
   Widget _buildBookingCard(Map<String, dynamic> data, String docId) {
     final status = (data['status'] as String?) ?? 'pending';
-    final carName = (data['carName'] as String?) ?? 'Unknown Car';
+    final carName = (data['carName'] as String?) ?? 'Xe chưa xác định';
     final carImage = data['carImage'] as String?;
     final date = (data['date'] as String?) ?? '';
     final time = (data['time'] as String?) ?? '';
@@ -322,15 +364,15 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
     switch (status) {
       case 'confirmed':
         statusColor = const Color(0xFF22C55E);
-        statusText = 'CONFIRMED';
+        statusText = 'ĐÃ XÁC NHẬN';
         break;
       case 'completed':
         statusColor = const Color(0xFF6B7280);
-        statusText = 'COMPLETED';
+        statusText = 'HOÀN THÀNH';
         break;
       default:
         statusColor = const Color(0xFFF59E0B);
-        statusText = 'PENDING';
+        statusText = 'ĐANG CHỜ';
     }
 
     return Container(
@@ -452,12 +494,12 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
                   children: [
                     if (status == 'pending')
                       Expanded(
-                        child: _buildOutlineButton('RESCHEDULE', onTap: () {}),
+                        child: _buildOutlineButton('ĐỔI LỊCH', onTap: () {}),
                       ),
                     if (status == 'pending') const SizedBox(width: 10),
                     Expanded(
                       child: _buildFilledButton(
-                        status == 'completed' ? 'LEAVE A REVIEW' : 'DETAILS  →',
+                        status == 'completed' ? 'ĐÁNH GIÁ' : 'CHI TIẾT  →',
                         onTap: () {
                           final bookingData = <String, dynamic>{
                             ...data,

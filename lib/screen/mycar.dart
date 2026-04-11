@@ -15,8 +15,10 @@ class MyCarScreen extends StatefulWidget {
 }
 
 class _MyCarScreenState extends State<MyCarScreen> {
-  static const _bgTop = Color(0xFF070A12);
-  static const _bgBottom = Color(0xFF050511);
+  // Preview: use Deposit palette
+  static const _bgTop = Color(0xFF1E2A47);
+  static const _bgMid = Color(0xFF1E2A47);
+  static const _bgBottom = Color(0xFF1E2A47);
 
   static const _cardSurface = Color(0xFF14161B);
 
@@ -52,7 +54,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [_bgTop, _bgBottom],
+              colors: [_bgTop, _bgMid, _bgBottom],
             ),
           ),
           child: userId == null
@@ -127,7 +129,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: const [
         Text(
-          'My Garage',
+          'Xe của tôi',
           style: TextStyle(
             color: Colors.white,
             fontSize: 26,
@@ -173,7 +175,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'MEMBER STATUS',
+                  'TRẠNG THÁI THÀNH VIÊN',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
@@ -308,6 +310,7 @@ class _GarageVehicleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = (vehicle['status'] ?? '').toString();
+    final statusText = _statusToVi(status);
     final name = (vehicle['name'] ?? '').toString();
     final subtitle = (vehicle['subtitle'] ?? '').toString();
     final imageUrl = (vehicle['imageUrl'] ?? '').toString();
@@ -400,7 +403,7 @@ class _GarageVehicleCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      status.toUpperCase(),
+                      statusText,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.98),
                         fontSize: 10,
@@ -479,6 +482,26 @@ class _GarageVehicleCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static String _statusToVi(String raw) {
+    final s = raw.trim().toLowerCase();
+    if (s.isEmpty) return 'KHÔNG RÕ';
+
+    // Handle common combined states like: "order active", "ordered active"...
+    final hasActive = s.contains('active');
+    final hasOrdered = s.contains('ordered') || s.contains('order');
+
+    if (hasOrdered && hasActive) return 'ĐÃ ĐẶT (ĐANG HIỆU LỰC)';
+    if (hasActive) return 'ĐANG HOẠT ĐỘNG';
+    if (hasOrdered) return 'ĐÃ ĐẶT';
+
+    if (s.contains('pending')) return 'ĐANG CHỜ';
+    if (s.contains('expired')) return 'HẾT HẠN';
+    if (s.contains('cancelled') || s.contains('canceled')) return 'ĐÃ HỦY';
+
+    // Fallback: giữ nguyên nhưng viết hoa để giống pill cũ
+    return raw.toUpperCase();
   }
 }
 

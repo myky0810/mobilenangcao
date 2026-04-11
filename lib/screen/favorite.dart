@@ -59,8 +59,19 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      body: SafeArea(child: _buildBody()),
+      backgroundColor: const Color(0xFF1E2A47),
+      body: SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF1E2A47), Color(0xFF1E2A47), Color(0xFF1E2A47)],
+            ),
+          ),
+          child: _buildBody(),
+        ),
+      ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
@@ -164,7 +175,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
   Widget _buildBottomNav() {
     return FloatingCarBottomNav(
       currentIndex: _activeNavIndex,
-      backgroundColor: const Color(0xFF121B28),
       onTap: (index) {
         if (_activeNavIndex == index) return;
         setState(() => _activeNavIndex = index);

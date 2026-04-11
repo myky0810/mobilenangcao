@@ -9,6 +9,8 @@ import '../widgets/notification_icon.dart';
 import '../widgets/ai_chat_button.dart';
 import '../widgets/car_card.dart';
 import '../services/user_service.dart';
+import 'banner_offer_screen.dart';
+import '../services/banner_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -20,6 +22,71 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with RouteAware, TickerProviderStateMixin {
+  final BannerService _bannerService = BannerService();
+  bool _bannerSeeded = false;
+
+  static final List<BannerOfferData> _offers = [
+    const BannerOfferData(
+      badge: 'ƯU ĐÃI ĐẶC BIỆT',
+      title: 'Car Expo 2026',
+      subtitle: 'Ưu đãi giới hạn cho khách hàng mới',
+      image: 'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg',
+      gradientColors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+      accentColor: Color(0xFF55A7FF),
+      description:
+          'Tham gia sự kiện Car Expo 2026 để nhận ưu đãi thuê xe sang với mức giá tốt nhất. Áp dụng cho số lượng giới hạn trong thời gian diễn ra chương trình.',
+      benefits: [
+        'Giảm giá lên đến 20% cho lần thuê đầu tiên',
+        'Tặng gói nâng cấp nội thất miễn phí',
+        'Ưu tiên hỗ trợ 24/7',
+      ],
+    ),
+    const BannerOfferData(
+      badge: 'XE ĐIỆN 2026',
+      title: 'Green Revolution',
+      subtitle: 'Trải nghiệm xe điện - phí sạc ưu đãi',
+      image: 'assets/images/products/Tesla-Model-S-2020-1600-02.jpg',
+      gradientColors: [Color(0xFF10B981), Color(0xFF34D399)],
+      accentColor: Color(0xFF10B981),
+      description:
+          'Trải nghiệm dàn xe điện mới nhất với gói ưu đãi đặc biệt. Tiết kiệm chi phí vận hành và tận hưởng công nghệ hiện đại.',
+      benefits: [
+        'Ưu đãi phí sạc tại đối tác',
+        'Miễn phí kiểm tra xe trước chuyến đi',
+        'Hỗ trợ kỹ thuật nhanh',
+      ],
+    ),
+    const BannerOfferData(
+      badge: 'TRẢI NGHIỆM HẠNG SANG',
+      title: 'Ultimate Luxury',
+      subtitle: 'Gói Premium cho khách hàng thân thiết',
+      image: 'assets/images/products/Mercedes-Benz-S-Class-2021-1600-01.jpg',
+      gradientColors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+      accentColor: Color(0xFF8B5CF6),
+      description:
+          'Gói Premium mang đến trải nghiệm thuê xe cao cấp với quyền lợi ưu tiên, dịch vụ nhanh chóng và nhiều quà tặng hấp dẫn.',
+      benefits: [
+        'Ưu tiên đặt xe giờ cao điểm',
+        'Tặng 1 lần nâng hạng xe miễn phí/tháng',
+        'Ưu đãi dịch vụ đưa đón',
+      ],
+    ),
+    const BannerOfferData(
+      badge: 'DÀNH CHO SUV',
+      title: 'Adventure Ready',
+      subtitle: 'Sẵn sàng cho mọi hành trình',
+      image: 'assets/images/products/Range-Rover-2022-1600-01.jpg',
+      gradientColors: [Color(0xFFEA580C), Color(0xFFF97316)],
+      accentColor: Color(0xFFEA580C),
+      description:
+          'Khám phá các mẫu SUV mạnh mẽ với gói ưu đãi dành riêng cho hành trình xa. Trang bị thêm tiện ích để chuyến đi trọn vẹn.',
+      benefits: [
+        'Tặng gói bảo hiểm mở rộng',
+        'Miễn phí trang bị bộ cứu hộ tiêu chuẩn',
+        'Giảm giá khi thuê dài ngày',
+      ],
+    ),
+  ];
   static final List<BannerData> _bannerData = [
     BannerData(
       badge: '🚗 CAR EXPO 2026',
@@ -134,6 +201,8 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
 
+  _ensureBannersSeeded();
+
     // Khởi tạo animation controllers
     _bannerAnimationController = AnimationController(
       duration: const Duration(seconds: 1),
@@ -167,6 +236,16 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Auto chuyển banner sau mỗi 5 giây
     _startBannerTimer();
+  }
+
+  Future<void> _ensureBannersSeeded() async {
+    if (_bannerSeeded) return;
+    _bannerSeeded = true;
+    try {
+      await _bannerService.ensureSeeded();
+    } catch (e) {
+      debugPrint('Banner seed skipped: $e');
+    }
   }
 
   @override
@@ -246,52 +325,67 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
-      body: Stack(
-        children: [
-          // Main content
-          SafeArea(
-            child: Column(
-              children: [
-                // Header
-                _buildHeader(),
+      // Preview: use Deposit palette on HomeScreen
+      backgroundColor: const Color(0xFF1E2A47),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              // Deposit palette
+              Color(0xFF1E2A47),
+              Color(0xFF1E2A47),
+              Color(0xFF1E2A47),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Main content
+            SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  _buildHeader(),
 
-                // Content với ScrollView
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16), // Giảm từ 24 -> 16
-                        // Banner hiện đại 2026
-                        _buildModernBanner(),
+                  // Content với ScrollView
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16), // Giảm từ 24 -> 16
+                          // Banner hiện đại 2026
+                          _buildModernBanner(),
 
-                        const SizedBox(height: 20), // Giảm từ 24 -> 20
-                        // Car brands
-                        _buildBrandsGrid(),
+                          const SizedBox(height: 20), // Giảm từ 24 -> 20
+                          // Car brands
+                          _buildBrandsGrid(),
 
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                        // Section Thịnh Hành
-                        _buildThinhHanhSection(),
+                          // Section Thịnh Hành
+                          _buildThinhHanhSection(),
 
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        // Car list
-                        _buildCarList(),
+                          // Car list
+                          _buildCarList(),
 
-                        const SizedBox(height: 20),
-                      ],
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // AI Chat Button - floating trên navbar
-          AIChatBadge(phoneNumber: widget.phoneNumber),
-        ],
+            // AI Chat Button - floating trên navbar
+            AIChatBadge(phoneNumber: widget.phoneNumber),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -410,7 +504,64 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Banner hiện đại 2026 với animation
   Widget _buildModernBanner() {
-    final currentBanner = _banners[_currentBannerIndex];
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _bannerService.watchActiveBanners(),
+      builder: (context, snapshot) {
+        final docs = snapshot.data ?? const [];
+        final uiBanners = docs.map(BannerService.toUiData).toList();
+
+        if (uiBanners.isNotEmpty) {
+          if (_currentBannerIndex >= uiBanners.length) {
+            _currentBannerIndex = 0;
+          }
+          final current = uiBanners[_currentBannerIndex];
+          final currentBanner = BannerData(
+            badge: current.badge,
+            title: current.title,
+            subtitle: current.subtitle,
+            buttonText: current.buttonText,
+            gradientColors: current.gradientColors,
+            accentColor: current.accentColor,
+            subtitleColor: current.subtitleColor,
+          );
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BannerOfferScreen(
+                    offer: current.details,
+                    phoneNumber: widget.phoneNumber,
+                  ),
+                ),
+              );
+            },
+            child: _buildModernBannerBody(currentBanner),
+          );
+        }
+
+        // Fallback local
+        final currentBanner = _banners[_currentBannerIndex];
+        final offer = _offers[_currentBannerIndex % _offers.length];
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BannerOfferScreen(
+                  offer: offer,
+                  phoneNumber: widget.phoneNumber,
+                ),
+              ),
+            );
+          },
+          child: _buildModernBannerBody(currentBanner),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernBannerBody(BannerData currentBanner) {
     final screenHeight = MediaQuery.of(context).size.height;
     // Responsive height: giảm xuống để tránh overflow hoàn toàn
     final bannerHeight = screenHeight < 700 ? 140.0 : 160.0;
@@ -435,13 +586,13 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                     spreadRadius: 2,
                   ),
                   BoxShadow(
-                    color: currentBanner.accentColor.withOpacity(0.1),
+                    color: currentBanner.accentColor.withValues(alpha: 0.1),
                     blurRadius: 30,
                     offset: const Offset(0, 0),
                     spreadRadius: 5,
@@ -477,8 +628,8 @@ class _HomeScreenState extends State<HomeScreen>
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            currentBanner.accentColor.withOpacity(0.2),
-                            currentBanner.accentColor.withOpacity(0.1),
+                            currentBanner.accentColor.withValues(alpha: 0.2),
+                            currentBanner.accentColor.withValues(alpha: 0.1),
                             Colors.transparent,
                           ],
                         ),
@@ -510,16 +661,15 @@ class _HomeScreenState extends State<HomeScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       currentBanner.accentColor,
-                                      currentBanner.accentColor.withOpacity(
-                                        0.8,
-                                      ),
+                    currentBanner.accentColor
+                      .withValues(alpha: 0.8),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
                                       color: currentBanner.accentColor
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -601,15 +751,13 @@ class _HomeScreenState extends State<HomeScreen>
                               // Action button với hover effect
                               GestureDetector(
                                 onTap: () {
-                                  // Handle banner tap - navigate to relevant screen
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Opened ${currentBanner.title.replaceAll('\n', ' ')}',
+                                  final offer = _offers[_currentBannerIndex % _offers.length];
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => BannerOfferScreen(
+                                        offer: offer,
+                                        phoneNumber: widget.phoneNumber,
                                       ),
-                                      backgroundColor:
-                                          currentBanner.accentColor,
-                                      duration: const Duration(seconds: 2),
                                     ),
                                   );
                                 },

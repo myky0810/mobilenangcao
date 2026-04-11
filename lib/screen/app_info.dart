@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AppInfoScreen extends StatefulWidget {
-  const AppInfoScreen({Key? key}) : super(key: key);
+  const AppInfoScreen({super.key});
 
   @override
   State<AppInfoScreen> createState() => _AppInfoScreenState();
@@ -11,6 +11,11 @@ class AppInfoScreen extends StatefulWidget {
 
 class _AppInfoScreenState extends State<AppInfoScreen> {
   PackageInfo? _packageInfo;
+
+  static const Color _bg = Color(0xFF1E2A47); // Deposit background
+  static const Color _card = Color(0xFF2C3E5C); // Deposit surface/card
+  static const Color _accent = Color(0xFF55A7FF);
+  static const Color _accent2 = Color(0xFF6EE7F9);
 
   @override
   void initState() {
@@ -28,304 +33,87 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      backgroundColor: _bg,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header with back button and title
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 18, 32, 47),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 1,
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      _bg,
+                      _bg,
+                      _bg,
+                    ],
                   ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Thông tin ứng dụng',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Spartan',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 40), // Balance the back button
-                ],
               ),
             ),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // App Icon & Name
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF6B35), Color(0xFFFF8E53)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.directions_car,
-                        size: 60,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    Text(
-                      _packageInfo?.appName ?? 'Luxury Car Rental',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      'Ứng dụng thuê xe sang trọng',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // App Info Cards
-                    _buildInfoCard(
-                      'Phiên bản',
-                      _packageInfo?.version ?? '1.0.0',
-                      Icons.system_update_alt,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    _buildInfoCard(
-                      'Build Number',
-                      _packageInfo?.buildNumber ?? '1',
-                      Icons.build_circle,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    _buildInfoCard(
-                      'Package Name',
-                      _packageInfo?.packageName ?? 'com.example.doanCuoiki',
-                      Icons.apps,
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // What's New Section
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 28, 42, 58),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.new_releases,
-                                  color: Colors.orange,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Cập nhật mới nhất',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          _buildUpdateItem(
-                            '🔥 Firebase Phone Authentication',
-                            'Xác thực số điện thoại với OTP thực tế',
-                          ),
-
-                          _buildUpdateItem(
-                            '🎨 Dark Theme UI',
-                            'Giao diện tối hiện đại và sang trọng',
-                          ),
-
-                          _buildUpdateItem(
-                            '📱 Redesigned BookCar Screen',
-                            'Màn hình đặt xe được thiết kế lại hoàn toàn',
-                          ),
-
-                          _buildUpdateItem(
-                            '🚗 Enhanced Car Details',
-                            'Thông tin xe chi tiết với video giới thiệu',
-                          ),
-
-                          _buildUpdateItem(
-                            '🔧 Performance Improvements',
-                            'Cải thiện hiệu suất và sửa lỗi',
-                          ),
-
-                          _buildUpdateItem(
-                            '📝 Better Error Handling',
-                            'Xử lý lỗi tốt hơn và thông báo rõ ràng',
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Developer Info
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 28, 42, 58),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.orange.withOpacity(0.2),
-                            child: const Icon(
-                              Icons.person,
-                              size: 35,
-                              color: Colors.orange,
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          const Text(
-                            'Developed by',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          const Text(
-                            'Mobile Development Team',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          Text(
-                            'Phiên bản cập nhật: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Contact & Support
-                    Row(
+            Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: _buildActionButton(
-                            'Báo lỗi',
-                            Icons.bug_report,
-                            () {
-                              _showSupportDialog(context, 'Báo lỗi');
-                            },
+                        _buildHero(),
+                        const SizedBox(height: 18),
+                        Text(
+                          _packageInfo?.appName ?? 'Luxury Car Rental',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildActionButton(
-                            'Hỗ trợ',
-                            Icons.help_outline,
-                            () {
-                              _showSupportDialog(context, 'Hỗ trợ');
-                            },
+                        const SizedBox(height: 8),
+                        Text(
+                          'Ứng dụng thuê xe sang trọng',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.72),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
+                          textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 26),
+                        _buildSectionTitle('Thông tin phiên bản'),
+                        const SizedBox(height: 10),
+                        _buildInfoCard(
+                          'Phiên bản',
+                          _packageInfo?.version ?? '1.0.0',
+                          Icons.system_update_alt_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoCard(
+                          'Số bản dựng',
+                          _packageInfo?.buildNumber ?? '1',
+                          Icons.build_circle_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoCard(
+                          'Tên gói',
+                          _packageInfo?.packageName ?? 'com.example.doanCuoiki',
+                          Icons.apps_rounded,
+                        ),
+                        const SizedBox(height: 22),
+                        _buildWhatsNew(),
+                        const SizedBox(height: 16),
+                        _buildDeveloperCard(),
+                        const SizedBox(height: 16),
+                        _buildSupportActions(context),
                       ],
                     ),
-
-                    const SizedBox(height: 40),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
@@ -333,24 +121,247 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     );
   }
 
-  Widget _buildInfoCard(String label, String value, IconData icon) {
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () => Navigator.pop(context),
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Thông tin ứng dụng',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          // spacer để cân layout với nút back
+          const SizedBox(width: 54),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHero() {
+    return Container(
+      width: 124,
+      height: 124,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_accent, _accent2],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: const Icon(Icons.directions_car_rounded, size: 62, color: Colors.white),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: _accent.withValues(alpha: 0.95),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWhatsNew() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 28, 42, 58),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        color: _card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: _accent.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _accent.withValues(alpha: 0.28)),
+                ),
+                child: const Icon(Icons.new_releases_rounded, color: _accent, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Cập nhật nổi bật',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _buildUpdateItem('Xác thực số điện thoại (OTP)', 'Đăng nhập nhanh, an toàn bằng Firebase Phone Auth'),
+          _buildUpdateItem('Giao diện tối cao cấp', 'Tông màu sang trọng, đồng bộ theo phong cách Deposit'),
+          _buildUpdateItem('Màn hình đặt xe được nâng cấp', 'Form rõ ràng, trải nghiệm mượt hơn'),
+          _buildUpdateItem('Chi tiết xe sinh động', 'Thông tin & media giới thiệu trực quan'),
+          _buildUpdateItem('Tối ưu hiệu năng', 'Cuộn mượt, giảm giật lag và sửa lỗi'),
+          _buildUpdateItem('Thông báo & xử lý lỗi', 'Thông báo rõ ràng, dễ hiểu hơn'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeveloperCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [_accent.withValues(alpha: 0.35), _accent2.withValues(alpha: 0.20)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Phát triển bởi',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.70),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Mobile Development Team',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cập nhật: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.65),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupportActions(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            'Báo lỗi',
+            Icons.bug_report_rounded,
+            () => _showSupportDialog(context, 'Báo lỗi'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            'Hỗ trợ',
+            Icons.help_outline_rounded,
+            () => _showSupportDialog(context, 'Hỗ trợ'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(String label, String value, IconData icon) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10), width: 1),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+              color: _accent.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _accent.withValues(alpha: 0.26)),
             ),
-            child: Icon(icon, color: Colors.orange, size: 20),
+            child: Icon(icon, color: _accent, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -360,8 +371,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.70),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -370,7 +382,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
@@ -388,11 +400,11 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 6,
-            height: 6,
+            width: 8,
+            height: 8,
             margin: const EdgeInsets.only(top: 8),
-            decoration: const BoxDecoration(
-              color: Colors.orange,
+            decoration: BoxDecoration(
+              color: _accent,
               shape: BoxShape.circle,
             ),
           ),
@@ -405,16 +417,18 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                   title,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   description,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.70),
+                    fontSize: 12,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -433,23 +447,26 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange.withOpacity(0.2),
-        foregroundColor: Colors.orange,
+        backgroundColor: _card,
+        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: Colors.orange.withOpacity(0.3), width: 1),
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.12), width: 1),
         ),
         elevation: 0,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18),
+          Icon(icon, size: 18, color: _accent),
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),
@@ -460,13 +477,13 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color.fromARGB(255, 28, 42, 58),
+    backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: Row(
           children: [
             Icon(
               type == 'Báo lỗi' ? Icons.bug_report : Icons.help_outline,
-              color: Colors.orange,
+      color: _accent,
             ),
             const SizedBox(width: 8),
             Text(type, style: const TextStyle(color: Colors.white)),
@@ -481,7 +498,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                   ? 'Để báo lỗi, vui lòng liên hệ với chúng tôi qua:'
                   : 'Để được hỗ trợ, vui lòng liên hệ qua:',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 14,
               ),
             ),
@@ -492,7 +509,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               Icons.email,
             ),
             const SizedBox(height: 8),
-            _buildContactItem('Phone', '+84 123 456 789', Icons.phone),
+            _buildContactItem('Số điện thoại', '+84 123 456 789', Icons.phone),
             const SizedBox(height: 8),
             _buildContactItem('Website', 'www.luxurycarrental.com', Icons.web),
           ],
@@ -500,7 +517,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng', style: TextStyle(color: Colors.orange)),
+            child: const Text('Đóng', style: TextStyle(color: _accent)),
           ),
         ],
       ),
@@ -522,18 +539,21 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.orange, size: 16),
+            Icon(icon, color: _accent, size: 16),
             const SizedBox(width: 8),
             Text(
               '$label: ',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),

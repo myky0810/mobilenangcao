@@ -18,7 +18,8 @@ class WarrantyScreen extends StatefulWidget {
 
 class _WarrantyScreenState extends State<WarrantyScreen> {
   // ── Colors ──
-  static const _bg = Color(0xFF0A0E1A);
+  // Use Deposit palette
+  static const _bg = Color(0xFF1E2A47);
   static const _card = Color(0xFF141822);
   static const _accent = Color(0xFF3B82F6);
   static const _cardSurface = Color(0xFF14161B);
@@ -1014,7 +1015,7 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                                   children: [
                                     Expanded(
                                       child: _DetailsTile(
-                                        label: 'VIN NUMBER',
+                                        label: 'SỐ VIN',
                                         value: vinMasked.isNotEmpty
                                             ? vinMasked
                                             : '--',
@@ -1023,7 +1024,7 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _DetailsTile(
-                                        label: 'ODOMETER',
+                                        label: 'SỐ KM (ODO)',
                                         value: odo.isNotEmpty ? odo : '--',
                                         subValue: odo.isNotEmpty ? 'km' : '',
                                         alignEnd: true,
@@ -1046,7 +1047,7 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _DetailsTile(
-                                        label: 'EXPIRES ON',
+                                        label: 'HẾT HẠN',
                                         value: expStr,
                                         valueColor: const Color(0xFF55A7FF),
                                         alignEnd: true,
@@ -1059,7 +1060,7 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                                   children: [
                                     const Expanded(
                                       child: Text(
-                                        'Coverage Breakdown',
+                                        'Hạng mục bảo hành',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
@@ -1077,7 +1078,7 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                                         ),
                                       ),
                                       child: const Text(
-                                        'View Policy',
+                                        'Xem điều khoản',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800,
@@ -1089,28 +1090,29 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                                 const SizedBox(height: 10),
                                 _CoverageItem(
                                   icon: Icons.settings_suggest_rounded,
-                                  title: 'Powertrain & Engine',
-                                  subtitle: 'Full coverage for core mechanics',
+                                  title: 'Động cơ & truyền động',
+                                  subtitle:
+                                      'Bảo hành đầy đủ cho các bộ phận cơ khí chính',
                                 ),
                                 const SizedBox(height: 10),
                                 _CoverageItem(
                                   icon: Icons.bolt_rounded,
-                                  title: 'Electrical Systems',
+                                  title: 'Hệ thống điện',
                                   subtitle:
-                                      'Sensors, wiring, and battery systems',
+                                      'Cảm biến, dây điện và hệ thống ắc quy',
                                 ),
                                 const SizedBox(height: 10),
                                 _CoverageItem(
                                   icon: Icons.health_and_safety_rounded,
-                                  title: 'Roadside Assistance',
-                                  subtitle:
-                                      '24/7 support and emergency support',
+                                  title: 'Hỗ trợ cứu hộ',
+                                  subtitle: 'Hỗ trợ 24/7 và hỗ trợ khẩn cấp',
                                 ),
                                 const SizedBox(height: 10),
                                 _CoverageItem(
                                   icon: Icons.format_paint_rounded,
-                                  title: 'Corrosion & Paint',
-                                  subtitle: '12-year anti-perforation warranty',
+                                  title: 'Chống gỉ & sơn',
+                                  subtitle:
+                                      'Bảo hành chống gỉ thủng lên đến 12 năm',
                                 ),
                               ],
                             ),
@@ -1158,7 +1160,7 @@ class _WarrantyDetailsSheet extends StatelessWidget {
     final n = name.trim();
     final y = year.trim();
     final base = [b, n].where((e) => e.isNotEmpty).join(' ');
-    if (y.isEmpty) return base.isNotEmpty ? base : 'Warranty Details';
+    if (y.isEmpty) return base.isNotEmpty ? base : 'Chi tiết bảo hành';
     return base.isNotEmpty ? '$base\n$y' : y;
   }
 
@@ -1327,7 +1329,7 @@ class _StatusPill extends StatelessWidget {
         ? const Color(0xFF16D6A5).withValues(alpha: 0.55)
         : const Color(0xFFFFC06B).withValues(alpha: 0.55);
 
-    final text = isActive ? 'ACTIVE' : s.toUpperCase();
+    final text = _statusToVi(s);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
@@ -1358,6 +1360,22 @@ class _StatusPill extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static String _statusToVi(String status) {
+    switch (status) {
+      case 'active':
+        return 'ĐANG HIỆU LỰC';
+      case 'pending':
+        return 'ĐANG CHỜ';
+      case 'expired':
+        return 'HẾT HẠN';
+      case 'cancelled':
+      case 'canceled':
+        return 'ĐÃ HỦY';
+      default:
+        return status.isEmpty ? 'KHÔNG RÕ' : status.toUpperCase();
+    }
   }
 }
 

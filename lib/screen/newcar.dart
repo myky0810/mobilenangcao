@@ -240,14 +240,14 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF050511),
+      backgroundColor: const Color(0xFF1E2A47),
       body: SafeArea(
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF0C0E12), Color(0xFF050511)],
+              colors: [Color(0xFF1E2A47), Color(0xFF1E2A47), Color(0xFF1E2A47)],
             ),
           ),
           child: Column(
@@ -279,42 +279,17 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Liên Kết Obsidian',
-            style: TextStyle(
-              color: Colors.blue.shade100,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
-            ),
+      child: Center(
+        child: Text(
+          'Xe mới',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.blue.shade100,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.2,
           ),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0xFF2C3451)),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.network(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuCT4ZZfsLPa0hOLo3RLiKUtTUxbtBpCoCWrlPr_mvck0be5-wK9VADsh5zhiSMdCWS3VjdLpBfI7BPralJnmFLFVhhuo-BLmO4lByw5AkH-_CxnhEVE4nWe4G0IQhfq2yCI6Yu3AGyGHW3WFb5faOUZ0MfebRNW4MjzmHdtEBxf3EqH3YKgoxEbaRRd3GIsFgpYpQcGJIs6qcW-hxxAnJ7759hUJaXe9qY8muAcv4td7-bZV9kCRDclZngS1nFoQJbiGYPnERQPgtI',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: const Color(0xFF202938),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white54,
-                    size: 24,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -326,7 +301,7 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
         decoration: BoxDecoration(
           color: const Color(0xFF111318),
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFF2E3B52)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Row(

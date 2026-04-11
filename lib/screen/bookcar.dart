@@ -674,9 +674,9 @@ class _BookCarScreenState extends State<BookCarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+        backgroundColor: _bg,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -723,25 +723,14 @@ class _BookCarScreenState extends State<BookCarScreen> {
                     hintText: 'Nhập họ và tên',
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
-                    fillColor: const Color(0xFF1a1a1a),
+                    fillColor: _card,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF3b82c8),
-                        width: 2,
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: 14,
                     ),
                   ),
                   validator: (value) {
@@ -772,25 +761,14 @@ class _BookCarScreenState extends State<BookCarScreen> {
                     hintText: 'Nhập số điện thoại',
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
-                    fillColor: const Color(0xFF1a1a1a),
+                    fillColor: _card,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF3b82c8),
-                        width: 2,
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: 14,
                     ),
                   ),
                   validator: (value) {
@@ -824,25 +802,14 @@ class _BookCarScreenState extends State<BookCarScreen> {
                     hintText: 'Nhập email',
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
-                    fillColor: const Color(0xFF1a1a1a),
+                    fillColor: _card,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF3b82c8),
-                        width: 2,
-                      ),
+                      borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: 14,
                     ),
                   ),
                   validator: (value) {
@@ -875,12 +842,11 @@ class _BookCarScreenState extends State<BookCarScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 16,
+                      vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1a1a1a),
+                      color: _card,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white12),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1019,14 +985,10 @@ class _BookCarScreenState extends State<BookCarScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3b82c8) : const Color(0xFF1a1a1a),
+          color: isSelected ? _primaryColor : _card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF3b82c8) : Colors.white12,
-            width: isSelected ? 2 : 1,
-          ),
         ),
         child: Center(
           child: Text(
@@ -1051,14 +1013,10 @@ class _BookCarScreenState extends State<BookCarScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3b82c8) : const Color(0xFF1a1a1a),
+          color: isSelected ? _primaryColor : _card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF3b82c8) : Colors.white12,
-            width: isSelected ? 2 : 1,
-          ),
         ),
         child: Center(
           child: Text(

@@ -13,6 +13,11 @@ class InfomationScreen extends StatefulWidget {
 }
 
 class _InfomationScreenState extends State<InfomationScreen> {
+  // Use Deposit palette
+  static const Color _showroomTop = Color(0xFF1E2A47);
+  static const Color _showroomMid = Color(0xFF1E2A47);
+  static const Color _showroomBase = Color(0xFF1E2A47);
+
   int _refreshTick = 0;
 
   void _showSavedSnackBar() {
@@ -216,143 +221,159 @@ class _InfomationScreenState extends State<InfomationScreen> {
 
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFF333333),
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
       ),
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: _showroomBase,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header with back button and title
+            // Nền đơn giản giống HomeScreen
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_showroomTop, _showroomMid, _showroomBase],
                 ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Thông tin cá nhân',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Spartan',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 40), // Balance the back button
-                ],
               ),
             ),
 
-            // Content
-            Expanded(
-              child: Column(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Color(0xFF4a4a4a),
+            Column(
+              children: [
+                // Header with back button and title
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        width: 1,
+                      ),
                     ),
                   ),
-                  _MenuRow(
-                    icon: Icons.person_outline,
-                    title: 'Thay đổi thông tin cá nhân',
-                    onTap: () async {
-                      // Điều hướng tới trang thay đổi thông tin
-                      final result = await Navigator.pushNamed(
-                        context,
-                        '/changeinfo',
-                        arguments: widget.phoneNumber,
-                      );
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Thông tin cá nhân',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Spartan',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 40), // Balance the back button
+                    ],
+                  ),
+                ),
 
-                      if (!mounted) return;
-                      if (result is Map && result['saved'] == true) {
-                        _showSavedSnackBar();
-                        // Force rebuild so any FutureBuilder/stream in this screen re-runs
-                        setState(() => _refreshTick++);
-                      }
-                    },
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Color(0xFF4a4a4a),
-                    ),
-                  ),
-                  _MenuRow(
-                    icon: Icons.lock_outline,
-                    title: 'Thay đổi mật khẩu',
-                    onTap: () async {
-                      final result = await Navigator.pushNamed(
-                        context,
-                        '/changepass',
-                        arguments: widget.phoneNumber,
-                      );
+                // Content
+                Expanded(
+                  child: Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFF4a4a4a),
+                        ),
+                      ),
+                      _MenuRow(
+                        icon: Icons.person_outline,
+                        title: 'Thay đổi thông tin cá nhân',
+                        onTap: () async {
+                          // Điều hướng tới trang thay đổi thông tin
+                          final result = await Navigator.pushNamed(
+                            context,
+                            '/changeinfo',
+                            arguments: widget.phoneNumber,
+                          );
 
-                      if (!context.mounted) return;
-                      if (result is Map && result['changedPassword'] == true) {
-                        showPasswordChangedSnackBar();
-                      }
-                    },
+                          if (!mounted) return;
+                          if (result is Map && result['saved'] == true) {
+                            _showSavedSnackBar();
+                            // Force rebuild so any FutureBuilder/stream in this screen re-runs
+                            setState(() => _refreshTick++);
+                          }
+                        },
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFF4a4a4a),
+                        ),
+                      ),
+                      _MenuRow(
+                        icon: Icons.lock_outline,
+                        title: 'Thay đổi mật khẩu',
+                        onTap: () async {
+                          final result = await Navigator.pushNamed(
+                            context,
+                            '/changepass',
+                            arguments: widget.phoneNumber,
+                          );
+
+                          if (!context.mounted) return;
+                          if (result is Map &&
+                              result['changedPassword'] == true) {
+                            showPasswordChangedSnackBar();
+                          }
+                        },
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFF4a4a4a),
+                        ),
+                      ),
+                      _MenuRow(
+                        icon: Icons.delete_outline,
+                        title: 'Xóa tài khoản',
+                        onTap: showDeleteAccountDialog,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFF4a4a4a),
+                        ),
+                      ),
+                    ],
                   ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Color(0xFF4a4a4a),
-                    ),
-                  ),
-                  _MenuRow(
-                    icon: Icons.delete_outline,
-                    title: 'Xóa tài khoản',
-                    onTap: showDeleteAccountDialog,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Color(0xFF4a4a4a),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),

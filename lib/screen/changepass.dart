@@ -14,6 +14,11 @@ class ChangePassScreen extends StatefulWidget {
 }
 
 class _ChangePassScreenState extends State<ChangePassScreen> {
+  // Use Deposit palette
+  static const Color _showroomTop = Color(0xFF1E2A47);
+  static const Color _showroomMid = Color(0xFF1E2A47);
+  static const Color _showroomBase = Color(0xFF1E2A47);
+
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -144,158 +149,175 @@ class _ChangePassScreenState extends State<ChangePassScreen> {
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFF333333),
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
       ),
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: _showroomBase,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header with back button and title
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 1,
-                  ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_showroomTop, _showroomMid, _showroomBase],
                 ),
               ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
+            ),
+
+            Column(
+              children: [
+                // Header with back button and title
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        width: 1,
                       ),
                     ),
                   ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Thay đổi mật khẩu',
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            'Thay đổi mật khẩu',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Spartan',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 40), // Balance the back button
+                    ],
+                  ),
+                ),
+
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 22),
+                        TextField(
+                          controller: _oldPasswordController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          obscureText: !_showOldPassword,
+                          enableSuggestions: false,
+                          autocorrect: false,
+                          decoration: _underlineDecoration(
+                            hint: 'Mật khẩu cũ',
+                            isVisible: _showOldPassword,
+                            onToggle: () {
+                              setState(() {
+                                _showOldPassword = !_showOldPassword;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        TextField(
+                          controller: _newPasswordController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          obscureText: !_showNewPassword,
+                          enableSuggestions: false,
+                          autocorrect: false,
+                          decoration: _underlineDecoration(
+                            hint: 'Mật khẩu mới',
+                            isVisible: _showNewPassword,
+                            onToggle: () {
+                              setState(() {
+                                _showNewPassword = !_showNewPassword;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        TextField(
+                          controller: _confirmPasswordController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          obscureText: !_showConfirmPassword,
+                          enableSuggestions: false,
+                          autocorrect: false,
+                          decoration: _underlineDecoration(
+                            hint: 'Xác nhận mật khẩu mới',
+                            isVisible: _showConfirmPassword,
+                            onToggle: () {
+                              setState(() {
+                                _showConfirmPassword = !_showConfirmPassword;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 18),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveChangePassword,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        elevation: 0,
+                        shape: const StadiumBorder(),
+                      ),
+                      child: const Text(
+                        'Lưu thay đổi',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Spartan',
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 40), // Balance the back button
-                ],
-              ),
-            ),
-
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 22),
-                    TextField(
-                      controller: _oldPasswordController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      obscureText: !_showOldPassword,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      decoration: _underlineDecoration(
-                        hint: 'Mật khẩu cũ',
-                        isVisible: _showOldPassword,
-                        onToggle: () {
-                          setState(() {
-                            _showOldPassword = !_showOldPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    TextField(
-                      controller: _newPasswordController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      obscureText: !_showNewPassword,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      decoration: _underlineDecoration(
-                        hint: 'Mật khẩu mới',
-                        isVisible: _showNewPassword,
-                        onToggle: () {
-                          setState(() {
-                            _showNewPassword = !_showNewPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    TextField(
-                      controller: _confirmPasswordController,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      obscureText: !_showConfirmPassword,
-                      enableSuggestions: false,
-                      autocorrect: false,
-                      decoration: _underlineDecoration(
-                        hint: 'Xác nhận mật khẩu mới',
-                        isVisible: _showConfirmPassword,
-                        onToggle: () {
-                          setState(() {
-                            _showConfirmPassword = !_showConfirmPassword;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 18),
-              child: SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _saveChangePassword,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    elevation: 0,
-                    shape: const StadiumBorder(),
-                  ),
-                  child: const Text(
-                    'Lưu thay đổi',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
+              ],
             ),
           ],
         ),

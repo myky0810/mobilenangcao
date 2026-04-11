@@ -51,9 +51,18 @@ class _TeslaScreenState extends State<TeslaScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+  backgroundColor: const Color(0xFF1E2A47),
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+    colors: [Color(0xFF1E2A47), Color(0xFF1E2A47), Color(0xFF1E2A47)],
+          ),
+        ),
+        child: _buildBody(),
+      ),
       bottomNavigationBar: FloatingCarBottomNav(
         currentIndex: 0,
         onTap: (index) {
@@ -81,7 +90,9 @@ class _TeslaScreenState extends State<TeslaScreen> with RouteAware {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+  shadowColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),

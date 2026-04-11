@@ -15,6 +15,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Use Deposit palette for the main (lower) background.
+  static const Color _showroomTop = Color(0xFF1E2A47);
+  static const Color _showroomMid = Color(0xFF1E2A47);
+  static const Color _showroomBase = Color(0xFF1E2A47);
+
+  // Header overlay: darker within the same blue family to blend with Deposit base.
+  static const Color _headerOverlayTop = Color(0xFF101A2C);
+  static const Color _headerOverlayBottom = Color(0xCC1E2A47);
+
   /// ✅ Ưu tiên lấy user từ FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
     return UserService.currentUserProfileRef(
@@ -190,32 +199,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final topPadding = MediaQuery.of(context).padding.top;
     final userRef = _userDocRef();
 
-    // Set status bar màu sáng trên nền xám
+    // Set status bar icon sáng trên nền tối (showroom)
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFF595959),
+        statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
       ),
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: _showroomBase,
       body: Stack(
         children: [
+          // Nền chính giống HomeScreen (showroom gradient)
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_showroomTop, _showroomMid, _showroomBase],
+              ),
+            ),
+          ),
+
+          // Header overlay “đè” lên nền (thay cho mảng xám cũ)
+          Container(
+            width: double.infinity,
+            height: topPadding + 92,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_headerOverlayTop, _headerOverlayBottom],
+              ),
+            ),
+          ),
+
           Column(
             children: [
-              // Phần trên màu #595959 (không có avatar)
-              Container(
-                width: double.infinity,
-                height: topPadding + 80, // Giảm height để avatar nằm giữa
-                decoration: const BoxDecoration(color: Color(0xFF595959)),
-              ),
-              // Phần dưới màu #333333
+              SizedBox(height: topPadding + 80), // khoảng cho header
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  color: const Color(0xFF333333),
+                  color: Colors.transparent,
                   padding: const EdgeInsets.only(top: 70), // Space cho avatar
                   child: Column(
                     children: [

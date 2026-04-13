@@ -3,6 +3,7 @@ import 'package:doan_cuoiki/models/car_detail.dart';
 import '../services/favorite_service.dart';
 import '../services/product_review_service.dart';
 import 'car_image_slider.dart';
+import 'app_snackbar.dart';
 
 class CarCard extends StatefulWidget {
   final String id;
@@ -168,12 +169,11 @@ class _CarCardState extends State<CarCard> {
   }
 
   void _showSnackBar(String message, [Color backgroundColor = Colors.green]) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        duration: const Duration(seconds: 1),
-      ),
+    AppSnackBar.show(
+      context,
+      message,
+      backgroundColor: backgroundColor,
+      duration: const Duration(seconds: 1),
     );
   }
 
@@ -237,19 +237,21 @@ class _CarCardState extends State<CarCard> {
                 ),
 
                 // Gradient overlay
-                Container(
-                  height: 200,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [
-                        Color.fromRGBO(0, 0, 0, 0.7),
-                        Colors.transparent,
-                      ],
+                IgnorePointer(
+                  child: Container(
+                    height: 200,
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Color.fromRGBO(0, 0, 0, 0.7),
+                          Colors.transparent,
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -15,14 +16,25 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Use Deposit palette for the main (lower) background.
-  static const Color _showroomTop = Color(0xFF1E2A47);
-  static const Color _showroomMid = Color(0xFF1E2A47);
-  static const Color _showroomBase = Color(0xFF1E2A47);
+  // Match HomeScreen background (gray premium) for the LOWER layer.
+  static const List<Color> _showroomGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
 
-  // Header overlay: darker within the same blue family to blend with Deposit base.
-  static const Color _headerOverlayTop = Color(0xFF101A2C);
-  static const Color _headerOverlayBottom = Color(0xCC1E2A47);
+  // Match `EliteMembersScreen` background direction + stops.
+  static const LinearGradient _showroomBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: _showroomGradient,
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
+
+  // UPPER overlay (header) with a darker tone that still matches the new gray base.
+  static const Color _headerOverlayTop = Color(0xFF0F0F10);
+  static const Color _headerOverlayBottom = Color(0xCC252525);
 
   /// ✅ Ưu tiên lấy user từ FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
@@ -57,14 +69,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showFaceIdNotSupportedSnackBar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('FACE ID hiện tại đang không được hỗ trợ'),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
+    AppSnackBar.show(
+      context,
+      'FACE ID hiện tại đang không được hỗ trợ',
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     );
   }
 
@@ -208,267 +217,262 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: _showroomBase,
-      body: Stack(
-        children: [
-          // Nền chính giống HomeScreen (showroom gradient)
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [_showroomTop, _showroomMid, _showroomBase],
+    return Container(
+      decoration: const BoxDecoration(gradient: _showroomBgGradient),
+      child: Scaffold(
+        // Draw the page background behind the bottom nav so there's no
+        // full-width "band" color under the navbar.
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            // Header overlay “đè” lên nền (thay cho mảng xám cũ)
+            Container(
+              width: double.infinity,
+              height: topPadding + 92,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_headerOverlayTop, _headerOverlayBottom],
+                ),
               ),
             ),
-          ),
 
-          // Header overlay “đè” lên nền (thay cho mảng xám cũ)
-          Container(
-            width: double.infinity,
-            height: topPadding + 92,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [_headerOverlayTop, _headerOverlayBottom],
-              ),
-            ),
-          ),
-
-          Column(
-            children: [
-              SizedBox(height: topPadding + 80), // khoảng cho header
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.transparent,
-                  padding: const EdgeInsets.only(top: 70), // Space cho avatar
-                  child: Column(
-                    children: [
-                      // ✅ Tên hiển thị - dùng StreamBuilder để realtime
-                      if (userRef == null)
+            Column(
+              children: [
+                SizedBox(height: topPadding + 80), // khoảng cho header
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.transparent,
+                    padding: const EdgeInsets.only(top: 70), // Space cho avatar
+                    child: Column(
+                      children: [
+                        // ✅ Tên hiển thị - dùng StreamBuilder để realtime
+                        if (userRef == null)
+                          Text(
+                            _formatPhoneNumber(widget.phoneNumber),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          )
+                        else
+                          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                            stream: userRef.snapshots(),
+                            builder: (context, snapshot) {
+                              final displayName = _displayNameFromData(
+                                snapshot.data?.data(),
+                              );
+                              return Text(
+                                displayName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              );
+                            },
+                          ),
+                        const SizedBox(height: 4),
+                        // Số điện thoại nhỏ mờ
                         Text(
                           _formatPhoneNumber(widget.phoneNumber),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
                           ),
-                        )
-                      else
-                        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                          stream: userRef.snapshots(),
-                          builder: (context, snapshot) {
-                            final displayName = _displayNameFromData(
-                              snapshot.data?.data(),
-                            );
-                            return Text(
-                              displayName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Menu items
+                        Expanded(
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            children: [
+                              // Thông tin cá nhân
+                              _buildMenuItem(
+                                icon: Icons.person_outline,
+                                title: 'Thông tin cá nhân',
+                                onTap: () async {
+                                  await Navigator.pushNamed(
+                                    context,
+                                    '/infomation',
+                                    arguments: widget.phoneNumber,
+                                  );
+                                  // Không cần reload vì dùng StreamBuilder rồi
+                                },
+                                showArrow: true,
                               ),
-                            );
-                          },
+                              const Divider(
+                                color: Color(0xFF4a4a4a),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                              // Lịch đăng ký lái thử
+                              _buildMenuItem(
+                                icon: Icons.calendar_month_outlined,
+                                title: 'Lịch đăng ký lái thử',
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/date_drive',
+                                    arguments: widget.phoneNumber,
+                                  );
+                                },
+                                showArrow: true,
+                              ),
+                              const Divider(
+                                color: Color(0xFF4a4a4a),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                              // Bảo hành xe
+                              _buildMenuItem(
+                                icon: Icons.verified_user_outlined,
+                                title: 'Bảo hành xe',
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/warranty',
+                                    arguments: widget.phoneNumber,
+                                  );
+                                },
+                                showArrow: true,
+                              ),
+                              const Divider(
+                                color: Color(0xFF4a4a4a),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                              // Cho phép đăng nhập Face ID (không sử dụng)
+                              _buildSwitchMenuItem(
+                                icon: Icons.face_outlined,
+                                title: 'Cho phép đăng nhập Face ID',
+                                value: false,
+                                onChanged: null,
+                                enabled: false,
+                                onTap: _showFaceIdNotSupportedSnackBar,
+                              ),
+                              const Divider(
+                                color: Color(0xFF4a4a4a),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                              // Thông tin ứng dụng
+                              _buildMenuItem(
+                                icon: Icons.info_outline,
+                                title: 'Thông tin ứng dụng',
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/appinfo');
+                                },
+                                showArrow: true,
+                              ),
+                              const Divider(
+                                color: Color(0xFF4a4a4a),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                              // Đăng xuất
+                              _buildMenuItem(
+                                icon: Icons.logout,
+                                title: 'Đăng xuất',
+                                onTap: () {
+                                  _showLogoutConfirmDialog();
+                                },
+                                showArrow: false,
+                              ),
+                              const Divider(
+                                color: Color(0xFF4a4a4a),
+                                thickness: 1,
+                                height: 1,
+                              ),
+                            ],
+                          ),
                         ),
-                      const SizedBox(height: 4),
-                      // Số điện thoại nhỏ mờ
-                      Text(
-                        _formatPhoneNumber(widget.phoneNumber),
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Menu items
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          children: [
-                            // Thông tin cá nhân
-                            _buildMenuItem(
-                              icon: Icons.person_outline,
-                              title: 'Thông tin cá nhân',
-                              onTap: () async {
-                                await Navigator.pushNamed(
-                                  context,
-                                  '/infomation',
-                                  arguments: widget.phoneNumber,
-                                );
-                                // Không cần reload vì dùng StreamBuilder rồi
-                              },
-                              showArrow: true,
-                            ),
-                            const Divider(
-                              color: Color(0xFF4a4a4a),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                            // Lịch đăng ký lái thử
-                            _buildMenuItem(
-                              icon: Icons.calendar_month_outlined,
-                              title: 'Lịch đăng ký lái thử',
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/date_drive',
-                                  arguments: widget.phoneNumber,
-                                );
-                              },
-                              showArrow: true,
-                            ),
-                            const Divider(
-                              color: Color(0xFF4a4a4a),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                            // Bảo hành xe
-                            _buildMenuItem(
-                              icon: Icons.verified_user_outlined,
-                              title: 'Bảo hành xe',
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/warranty',
-                                  arguments: widget.phoneNumber,
-                                );
-                              },
-                              showArrow: true,
-                            ),
-                            const Divider(
-                              color: Color(0xFF4a4a4a),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                            // Cho phép đăng nhập Face ID (không sử dụng)
-                            _buildSwitchMenuItem(
-                              icon: Icons.face_outlined,
-                              title: 'Cho phép đăng nhập Face ID',
-                              value: false,
-                              onChanged: null,
-                              enabled: false,
-                              onTap: _showFaceIdNotSupportedSnackBar,
-                            ),
-                            const Divider(
-                              color: Color(0xFF4a4a4a),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                            // Thông tin ứng dụng
-                            _buildMenuItem(
-                              icon: Icons.info_outline,
-                              title: 'Thông tin ứng dụng',
-                              onTap: () {
-                                Navigator.pushNamed(context, '/appinfo');
-                              },
-                              showArrow: true,
-                            ),
-                            const Divider(
-                              color: Color(0xFF4a4a4a),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                            // Đăng xuất
-                            _buildMenuItem(
-                              icon: Icons.logout,
-                              title: 'Đăng xuất',
-                              onTap: () {
-                                _showLogoutConfirmDialog();
-                              },
-                              showArrow: false,
-                            ),
-                            const Divider(
-                              color: Color(0xFF4a4a4a),
-                              thickness: 1,
-                              height: 1,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // Avatar nằm giữa 2 màu (positioned)
-          Positioned(
-            top: topPadding + 30, // Vị trí nằm giữa ranh giới 2 màu
-            left:
-                MediaQuery.of(context).size.width / 2 -
-                50, // Center horizontally
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey[700],
-                border: Border.all(
-                  color: Colors.white,
-                  width: 3,
-                ), // Viền trắng để nổi bật
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/RR.jpg'),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            // Avatar nằm giữa 2 màu (positioned)
+            Positioned(
+              top: topPadding + 30, // Vị trí nằm giữa ranh giới 2 màu
+              left:
+                  MediaQuery.of(context).size.width / 2 -
+                  50, // Center horizontally
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[700],
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 3,
+                  ), // Viền trắng để nổi bật
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/RR.jpg'),
+                    fit: BoxFit.cover,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: FloatingCarBottomNav(
-        currentIndex: 4,
-        onTap: (index) {
-          if (index == 4) return;
+          ],
+        ),
+        bottomNavigationBar: FloatingCarBottomNav(
+          currentIndex: 4,
+          onTap: (index) {
+            if (index == 4) return;
 
-          if (index == 0) {
-            Navigator.pushReplacementNamed(
-              context,
-              '/home',
-              arguments: widget.phoneNumber,
-            );
-            return;
-          }
-          if (index == 1) {
-            Navigator.pushReplacementNamed(
-              context,
-              '/newcar',
-              arguments: widget.phoneNumber,
-            );
-            return;
-          }
-          if (index == 2) {
-            Navigator.pushReplacementNamed(
-              context,
-              '/mycar',
-              arguments: widget.phoneNumber,
-            );
-            return;
-          }
-          if (index == 3) {
-            Navigator.pushReplacementNamed(
-              context,
-              '/favorite',
-              arguments: widget.phoneNumber,
-            );
-            return;
-          }
-        },
+            if (index == 0) {
+              Navigator.pushReplacementNamed(
+                context,
+                '/home',
+                arguments: widget.phoneNumber,
+              );
+              return;
+            }
+            if (index == 1) {
+              Navigator.pushReplacementNamed(
+                context,
+                '/newcar',
+                arguments: widget.phoneNumber,
+              );
+              return;
+            }
+            if (index == 2) {
+              Navigator.pushReplacementNamed(
+                context,
+                '/mycar',
+                arguments: widget.phoneNumber,
+              );
+              return;
+            }
+            if (index == 3) {
+              Navigator.pushReplacementNamed(
+                context,
+                '/favorite',
+                arguments: widget.phoneNumber,
+              );
+              return;
+            }
+          },
+        ),
       ),
     );
   }

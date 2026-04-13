@@ -18,6 +18,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List<NotificationModel> _notifications = [];
   bool _isLoading = true;
 
+  static const Color _pageBg = Color(0xFF252525);
+  static const List<Color> _pageBgGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -44,38 +52,55 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      extendBodyBehindAppBar: true,
+      backgroundColor: _pageBg,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+        forceMaterialTransparency: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         elevation: 0,
         title: const Text(
           'Thông báo',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Làm mới',
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             onPressed: _loadNotifications,
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : _notifications.isEmpty
-          ? _buildEmptyState()
-          : _buildNotificationList(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: _pageBgGradient,
+            stops: [0.0, 0.35, 0.75, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : _notifications.isEmpty
+              ? _buildEmptyState()
+              : _buildNotificationList(),
+        ),
+      ),
     );
   }
 
@@ -109,7 +134,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('Làm mới'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3B82C8),
+              backgroundColor: const Color(0xFF3A3A3A),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -125,14 +150,32 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget _buildNotificationList() {
     return RefreshIndicator(
       onRefresh: _loadNotifications,
-      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      backgroundColor: _pageBg,
       color: Colors.white,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         itemCount: _notifications.length,
         itemBuilder: (context, index) {
           final notification = _notifications[index];
-          return _buildNotificationCard(notification);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (index == 0) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Mới nhất',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              _buildNotificationCard(notification),
+            ],
+          );
         },
       ),
     );
@@ -142,9 +185,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 27, 42, 59),
+        color: notification.isRead
+            ? const Color(0xFF121212)
+            : const Color(0xFF171717),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2), width: 1),
+        border: Border.all(
+          color: notification.isRead
+              ? Colors.white.withOpacity(0.08)
+              : Colors.white.withOpacity(0.14),
+          width: 1,
+        ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),

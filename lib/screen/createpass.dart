@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_snackbar.dart';
+
+import '../widgets/scrollview_animation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../data/firebase_helper.dart';
@@ -171,53 +174,13 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
     required Color color,
     int durationSeconds = 3,
   }) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          duration: Duration(seconds: durationSeconds),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          padding: EdgeInsets.zero,
-          content: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.9),
-                  color.withValues(alpha: 0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.white, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    AppSnackBar.showModern(
+      context,
+      icon: icon,
+      message: message,
+      color: color,
+      durationSeconds: durationSeconds,
+    );
   }
 
   @override
@@ -233,191 +196,198 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
+        child: ScrollViewAnimation.children(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
 
-                // ── Title ──
-                Center(
-                  child: Text(
-                    widget.isResetPassword
-                        ? 'Đặt lại mật khẩu'
-                        : 'Tạo mật khẩu',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 50),
-
-                // ── Password input ──
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        width: 1.0,
+                  // ── Title ──
+                  Center(
+                    child: Text(
+                      widget.isResetPassword
+                          ? 'Đặt lại mật khẩu'
+                          : 'Tạo mật khẩu',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          cursorColor: Colors.white,
-                          decoration: const InputDecoration(
-                            hintText: 'Nhập mật khẩu',
-                            hintStyle: TextStyle(
-                              color: Color(0x99FFFFFF),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.white.withValues(alpha: 0.6),
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
+                  const SizedBox(height: 50),
 
-                // ── Confirm password input ──
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        width: 1.0,
+                  // ── Password input ──
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 1.0,
+                        ),
                       ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          cursorColor: Colors.white,
-                          decoration: const InputDecoration(
-                            hintText: 'Xác nhận mật khẩu',
-                            hintStyle: TextStyle(
-                              color: Color(0x99FFFFFF),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.white.withValues(alpha: 0.6),
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // ── Password requirements ──
-                _buildRequirement(
-                  'Mật khẩu phải từ 8 đến 15 kí tự',
-                  _hasMinLength,
-                ),
-                const SizedBox(height: 12),
-                _buildRequirement(
-                  'Bao gồm chữ số chữ viết hoa, chữ viết thường',
-                  _hasUpperAndLower,
-                ),
-                const SizedBox(height: 12),
-                _buildRequirement(
-                  'Bao gồm ít nhất có một kí tự đặc biệt(@,#,...)',
-                  _hasSpecialChar,
-                ),
-                const SizedBox(height: 80),
-
-                // ── Cập nhật button ──
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleCreatePassword,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.black,
-                            ),
-                          )
-                        : Text(
-                            widget.isResetPassword
-                                ? 'Đặt lại mật khẩu'
-                                : 'Cập nhật',
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            cursorColor: Colors.white,
+                            decoration: const InputDecoration(
+                              hintText: 'Nhập mật khẩu',
+                              hintStyle: TextStyle(
+                                color: Color(0x99FFFFFF),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
                             ),
                           ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 30),
+
+                  // ── Confirm password input ──
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _confirmPasswordController,
+                            obscureText: _obscureConfirmPassword,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            cursorColor: Colors.white,
+                            decoration: const InputDecoration(
+                              hintText: 'Xác nhận mật khẩu',
+                              hintStyle: TextStyle(
+                                color: Color(0x99FFFFFF),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // ── Password requirements ──
+                  _buildRequirement(
+                    'Mật khẩu phải từ 8 đến 15 kí tự',
+                    _hasMinLength,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildRequirement(
+                    'Bao gồm chữ số chữ viết hoa, chữ viết thường',
+                    _hasUpperAndLower,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildRequirement(
+                    'Bao gồm ít nhất có một kí tự đặc biệt(@,#,...)',
+                    _hasSpecialChar,
+                  ),
+                  const SizedBox(height: 80),
+
+                  // ── Cập nhật button ──
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleCreatePassword,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : Text(
+                              widget.isResetPassword
+                                  ? 'Đặt lại mật khẩu'
+                                  : 'Cập nhật',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../navigation_observer.dart';
 import '../../services/car_data_service.dart';
 import '../../widgets/car_card.dart';
-import '../../widgets/floating_car_bottom_nav.dart';
+import '../../widgets/scrollview_animation.dart';
 
 class VolvoScreen extends StatefulWidget {
   const VolvoScreen({super.key, this.phoneNumber});
@@ -14,7 +14,20 @@ class VolvoScreen extends StatefulWidget {
 }
 
 class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
-  int _activeNavIndex = 0;
+  static const List<Color> _showroomGradient = <Color>[
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
+  static const LinearGradient _showroomBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: _showroomGradient,
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
+
   late List<Map<String, dynamic>> _volvoCars;
 
   @override
@@ -51,50 +64,24 @@ class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-  backgroundColor: const Color(0xFF1E2A47),
-      appBar: _buildAppBar(),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-    colors: [Color(0xFF1E2A47), Color(0xFF1E2A47), Color(0xFF1E2A47)],
-          ),
-        ),
-        child: _buildBody(),
-      ),
-      bottomNavigationBar: FloatingCarBottomNav(
-        currentIndex: _activeNavIndex,
-        onTap: (index) {
-          if (_activeNavIndex == index) return;
-          setState(() => _activeNavIndex = index);
-
-          final routes = <int, String>{
-            0: '/home',
-            1: '/newcar',
-            2: '/mycar',
-            3: '/favorite',
-            4: '/profile',
-          };
-          final route = routes[index];
-          if (route == null) return;
-
-          Navigator.pushReplacementNamed(
-            context,
-            route,
-            arguments: widget.phoneNumber,
-          );
-        },
+    return Container(
+      decoration: const BoxDecoration(gradient: _showroomBgGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        appBar: _buildAppBar(),
+        body: _buildBody(),
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      forceMaterialTransparency: true,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-  shadowColor: Colors.transparent,
+      shadowColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
@@ -113,16 +100,35 @@ class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
   }
 
   Widget _buildBody() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _volvoCars.length,
-      itemBuilder: (context, index) {
-        return CarCard.fromMap(
-          _volvoCars[index],
-          phoneNumber: widget.phoneNumber,
-        );
-      },
+    return SafeArea(
+      child: ScrollViewAnimation.children(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        children: [
+          for (final raw in _volvoCars) ...[
+            // Defensive mapping: Firestore/local data may omit keys or contain nulls.
+            CarCard.fromMap(<String, dynamic>{
+              ...raw,
+              'id': (raw['id'] ?? '').toString(),
+              'name': (raw['name'] ?? 'Volvo').toString(),
+              'brand': (raw['brand'] ?? 'Volvo').toString(),
+              'price': (raw['price'] ?? 'Liên hệ').toString(),
+              'priceNote': (raw['priceNote'] ?? 'Liên hệ').toString(),
+              'image': (raw['image'] ?? '').toString(),
+              'rating': (raw['rating'] as num?)?.toDouble(),
+              'reviewCount':
+                  (raw['reviewCount'] as int?) ??
+                  (raw['reviewCount'] as num?)?.toInt(),
+              'isNew': raw['isNew'] as bool? ?? false,
+              'description': (raw['description'] ?? '').toString(),
+              // CarCard.fromMap expects `gallery` not `images`.
+              'gallery':
+                  (raw['gallery'] as List?) ??
+                  (raw['images'] as List?) ??
+                  const <dynamic>[],
+            }, phoneNumber: widget.phoneNumber),
+          ],
+        ],
+      ),
     );
   }
-
 }

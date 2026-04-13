@@ -13,10 +13,14 @@ class InfomationScreen extends StatefulWidget {
 }
 
 class _InfomationScreenState extends State<InfomationScreen> {
-  // Use Deposit palette
-  static const Color _showroomTop = Color(0xFF1E2A47);
-  static const Color _showroomMid = Color(0xFF1E2A47);
-  static const Color _showroomBase = Color(0xFF1E2A47);
+  // Match HomeScreen background (gray premium)
+  static const Color _showroomBase = Color(0xFF252525);
+  static const List<Color> _showroomGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
 
   int _refreshTick = 0;
 
@@ -234,11 +238,12 @@ class _InfomationScreenState extends State<InfomationScreen> {
           children: [
             // Nền đơn giản giống HomeScreen
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_showroomTop, _showroomMid, _showroomBase],
+                  colors: _showroomGradient,
+                  stops: const [0.0, 0.35, 0.75, 1.0],
                 ),
               ),
             ),

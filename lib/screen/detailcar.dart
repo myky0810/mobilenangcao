@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/favorite_service.dart';
 import 'package:doan_cuoiki/services/product_review_service.dart';
+import 'package:doan_cuoiki/widgets/animation_hard.dart';
 
 enum ReviewSortOption { newest, highestRated }
 
@@ -56,50 +57,53 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 110),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHero(),
-                    const SizedBox(height: 14),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildInfoHeader(),
-                    ),
-                    const SizedBox(height: 14),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildStatsGrid(),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildDescriptionBlock(),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildReviewSection(),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildSpecRows(),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildVideoPreview(),
-                    ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildGalleryStrip(),
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-                ),
+              child: AnimationHard(
+                // Màn này tự vẽ header trong content (_buildHero),
+                // nên không cần SliverAppBar.
+                useSafeArea: false,
+                bottomReserve: 0,
+                bodyPadding: EdgeInsets.zero,
+                bodySlivers: [
+                  SliverToBoxAdapter(child: _buildHero()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildInfoHeader()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 14)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildStatsGrid()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildDescriptionBlock()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildReviewSection()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildSpecRows()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildVideoPreview()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverToBoxAdapter(child: _buildGalleryStrip()),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 18)),
+                  // Chừa đáy cho CTA cố định.
+                  const SliverToBoxAdapter(child: SizedBox(height: 110)),
+                ],
               ),
             ),
             Positioned(left: 0, right: 0, bottom: 0, child: _buildBottomCTA()),
@@ -796,29 +800,48 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   }
 
   Widget _buildStatsGrid() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.9,
+    // Tránh GridView(shrinkWrap) vì tốn layout khi nằm trong scroll lớn.
+    // Dùng Wrap + SizedBox cố định chiều rộng để layout nhẹ hơn.
+    final width = MediaQuery.of(context).size.width;
+    final horizontalPadding = 16.0 * 2;
+    final spacing = 12.0;
+    final tileWidth = (width - horizontalPadding - spacing) / 2;
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
       children: [
-        _statTile(icon: Icons.bolt_rounded, title: '0-100 km/h', value: '3.2s'),
-        _statTile(
-          icon: Icons.speed_rounded,
-          title: 'Tốc độ tối đa',
-          value: '321 km/h',
+        SizedBox(
+          width: tileWidth,
+          child: _statTile(
+            icon: Icons.bolt_rounded,
+            title: '0-100 km/h',
+            value: '3.2s',
+          ),
         ),
-        _statTile(
-          icon: Icons.electric_car_rounded,
-          title: 'Tầm hoạt động',
-          value: '580 km',
+        SizedBox(
+          width: tileWidth,
+          child: _statTile(
+            icon: Icons.speed_rounded,
+            title: 'Tốc độ tối đa',
+            value: '321 km/h',
+          ),
         ),
-        _statTile(
-          icon: Icons.auto_graph_rounded,
-          title: 'Công suất',
-          value: '1050 hp',
+        SizedBox(
+          width: tileWidth,
+          child: _statTile(
+            icon: Icons.electric_car_rounded,
+            title: 'Tầm hoạt động',
+            value: '580 km',
+          ),
+        ),
+        SizedBox(
+          width: tileWidth,
+          child: _statTile(
+            icon: Icons.auto_graph_rounded,
+            title: 'Công suất',
+            value: '1050 hp',
+          ),
         ),
       ],
     );

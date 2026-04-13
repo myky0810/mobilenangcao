@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../data/firebase_helper.dart';
 import '../services/members_stats_service.dart';
 import '../widgets/floating_car_bottom_nav.dart';
+import '../widgets/scrollview_animation.dart';
 
 class EliteMembersScreen extends StatefulWidget {
   const EliteMembersScreen({super.key, this.phoneNumber});
@@ -18,8 +19,17 @@ class EliteMembersScreen extends StatefulWidget {
 }
 
 class _EliteMembersScreenState extends State<EliteMembersScreen> {
-  static const _bgTop = Color(0xFF070A12);
-  static const _bgBottom = Color(0xFF050511);
+  static const _bgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF545454),
+      Color(0xFF3A3A3A),
+      Color(0xFF252525),
+      Color(0xFF171717),
+    ],
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
 
   // We treat Elite Members as part of the "MyCar" area but it's a separate
   // route. Keep the center item highlighted.
@@ -70,18 +80,16 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
   Widget build(BuildContext context) {
     final userId = _userId;
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [_bgTop, _bgBottom],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: _bgGradient),
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        extendBody: true,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
             onPressed: () => Navigator.of(context).maybePop(),
@@ -225,7 +233,7 @@ class _EliteDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final moneyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
 
-    return ListView(
+    return ScrollViewAnimation.children(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
       children: [
         _GoldStatusCard(tier: tier, userId: userId),

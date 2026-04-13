@@ -4,6 +4,7 @@ import '../data/firebase_helper.dart';
 import '../services/garage_service.dart';
 import '../screen/elite_members.dart';
 import '../widgets/floating_car_bottom_nav.dart';
+import '../widgets/scrollview_animation.dart';
 
 class MyCarScreen extends StatefulWidget {
   const MyCarScreen({super.key, this.phoneNumber});
@@ -15,12 +16,20 @@ class MyCarScreen extends StatefulWidget {
 }
 
 class _MyCarScreenState extends State<MyCarScreen> {
-  // Preview: use Deposit palette
-  static const _bgTop = Color(0xFF1E2A47);
-  static const _bgMid = Color(0xFF1E2A47);
-  static const _bgBottom = Color(0xFF1E2A47);
-
   static const _cardSurface = Color(0xFF14161B);
+  static const List<Color> _showroomGradient = <Color>[
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
+  static const LinearGradient _showroomBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: _showroomGradient,
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
 
   int _activeNavIndex = 2;
 
@@ -46,20 +55,15 @@ class _MyCarScreenState extends State<MyCarScreen> {
   Widget build(BuildContext context) {
     final userId = _normalizedPhone;
 
-    return Scaffold(
-      backgroundColor: _bgBottom,
-      body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [_bgTop, _bgMid, _bgBottom],
-            ),
-          ),
+    return Container(
+      decoration: const BoxDecoration(gradient: _showroomBgGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        body: SafeArea(
           child: userId == null
-              ? ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+              ? ScrollViewAnimation.children(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 14),
@@ -80,8 +84,8 @@ class _MyCarScreenState extends State<MyCarScreen> {
                     final vehicles =
                         snapshot.data ?? const <Map<String, dynamic>>[];
 
-                    return ListView(
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+                    return ScrollViewAnimation.children(
+                      padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
                       children: [
                         _buildHeader(),
                         const SizedBox(height: 14),
@@ -119,8 +123,8 @@ class _MyCarScreenState extends State<MyCarScreen> {
                   },
                 ),
         ),
+        bottomNavigationBar: _buildBottomNav(),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/notification.dart';
 import '../services/notification_api_service.dart';
+import '../widgets/scrollview_animation.dart';
 
 class EndowScreen extends StatefulWidget {
   const EndowScreen({super.key, this.phoneNumber});
@@ -14,6 +15,20 @@ class EndowScreen extends StatefulWidget {
 }
 
 class _EndowScreenState extends State<EndowScreen> {
+  static const _bgBase = Color(0xFF252525);
+
+  static const _bgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF545454),
+      Color(0xFF3A3A3A),
+      Color(0xFF252525),
+      Color(0xFF171717),
+    ],
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
+
   int _activeNavIndex = 1; // Index cho Ưu đãi (index 1)
   final NotificationApiService _notificationService = NotificationApiService();
   StreamSubscription<List<NotificationModel>>? _notificationSubscription;
@@ -60,18 +75,25 @@ class _EndowScreenState extends State<EndowScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF333333),
-      appBar: _buildAppBar(),
-      body: _isLoading ? _buildLoadingBody() : _buildBody(),
-      bottomNavigationBar: _buildBottomNav(),
+    return Container(
+      decoration: const BoxDecoration(gradient: _bgGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        appBar: _buildAppBar(),
+        body: _isLoading ? _buildLoadingBody() : _buildBody(),
+        bottomNavigationBar: _buildBottomNav(),
+      ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       leading: IconButton(
         onPressed: () => Navigator.pushReplacementNamed(
           context,
@@ -123,10 +145,10 @@ class _EndowScreenState extends State<EndowScreen> {
   Widget _buildLoadingBody() {
     return RefreshIndicator(
       onRefresh: _loadNotifications,
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: _bgBase,
       color: Colors.orange,
-      child: ListView(
-        padding: const EdgeInsets.all(0),
+      child: ScrollViewAnimation.children(
+        padding: EdgeInsets.zero,
         children: [
           // Hot Promotions section
           _buildHotPromotionsSection(),
@@ -141,12 +163,10 @@ class _EndowScreenState extends State<EndowScreen> {
             return Column(
               children: [
                 _buildSectionHeader(sectionTitle),
-                ...notifications
-                    .map((notification) => _buildNotificationItem(notification))
-                    .toList(),
+                ...notifications.map(_buildNotificationItem),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -161,7 +181,7 @@ class _EndowScreenState extends State<EndowScreen> {
   Widget _buildSectionHeader(String title) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      color: const Color(0xFF333333),
+      color: Colors.transparent,
       child: Row(
         children: [
           Text(
@@ -207,7 +227,7 @@ class _EndowScreenState extends State<EndowScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              color: const Color(0xFF333333),
+              color: Colors.transparent,
               child: Row(
                 children: [
                   const Icon(
@@ -342,8 +362,8 @@ class _EndowScreenState extends State<EndowScreen> {
   Widget _buildNotificationItem(NotificationModel notification) {
     return Container(
       color: notification.isRead
-          ? const Color(0xFF333333)
-          : const Color(0xFF3a3a3a),
+          ? const Color(0xFF252525)
+          : const Color(0xFF2F2F2F),
       child: Material(
         color: Colors.transparent,
         child: InkWell(

@@ -4,6 +4,7 @@ import '../navigation_observer.dart';
 import '../services/favorite_service.dart';
 import '../widgets/car_card.dart';
 import '../widgets/floating_car_bottom_nav.dart';
+import '../widgets/scrollview_animation.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key, this.phoneNumber});
@@ -15,6 +16,20 @@ class FavoriteScreen extends StatefulWidget {
 }
 
 class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
+  static const List<Color> _showroomGradient = <Color>[
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
+  static const LinearGradient _showroomBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: _showroomGradient,
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
+
   List<CarDetailData> _favoriteCars = [];
   int _activeNavIndex = 3;
 
@@ -58,21 +73,21 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E2A47),
-      body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1E2A47), Color(0xFF1E2A47), Color(0xFF1E2A47)],
-            ),
-          ),
-          child: _buildBody(),
+    return Container(
+      decoration: const BoxDecoration(gradient: _showroomBgGradient),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
         ),
+        body: SafeArea(child: _buildBody()),
+        bottomNavigationBar: _buildBottomNav(),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -129,46 +144,46 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
       );
     }
 
-    return ListView.builder(
+    return ScrollViewAnimation.children(
+      // SafeArea đã được bọc ở ngoài (_build trong Scaffold body)
+      useSafeArea: false,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-      itemCount: _favoriteCars.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_favoriteCars.length} xe đã lưu',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${_favoriteCars.length} xe đã lưu',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Danh sách xe bạn đã đánh dấu yêu thích',
-                style: TextStyle(color: Colors.grey[400], fontSize: 14),
-              ),
-              const SizedBox(height: 20),
-            ],
-          );
-        }
-        return CarCard(
-          id: _favoriteCars[index - 1].id,
-          name: _favoriteCars[index - 1].name,
-          brand: _favoriteCars[index - 1].brand,
-          price: _favoriteCars[index - 1].price,
-          priceNote: 'Lăn bánh từ ${_favoriteCars[index - 1].price}',
-          image: _favoriteCars[index - 1].image,
-          gallery: _favoriteCars[index - 1].images,
-          rating: _favoriteCars[index - 1].rating,
-          reviewCount: _favoriteCars[index - 1].reviewCount,
-          isNew: _favoriteCars[index - 1].isNew,
-          description: _favoriteCars[index - 1].description,
-          phoneNumber: widget.phoneNumber,
-        );
-      },
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Danh sách xe bạn đã đánh dấu yêu thích',
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+        for (final car in _favoriteCars)
+          CarCard(
+            id: car.id,
+            name: car.name,
+            brand: car.brand,
+            price: car.price,
+            priceNote: 'Lăn bánh từ ${car.price}',
+            image: car.image,
+            gallery: car.images,
+            rating: car.rating,
+            reviewCount: car.reviewCount,
+            isNew: car.isNew,
+            description: car.description,
+            phoneNumber: widget.phoneNumber,
+          ),
+      ],
     );
   }
 

@@ -4,11 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/widgets/floating_car_bottom_nav.dart';
 
 import '../data/cars_data.dart';
-import '../models/car_detail.dart';
 import '../widgets/notification_icon.dart';
 import '../widgets/ai_chat_button.dart';
 import '../widgets/car_card.dart';
-import '../services/user_service.dart';
+
 import 'banner_offer_screen.dart';
 import '../services/banner_service.dart';
 
@@ -22,15 +21,61 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with RouteAware, TickerProviderStateMixin {
+  // Background is the original dark theme.
+
+  // Match `InfomationScreen` background.
+  static const List<Color> _showroomGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
+  // Match `EliteMembersScreen` background direction + stops.
+  static const LinearGradient _showroomBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: _showroomGradient,
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
+
   final BannerService _bannerService = BannerService();
   bool _bannerSeeded = false;
+
+  // Prevent booking success notification from showing multiple times.
+  bool _hasShownNotification = false;
+
+  // Brands grid state.
+  int _selectedBrandIndex = 0;
+  late final List<CarBrand> _brands = <CarBrand>[
+    CarBrand(name: 'BMW', assetPath: 'assets/images/icons8-bmw-48.png'),
+    CarBrand(
+      name: 'Mercedes',
+      assetPath: 'assets/images/icons8-mercedes-benz-48.png',
+    ),
+    CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
+    CarBrand(name: 'Hyundai', assetPath: 'assets/images/icons8-hyundai-48.png'),
+    CarBrand(name: 'Tesla', assetPath: 'assets/images/icons8-tesla-48.png'),
+    CarBrand(name: 'Toyota', assetPath: 'assets/images/icons8-toyota-48.png'),
+    CarBrand(name: 'Volvo', assetPath: 'assets/images/icons8-volvo-100.png'),
+    CarBrand(name: 'More', icon: Icons.more_horiz_rounded),
+  ];
+
+  // Banner/animation state (used by the modern banner section).
+  int _currentBannerIndex = 0;
+  late final List<BannerData> _banners = _bannerData;
+  late AnimationController _bannerAnimationController;
+  late AnimationController _slideAnimationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   static final List<BannerOfferData> _offers = [
     const BannerOfferData(
       badge: 'ƯU ĐÃI ĐẶC BIỆT',
       title: 'Car Expo 2026',
       subtitle: 'Ưu đãi giới hạn cho khách hàng mới',
-      image: 'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg',
+      image:
+          'assets/images/products/BMW-8-Series_Gran_Coupe-2020-1280-0f678acd22736ee5d6145e8de467ff05e8.jpg',
       gradientColors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
       accentColor: Color(0xFF55A7FF),
       description:
@@ -97,73 +142,7 @@ class _HomeScreenState extends State<HomeScreen>
       accentColor: Color(0xFF3b82f6),
       subtitleColor: Color(0xFF10b981),
     ),
-    BannerData(
-      badge: '⚡ ELECTRIC 2026',
-      title: 'Green\nRevolution',
-      subtitle: 'Zero Emission Cars',
-      buttonText: 'Tìm hiểu thêm',
-      gradientColors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
-      accentColor: Color(0xFF10b981),
-      subtitleColor: Color(0xFF06d6a0),
-    ),
-    BannerData(
-      badge: '🏎️ LUXURY 2026',
-      title: 'Ultimate\nLuxury',
-      subtitle: 'Premium Experience',
-      buttonText: 'Xem ngay',
-      gradientColors: [Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF4C1D95)],
-      accentColor: Color(0xFF8B5CF6),
-      subtitleColor: Color(0xFFF59E0B),
-    ),
-    BannerData(
-      badge: '🚙 SUV 2026',
-      title: 'Adventure\nReady',
-      subtitle: 'Off-Road Champions',
-      buttonText: 'Khởi hành',
-      gradientColors: [Color(0xFF7C2D12), Color(0xFF9A3412), Color(0xFFEA580C)],
-      accentColor: Color(0xFFEA580C),
-      subtitleColor: Color(0xFF22C55E),
-    ),
   ];
-
-  // Backward-compatible alias (many places below refer to _banners).
-  late final List<BannerData> _banners = _bannerData;
-
-  // Banner animations
-  late final AnimationController _bannerAnimationController;
-  late final AnimationController _slideAnimationController;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<Offset> _slideAnimation;
-
-  int _currentBannerIndex = 0;
-  bool _hasShownNotification = false;
-
-  // Brand selector state
-  final List<CarBrand> _brands = [
-    CarBrand(name: 'Volvo', assetPath: 'assets/images/icons8-volvo-100.png'),
-    CarBrand(name: 'BMW', assetPath: 'assets/images/icons8-bmw-48.png'),
-    CarBrand(
-      name: 'Mercedes',
-      assetPath: 'assets/images/icons8-mercedes-benz-48.png',
-    ),
-    CarBrand(name: 'Tesla', assetPath: 'assets/images/icons8-tesla-48.png'),
-    CarBrand(name: 'Toyota', assetPath: 'assets/images/icons8-toyota-48.png'),
-    CarBrand(name: 'Mazda', assetPath: 'assets/images/icons8-mazda-48.png'),
-    CarBrand(name: 'Hyundai', assetPath: 'assets/images/icons8-hyundai-48.png'),
-    CarBrand(name: 'Tất cả', icon: Icons.apps_rounded),
-  ];
-  int _selectedBrandIndex = 0;
-
-  late final List<CarDetailData> _cars = CarsData.allCars;
-
-  DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    // Provider-safe ref resolver:
-    // - Google: users_google/{uid}
-    // - Phone (Firestore-only login): users_phone/{normalizedPhone} (requires phoneIdentifier)
-    return UserService.currentUserProfileRef(
-      phoneIdentifier: widget.phoneNumber,
-    );
-  }
 
   bool _looksLikePhone(String value) {
     final v = value.trim();
@@ -201,51 +180,45 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
 
-  _ensureBannersSeeded();
+    _ensureBannersSeeded();
 
     // Khởi tạo animation controllers
     _bannerAnimationController = AnimationController(
-      duration: const Duration(seconds: 1),
       vsync: this,
-    );
-
-    _slideAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
+    );
+    _slideAnimationController = AnimationController(
       vsync: this,
+      duration: const Duration(milliseconds: 800),
     );
 
-    // Khởi tạo animations
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _bannerAnimationController,
-        curve: Curves.easeInOut,
-      ),
+    _fadeAnimation = CurvedAnimation(
+      parent: _bannerAnimationController,
+      curve: Curves.easeInOut,
     );
-
     _slideAnimation =
-        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
+        Tween<Offset>(begin: const Offset(0.3, 0), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _slideAnimationController,
             curve: Curves.easeOutCubic,
           ),
         );
 
-    // Bắt đầu animation
     _bannerAnimationController.forward();
     _slideAnimationController.forward();
-
-    // Auto chuyển banner sau mỗi 5 giây
     _startBannerTimer();
   }
 
-  Future<void> _ensureBannersSeeded() async {
+  DocumentReference<Map<String, dynamic>>? _userDocRef() {
+    final phone = widget.phoneNumber?.trim();
+    if (phone == null || phone.isEmpty) return null;
+    return FirebaseFirestore.instance.collection('users').doc(phone);
+  }
+
+  void _ensureBannersSeeded() {
     if (_bannerSeeded) return;
     _bannerSeeded = true;
-    try {
-      await _bannerService.ensureSeeded();
-    } catch (e) {
-      debugPrint('Banner seed skipped: $e');
-    }
+    // Current implementation seeds from the static fallback list.
   }
 
   @override
@@ -324,60 +297,30 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Preview: use Deposit palette on HomeScreen
-      backgroundColor: const Color(0xFF1E2A47),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              // Deposit palette
-              Color(0xFF1E2A47),
-              Color(0xFF1E2A47),
-              Color(0xFF1E2A47),
-            ],
-          ),
-        ),
-        child: Stack(
+    // Wrap with a diagonal gradient like `EliteMembersScreen`.
+    return Container(
+      decoration: const BoxDecoration(gradient: _showroomBgGradient),
+      child: Scaffold(
+        // Let the background show through behind the bottom nav.
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        body: Stack(
           children: [
             // Main content
             SafeArea(
-              child: Column(
-                children: [
-                  // Header
-                  _buildHeader(),
-
-                  // Content với ScrollView
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16), // Giảm từ 24 -> 16
-                          // Banner hiện đại 2026
-                          _buildModernBanner(),
-
-                          const SizedBox(height: 20), // Giảm từ 24 -> 20
-                          // Car brands
-                          _buildBrandsGrid(),
-
-                          const SizedBox(height: 24),
-
-                          // Section Thịnh Hành
-                          _buildThinhHanhSection(),
-
-                          const SizedBox(height: 16),
-
-                          // Car list
-                          _buildCarList(),
-
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                  ),
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(child: _buildHeader()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverToBoxAdapter(child: _buildModernBanner()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  _buildBrandsSliver(),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  SliverToBoxAdapter(child: _buildThinhHanhSection()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  _buildCarListSliver(),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
                 ],
               ),
             ),
@@ -386,8 +329,8 @@ class _HomeScreenState extends State<HomeScreen>
             AIChatBadge(phoneNumber: widget.phoneNumber),
           ],
         ),
+        bottomNavigationBar: _buildBottomNav(),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -403,22 +346,20 @@ class _HomeScreenState extends State<HomeScreen>
             height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24, width: 2),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/RR.jpg'),
-                fit: BoxFit.cover,
-              ),
+              color: Colors.white.withValues(alpha: 0.10),
             ),
+            child: const Icon(Icons.person, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
 
-          // Name
+          // Greeting + name
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Xin chào,',
+                  'Xin chào',
                   style: TextStyle(
                     color: Colors.white54,
                     fontSize: 13,
@@ -661,8 +602,9 @@ class _HomeScreenState extends State<HomeScreen>
                                   gradient: LinearGradient(
                                     colors: [
                                       currentBanner.accentColor,
-                    currentBanner.accentColor
-                      .withValues(alpha: 0.8),
+                                      currentBanner.accentColor.withValues(
+                                        alpha: 0.8,
+                                      ),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(16),
@@ -751,7 +693,9 @@ class _HomeScreenState extends State<HomeScreen>
                               // Action button với hover effect
                               GestureDetector(
                                 onTap: () {
-                                  final offer = _offers[_currentBannerIndex % _offers.length];
+                                  final offer =
+                                      _offers[_currentBannerIndex %
+                                          _offers.length];
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (_) => BannerOfferScreen(
@@ -894,54 +838,47 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildBrandsGrid() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Ưu đãi đặc biệt',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+  SliverPadding _buildBrandsSliver() {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      sliver: SliverMainAxisGroup(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Ưu đãi đặc biệt',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'Xem tất cả',
-                  style: TextStyle(color: Colors.blue, fontSize: 14),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'Xem tất cả',
+                    style: TextStyle(color: Colors.blue, fontSize: 14),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-
-        // Grid 4x2
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
               childAspectRatio: 0.75,
               crossAxisSpacing: 16,
               mainAxisSpacing: 20,
             ),
-            itemCount: _brands.length,
-            itemBuilder: (context, index) {
+            delegate: SliverChildBuilderDelegate((context, index) {
               return _buildBrandItem(_brands[index], index);
-            },
+            }, childCount: _brands.length),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1043,7 +980,7 @@ class _HomeScreenState extends State<HomeScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'Thịnh Hành',
+            'Thịnh hành',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -1062,32 +999,37 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildCarList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _cars.length,
-      itemBuilder: (context, index) {
-        final car = _cars[index];
-        return CarCard.fromMap(
-          {
-            'id': car.id,
-            'name': car.name,
-            'brand': car.brand,
-            'price': car.price,
-            'priceNote': 'Lăn bánh từ ${car.price}',
-            'image': car.image,
-            'gallery': car.images,
-            'rating': car.rating,
-            'reviewCount': car.reviewCount,
-            'isNew': car.isNew,
-            'description': car.description,
-          },
-          phoneNumber: widget.phoneNumber,
-          showBrandBadge: false,
-        );
-      },
+  SliverToBoxAdapter _buildCarListSliver() {
+    final cars = CarsData.allCars;
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            for (final car in cars)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: CarCard.fromMap(
+                  {
+                    'id': car.id,
+                    'name': car.name,
+                    'brand': car.brand,
+                    'price': car.price,
+                    'priceNote': 'Liên hệ',
+                    'image': car.image,
+                    'gallery': car.images,
+                    'rating': car.rating,
+                    'reviewCount': car.reviewCount,
+                    'isNew': car.isNew,
+                    'description': car.description,
+                  },
+                  phoneNumber: widget.phoneNumber,
+                  showBrandBadge: false,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 

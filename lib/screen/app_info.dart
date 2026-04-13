@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_snackbar.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -12,10 +13,23 @@ class AppInfoScreen extends StatefulWidget {
 class _AppInfoScreenState extends State<AppInfoScreen> {
   PackageInfo? _packageInfo;
 
-  static const Color _bg = Color(0xFF1E2A47); // Deposit background
-  static const Color _card = Color(0xFF2C3E5C); // Deposit surface/card
+  // Match HomeScreen background (gray premium)
+  static const Color _bg = Color(0xFF252525);
+  static const List<Color> _bgGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
+  // Premium accent (used subtly)
   static const Color _accent = Color(0xFF55A7FF);
   static const Color _accent2 = Color(0xFF6EE7F9);
+
+  // Card surface
+  static const Color _surface = Color(0xFF1F1F1F);
+  static const Color _surface2 = Color(0xFF2A2A2A);
+  static const Color _divider = Color(0xFF3B3B3B);
 
   @override
   void initState() {
@@ -32,8 +46,14 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final packageName = _packageInfo?.packageName ?? 'com.example.doanCuoiki';
+    final appName = _packageInfo?.appName ?? 'Luxury Car Rental';
+    final version = _packageInfo?.version ?? '1.0.0';
+    final buildNumber = _packageInfo?.buildNumber ?? '1';
+
     return Scaffold(
       backgroundColor: _bg,
+      extendBodyBehindAppBar: true,
       body: SafeArea(
         child: Stack(
           children: [
@@ -43,74 +63,154 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      _bg,
-                      _bg,
-                      _bg,
-                    ],
+                    colors: _bgGradient,
+                    stops: const [0.0, 0.35, 0.75, 1.0],
                   ),
                 ),
               ),
             ),
-            Column(
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 30),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildHero(),
-                        const SizedBox(height: 18),
-                        Text(
-                          _packageInfo?.appName ?? 'Luxury Car Rental',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            height: 1.1,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ứng dụng thuê xe sang trọng',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.72),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 26),
-                        _buildSectionTitle('Thông tin phiên bản'),
-                        const SizedBox(height: 10),
-                        _buildInfoCard(
-                          'Phiên bản',
-                          _packageInfo?.version ?? '1.0.0',
-                          Icons.system_update_alt_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoCard(
-                          'Số bản dựng',
-                          _packageInfo?.buildNumber ?? '1',
-                          Icons.build_circle_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoCard(
-                          'Tên gói',
-                          _packageInfo?.packageName ?? 'com.example.doanCuoiki',
-                          Icons.apps_rounded,
-                        ),
-                        const SizedBox(height: 22),
-                        _buildWhatsNew(),
-                        const SizedBox(height: 16),
-                        _buildDeveloperCard(),
-                        const SizedBox(height: 16),
-                        _buildSupportActions(context),
-                      ],
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  pinned: true,
+                  centerTitle: true,
+                  title: const Text(
+                    'Thông tin ứng dụng',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
                     ),
+                  ),
+                  leading: Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: _BackPill(onTap: () => Navigator.pop(context)),
+                  ),
+                  actions: const [SizedBox(width: 10)],
+                  flexibleSpace: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 30),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      const SizedBox(height: 4),
+                      _buildLuxuryHeader(appName: appName, version: version),
+                      const SizedBox(height: 16),
+                      _buildPremiumSection(
+                        title: 'Phiên bản',
+                        child: Column(
+                          children: [
+                            _SettingRow(
+                              icon: Icons.system_update_alt_rounded,
+                              title: 'Phiên bản',
+                              value: version,
+                              showTrailingIcon: false,
+                            ),
+                            const _SectionDivider(),
+                            _SettingRow(
+                              icon: Icons.build_circle_rounded,
+                              title: 'Số bản dựng',
+                              value: buildNumber,
+                              showTrailingIcon: false,
+                            ),
+                            const _SectionDivider(),
+                            _SettingRow(
+                              icon: Icons.apps_rounded,
+                              title: 'Gói ứng dụng',
+                              value: packageName,
+                              showTrailingIcon: false,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildPremiumSection(
+                        title: 'Điểm nổi bật',
+                        child: Column(
+                          children: [
+                            _BulletRow(
+                              icon: Icons.verified_user_rounded,
+                              title: 'Bảo mật & đăng nhập',
+                              description: 'OTP nhanh, an toàn và ổn định',
+                            ),
+                            const SizedBox(height: 10),
+                            _BulletRow(
+                              icon: Icons.auto_awesome_rounded,
+                              title: 'Trải nghiệm cao cấp',
+                              description: 'Giao diện tối sang, thao tác mượt',
+                            ),
+                            const SizedBox(height: 10),
+                            _BulletRow(
+                              icon: Icons.tune_rounded,
+                              title: 'Tối ưu & sửa lỗi',
+                              description: 'Giảm lag, cuộn mượt và ổn định hơn',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildPremiumSection(
+                        title: 'Hỗ trợ',
+                        child: Column(
+                          children: [
+                            _SettingRow(
+                              icon: Icons.email_rounded,
+                              title: 'Email',
+                              value: 'support@luxurycarrental.com',
+                              onTap: () => _copy(
+                                context,
+                                'Email',
+                                'support@luxurycarrental.com',
+                              ),
+                            ),
+                            const _SectionDivider(),
+                            _SettingRow(
+                              icon: Icons.phone_rounded,
+                              title: 'Hotline',
+                              value: '+84 123 456 789',
+                              onTap: () =>
+                                  _copy(context, 'Hotline', '+84 123 456 789'),
+                            ),
+                            const _SectionDivider(),
+                            _SettingRow(
+                              icon: Icons.public_rounded,
+                              title: 'Website',
+                              value: 'www.luxurycarrental.com',
+                              onTap: () => _copy(
+                                context,
+                                'Website',
+                                'www.luxurycarrental.com',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildPremiumSection(
+                        title: 'Nhà phát triển',
+                        child: _buildDeveloperCompact(),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildPrimaryActions(context),
+                      const SizedBox(height: 30),
+                    ]),
                   ),
                 ),
               ],
@@ -121,269 +221,76 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildLuxuryHeader({
+    required String appName,
+    required String version,
+  }) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(999),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              'Thông tin ứng dụng',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          // spacer để cân layout với nút back
-          const SizedBox(width: 54),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHero() {
-    return Container(
-      width: 124,
-      height: 124,
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
+        borderRadius: BorderRadius.circular(22),
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_accent, _accent2],
+          colors: [
+            Colors.white.withValues(alpha: 0.10),
+            Colors.white.withValues(alpha: 0.06),
+            Colors.black.withValues(alpha: 0.12),
+          ],
         ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 28,
+            offset: const Offset(0, 18),
           ),
         ],
-      ),
-      child: const Icon(Icons.directions_car_rounded, size: 62, color: Colors.white),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: _accent.withValues(alpha: 0.95),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWhatsNew() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _accent.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _accent.withValues(alpha: 0.28)),
-                ),
-                child: const Icon(Icons.new_releases_rounded, color: _accent, size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Cập nhật nổi bật',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _buildUpdateItem('Xác thực số điện thoại (OTP)', 'Đăng nhập nhanh, an toàn bằng Firebase Phone Auth'),
-          _buildUpdateItem('Giao diện tối cao cấp', 'Tông màu sang trọng, đồng bộ theo phong cách Deposit'),
-          _buildUpdateItem('Màn hình đặt xe được nâng cấp', 'Form rõ ràng, trải nghiệm mượt hơn'),
-          _buildUpdateItem('Chi tiết xe sinh động', 'Thông tin & media giới thiệu trực quan'),
-          _buildUpdateItem('Tối ưu hiệu năng', 'Cuộn mượt, giảm giật lag và sửa lỗi'),
-          _buildUpdateItem('Thông báo & xử lý lỗi', 'Thông báo rõ ràng, dễ hiểu hơn'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeveloperCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [_accent.withValues(alpha: 0.35), _accent2.withValues(alpha: 0.20)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
-            child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Phát triển bởi',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.70),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Mobile Development Team',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Cập nhật: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.65),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSupportActions(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActionButton(
-            'Báo lỗi',
-            Icons.bug_report_rounded,
-            () => _showSupportDialog(context, 'Báo lỗi'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionButton(
-            'Hỗ trợ',
-            Icons.help_outline_rounded,
-            () => _showSupportDialog(context, 'Hỗ trợ'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard(String label, String value, IconData icon) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10), width: 1),
       ),
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: _accent.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _accent.withValues(alpha: 0.26)),
-            ),
-            child: Icon(icon, color: _accent, size: 20),
-          ),
-          const SizedBox(width: 16),
+          _buildAppBadge(),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
+                  appName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    height: 1.15,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Trải nghiệm đặt xe cao cấp',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.70),
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _PillTag(
+                      icon: Icons.verified_rounded,
+                      text: 'Giao diện chuẩn',
+                    ),
+                    _PillTag(icon: Icons.shield_rounded, text: 'Bảo mật'),
+                    _PillTag(
+                      icon: Icons.auto_awesome_rounded,
+                      text: 'Phiên bản $version',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -393,20 +300,110 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     );
   }
 
-  Widget _buildUpdateItem(String title, String description) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+  Widget _buildAppBadge() {
+    return Container(
+      width: 62,
+      height: 62,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_accent, _accent2],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.directions_car_rounded,
+        size: 32,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildPremiumSection({required String title, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 10,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(99),
+                  gradient: const LinearGradient(
+                    colors: [_accent, _accent2],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeveloperCompact() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _surface2,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
           Container(
-            width: 8,
-            height: 8,
-            margin: const EdgeInsets.only(top: 8),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: _accent,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(
+                colors: [
+                  _accent.withValues(alpha: 0.35),
+                  _accent2.withValues(alpha: 0.20),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
             ),
+            child: const Icon(Icons.person_rounded, color: Colors.white),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -414,20 +411,19 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  'Mobile Development Team',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  description,
+                  'Cập nhật: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.70),
+                    color: Colors.white.withValues(alpha: 0.65),
                     fontSize: 12,
-                    height: 1.2,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -439,51 +435,51 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     );
   }
 
-  Widget _buildActionButton(
-    String text,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _card,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.12), width: 1),
-        ),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18, color: _accent),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-            ),
+  Widget _buildPrimaryActions(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _PrimaryButton(
+            icon: Icons.bug_report_rounded,
+            label: 'Báo lỗi',
+            onTap: () => _showSupportDialog(context, 'Báo lỗi'),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _PrimaryButton(
+            icon: Icons.help_outline_rounded,
+            label: 'Hỗ trợ',
+            onTap: () => _showSupportDialog(context, 'Hỗ trợ'),
+          ),
+        ),
+      ],
     );
   }
+
+  void _copy(BuildContext context, String label, String value) {
+    Clipboard.setData(ClipboardData(text: value));
+    AppSnackBar.show(
+      context,
+      'Đã sao chép $label: $value',
+      backgroundColor: Colors.black.withValues(alpha: 0.92),
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  // Legacy builders removed in favor of premium sections.
 
   void _showSupportDialog(BuildContext context, String type) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-    backgroundColor: _card,
+        backgroundColor: _surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: Row(
           children: [
             Icon(
               type == 'Báo lỗi' ? Icons.bug_report : Icons.help_outline,
-      color: _accent,
+              color: _accent,
             ),
             const SizedBox(width: 8),
             Text(type, style: const TextStyle(color: Colors.white)),
@@ -503,15 +499,23 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildContactItem(
-              'Email',
-              'support@luxurycarrental.com',
-              Icons.email,
+            _SupportContactItem(
+              label: 'Email',
+              value: 'support@luxurycarrental.com',
+              icon: Icons.email_rounded,
             ),
             const SizedBox(height: 8),
-            _buildContactItem('Số điện thoại', '+84 123 456 789', Icons.phone),
+            _SupportContactItem(
+              label: 'Hotline',
+              value: '+84 123 456 789',
+              icon: Icons.phone_rounded,
+            ),
             const SizedBox(height: 8),
-            _buildContactItem('Website', 'www.luxurycarrental.com', Icons.web),
+            _SupportContactItem(
+              label: 'Website',
+              value: 'www.luxurycarrental.com',
+              icon: Icons.public_rounded,
+            ),
           ],
         ),
         actions: [
@@ -523,49 +527,338 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
       ),
     );
   }
+}
 
-  Widget _buildContactItem(String label, String value, IconData icon) {
-    return GestureDetector(
+class _BackPill extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _BackPill({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        ),
+        child: const Icon(
+          Icons.arrow_back_ios_new_rounded,
+          color: Colors.white,
+          size: 18,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      color: _AppInfoScreenState._divider.withValues(alpha: 0.7),
+    );
+  }
+}
+
+class _PillTag extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _PillTag({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.90)),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.90),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final VoidCallback? onTap;
+  final bool showTrailingIcon;
+
+  const _SettingRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    this.onTap,
+    this.showTrailingIcon = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: _AppInfoScreenState._surface2,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+              ),
+              child: Icon(icon, color: _AppInfoScreenState._accent, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (showTrailingIcon)
+              Icon(
+                Icons.copy_rounded,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BulletRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _BulletRow({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          ),
+          child: Icon(icon, size: 18, color: _AppInfoScreenState._accent),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                description,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.70),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _PrimaryButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [_AppInfoScreenState._accent, _AppInfoScreenState._accent2],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SupportContactItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _SupportContactItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
       onTap: () {
         Clipboard.setData(ClipboardData(text: value));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Đã sao chép $label: $value'),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.black.withValues(alpha: 0.92),
             duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       },
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
-            width: 1,
-          ),
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: _accent, size: 16),
-            const SizedBox(width: 8),
-            Text(
-              '$label: ',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(icon, size: 16, color: _AppInfoScreenState._accent),
             ),
+            const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '$label: ',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.70),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextSpan(text: value),
+                  ],
                 ),
               ),
+            ),
+            Icon(
+              Icons.copy_rounded,
+              size: 16,
+              color: Colors.white.withValues(alpha: 0.55),
             ),
           ],
         ),

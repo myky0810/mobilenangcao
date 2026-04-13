@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 
 import '../data/cars_data.dart';
@@ -18,6 +19,21 @@ class NewCarScreen extends StatefulWidget {
 }
 
 class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
+  // Match `InfomationScreen` / `HomeScreen` background.
+  static const List<Color> _showroomGradient = <Color>[
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
+
+  static const LinearGradient _showroomBgGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: _showroomGradient,
+    stops: [0.0, 0.35, 0.75, 1.0],
+  );
+
   static const Color _filterSheetBackground = Color(0xFF111623);
   static const Color _filterCardBackground = Color(0xFF1A2233);
   static const Color _filterCardBorder = Color(0xFF26344D);
@@ -200,9 +216,15 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
         car.transmission,
         car.purpose,
         '${car.horsepower} hp',
-      ].map((item) => _normalizeText(item)).join(' ');
+      ];
 
-      final matchesKeyword = keyword.isEmpty || searchData.contains(keyword);
+      final matchesKeyword =
+          keyword.isEmpty ||
+          searchData
+              .whereType<String>()
+              .map(_normalizeText)
+              .any((v) => v.contains(keyword));
+
       return matchesCategory &&
           matchesBrand &&
           matchesSeats &&
@@ -239,40 +261,71 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E2A47),
-      body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1E2A47), Color(0xFF1E2A47), Color(0xFF1E2A47)],
-            ),
+    final cars = _filteredCars;
+
+    return Container(
+      decoration: const BoxDecoration(gradient: _showroomBgGradient),
+      child: Scaffold(
+        // Show the page background behind the bottom nav to avoid the "overlay"
+        // band color at the navbar area while keeping the navbar's own color.
+        extendBody: true,
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: Size.zero,
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            shadowColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(),
-              _buildSearchAndFilterBar(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                child: Text(
-                  'Đội xe Obsidian',
-                  style: TextStyle(
-                    color: Colors.blue.shade100,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
+        ),
+        body: SafeArea(
+          child: ScrollViewAnimation.slivers(
+            padding: EdgeInsets.zero,
+            slivers: [
+              SliverToBoxAdapter(child: _buildHeader()),
+              SliverToBoxAdapter(child: _buildSearchAndFilterBar()),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+              if (cars.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      'Không tìm thấy mẫu xe phù hợp',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
                   ),
+                )
+              else
+                SliverList.builder(
+                  itemCount: cars.length,
+                  itemBuilder: (context, index) {
+                    final car = cars[index];
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: CarCard.fromMap({
+                        'id': car.id,
+                        'name': car.name,
+                        'brand': car.brand,
+                        'price': car.price,
+                        'priceNote': 'Lăn bánh từ ${car.price}',
+                        'image': car.image,
+                        'gallery': car.images,
+                        'rating': car.rating,
+                        'reviewCount': car.reviewCount,
+                        'isNew': car.isNew,
+                        'description': car.description,
+                      }, phoneNumber: widget.phoneNumber),
+                    );
+                  },
                 ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(child: _buildCarList()),
+              const SliverToBoxAdapter(child: SizedBox(height: 90)),
             ],
           ),
         ),
+        bottomNavigationBar: _buildBottomNav(),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -284,7 +337,7 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
           'Xe mới',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.blue.shade100,
+            color: Colors.white,
             fontSize: 22,
             fontWeight: FontWeight.w900,
             letterSpacing: 0.2,
@@ -306,7 +359,7 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Row(
           children: [
-            const Icon(Icons.search, color: Color(0xFF8AACFF), size: 22),
+            Icon(Icons.search, color: Colors.grey, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: TextField(
@@ -341,49 +394,12 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
               ),
               child: IconButton(
                 onPressed: _openFilterSheet,
-                icon: const Icon(
-                  Icons.tune_rounded,
-                  color: Color(0xFF8AACFF),
-                  size: 22,
-                ),
+                icon: Icon(Icons.tune_rounded, color: Colors.white, size: 22),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCarList() {
-    final cars = _filteredCars;
-    if (cars.isEmpty) {
-      return const Center(
-        child: Text(
-          'Không tìm thấy mẫu xe phù hợp',
-          style: TextStyle(color: Colors.white70, fontSize: 16),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 16),
-      itemCount: cars.length,
-      itemBuilder: (context, index) {
-        final car = cars[index];
-        return CarCard.fromMap({
-          'id': car.id,
-          'name': car.name,
-          'brand': car.brand,
-          'price': car.price,
-          'priceNote': 'Lăn bánh từ ${car.price}',
-          'image': car.image,
-          'gallery': car.images,
-          'rating': car.rating,
-          'reviewCount': car.reviewCount,
-          'isNew': car.isNew,
-          'description': car.description,
-        }, phoneNumber: widget.phoneNumber);
-      },
     );
   }
 
@@ -419,185 +435,25 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                       ),
                       const SizedBox(height: 12),
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Expanded(
-                                    child: Text(
-                                      'Tìm kiếm nâng cao',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
+                        child: ScrollViewAnimation.children(
+                          padding: EdgeInsets.zero,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'Tìm kiếm nâng cao',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      setModalState(() {
-                                        _selectedCategory = 'Tất cả';
-                                        _selectedSeatFilter = 'Tất cả';
-                                        _selectedFuelType = 'Tất cả';
-                                        _selectedDriveType = 'Tất cả';
-                                        _selectedPriceRange = 'Tất cả';
-                                        _selectedTransmission = 'Tất cả';
-                                        _selectedPowerRange = 'Tất cả';
-                                        _selectedPurpose = 'Tất cả';
-                                        _selectedBrands.clear();
-                                        _onlyNewCars = false;
-                                        _sortOption = PriceSortOption.none;
-                                      });
-                                    },
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: const Color(0xFF66D9FF),
-                                    ),
-                                    child: const Text('Đặt lại'),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Hãng xe',
-                                icon: Icons.factory_rounded,
-                                child: _buildMultiChoiceWrap(
-                                  options: _availableBrands,
-                                  selectedOptions: _selectedBrands,
-                                  onToggle: (brand, selected) {
-                                    setModalState(() {
-                                      if (selected) {
-                                        _selectedBrands.add(brand);
-                                      } else {
-                                        _selectedBrands.remove(brand);
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Loại xe',
-                                icon: Icons.directions_car_filled_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _categories,
-                                  selected: _selectedCategory,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedCategory = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Giá cả',
-                                icon: Icons.attach_money_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _priceRanges,
-                                  selected: _selectedPriceRange,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedPriceRange = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Số chỗ ngồi',
-                                icon: Icons.people_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _seatFilters,
-                                  selected: _selectedSeatFilter,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedSeatFilter = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Loại nhiên liệu',
-                                icon: Icons.local_gas_station_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _fuelFilters,
-                                  selected: _selectedFuelType,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedFuelType = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Hộp số',
-                                icon: Icons.settings_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _transmissionFilters,
-                                  selected: _selectedTransmission,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedTransmission = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Công suất',
-                                icon: Icons.bolt_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _powerRanges,
-                                  selected: _selectedPowerRange,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedPowerRange = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Dẫn động',
-                                icon: Icons.directions_car_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _driveFilters,
-                                  selected: _selectedDriveType,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedDriveType = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Mục đích sử dụng',
-                                icon: Icons.flag_rounded,
-                                child: _buildChoiceWrap(
-                                  options: _purposeFilters,
-                                  selected: _selectedPurpose,
-                                  onSelected: (value) => setModalState(
-                                    () => _selectedPurpose = value,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Sắp xếp giá',
-                                icon: Icons.sort_rounded,
-                                child: _buildSortChoiceWrap(
-                                  selected: _sortOption,
-                                  onSelected: (value) =>
-                                      setModalState(() => _sortOption = value),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              _buildFilterSection(
-                                title: 'Tùy chọn nhanh',
-                                icon: Icons.auto_awesome_rounded,
-                                child: _buildToggleTile(
-                                  title: 'Chỉ hiển thị xe mới',
-                                  value: _onlyNewCars,
-                                  onChanged: (value) =>
-                                      setModalState(() => _onlyNewCars = value),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
+                                    TextButton(
                                       onPressed: () {
                                         setModalState(() {
                                           _selectedCategory = 'Tất cả';
@@ -613,55 +469,222 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
                                           _sortOption = PriceSortOption.none;
                                         });
                                       },
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.white70,
-                                        side: const BorderSide(
-                                          color: _filterCardBorder,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: const Color(
+                                          0xFF66D9FF,
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 15,
+                                      ),
+                                      child: const Text('Đặt lại'),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Hãng xe',
+                                  icon: Icons.factory_rounded,
+                                  child: _buildMultiChoiceWrap(
+                                    options: _availableBrands,
+                                    selectedOptions: _selectedBrands,
+                                    onToggle: (brand, selected) {
+                                      setModalState(() {
+                                        if (selected) {
+                                          _selectedBrands.add(brand);
+                                        } else {
+                                          _selectedBrands.remove(brand);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Loại xe',
+                                  icon: Icons.directions_car_filled_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _categories,
+                                    selected: _selectedCategory,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedCategory = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Giá cả',
+                                  icon: Icons.attach_money_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _priceRanges,
+                                    selected: _selectedPriceRange,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedPriceRange = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Số chỗ ngồi',
+                                  icon: Icons.people_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _seatFilters,
+                                    selected: _selectedSeatFilter,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedSeatFilter = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Loại nhiên liệu',
+                                  icon: Icons.local_gas_station_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _fuelFilters,
+                                    selected: _selectedFuelType,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedFuelType = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Hộp số',
+                                  icon: Icons.settings_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _transmissionFilters,
+                                    selected: _selectedTransmission,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedTransmission = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Công suất',
+                                  icon: Icons.bolt_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _powerRanges,
+                                    selected: _selectedPowerRange,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedPowerRange = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Dẫn động',
+                                  icon: Icons.directions_car_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _driveFilters,
+                                    selected: _selectedDriveType,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedDriveType = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Mục đích sử dụng',
+                                  icon: Icons.flag_rounded,
+                                  child: _buildChoiceWrap(
+                                    options: _purposeFilters,
+                                    selected: _selectedPurpose,
+                                    onSelected: (value) => setModalState(
+                                      () => _selectedPurpose = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Sắp xếp giá',
+                                  icon: Icons.sort_rounded,
+                                  child: _buildSortChoiceWrap(
+                                    selected: _sortOption,
+                                    onSelected: (value) => setModalState(
+                                      () => _sortOption = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                _buildFilterSection(
+                                  title: 'Tùy chọn nhanh',
+                                  icon: Icons.auto_awesome_rounded,
+                                  child: _buildToggleTile(
+                                    title: 'Chỉ hiển thị xe mới',
+                                    value: _onlyNewCars,
+                                    onChanged: (value) => setModalState(
+                                      () => _onlyNewCars = value,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () {
+                                          setModalState(() {
+                                            _selectedCategory = 'Tất cả';
+                                            _selectedSeatFilter = 'Tất cả';
+                                            _selectedFuelType = 'Tất cả';
+                                            _selectedDriveType = 'Tất cả';
+                                            _selectedPriceRange = 'Tất cả';
+                                            _selectedTransmission = 'Tất cả';
+                                            _selectedPowerRange = 'Tất cả';
+                                            _selectedPurpose = 'Tất cả';
+                                            _selectedBrands.clear();
+                                            _onlyNewCars = false;
+                                            _sortOption = PriceSortOption.none;
+                                          });
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white70,
+                                          side: const BorderSide(
+                                            color: _filterCardBorder,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 15,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
                                         ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
+                                        child: const Text('Xóa lọc'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      flex: 2,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 15,
+                                          ),
+                                          elevation: 0,
+                                          backgroundColor: _filterActivePrimary,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Áp dụng',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
                                           ),
                                         ),
                                       ),
-                                      child: const Text('Xóa lọc'),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    flex: 2,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 15,
-                                        ),
-                                        elevation: 0,
-                                        backgroundColor: _filterActivePrimary,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Áp dụng',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],

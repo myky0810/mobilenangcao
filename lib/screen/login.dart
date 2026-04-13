@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_snackbar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:doan_cuoiki/widgets/luxury_logo.dart';
+
+import '../widgets/scrollview_animation.dart';
+import 'package:doan_cuoiki/widgets/supercar_logo.dart';
 import 'package:doan_cuoiki/data/firebase_helper.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -21,6 +23,7 @@ class _LoginEmailState extends State<LoginEmail>
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
   final TextEditingController _phoneController = TextEditingController();
+  final FocusNode _phoneFocusNode = FocusNode();
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   bool _googleSignInInitialized = false;
   bool _isLoading = false;
@@ -41,6 +44,7 @@ class _LoginEmailState extends State<LoginEmail>
   void dispose() {
     _controller.dispose();
     _phoneController.dispose();
+    _phoneFocusNode.dispose();
     super.dispose();
   }
 
@@ -69,254 +73,260 @@ class _LoginEmailState extends State<LoginEmail>
 
             // ── Foreground ──
             SafeArea(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 50),
+              child: ScrollViewAnimation.children(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 50),
 
-                      // ── Luxury logo ──
-                      const LuxuryLogo(size: 110),
-                      const SizedBox(height: 20),
+                        // ── Luxury logo ──
+                        const LamboLogo(size: 160),
+                        const SizedBox(height: 20),
 
-                      // ── WELCOME text ──
-                      Text(
-                        'WELCOME',
-                        style: GoogleFonts.leagueSpartan(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 8,
-                        ),
-                      ),
-                      const SizedBox(height: 50),
-
-                      // ── Subtitle ──
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Vui lòng nhập số điện thoại',
-                          style: TextStyle(
+                        // ── WELCOME text ──
+                        Text(
+                          'WELCOME',
+                          style: GoogleFonts.leagueSpartan(
                             color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w300,
-                            letterSpacing: 0.3,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 8,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 50),
 
-                      // ── Phone number input ──
-                      Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              width: 1.0,
+                        // ── Subtitle ──
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Vui lòng nhập số điện thoại',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w300,
+                              letterSpacing: 0.3,
                             ),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            // +84 prefix
-                            const Text(
-                              '+84',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w400,
+                        const SizedBox(height: 12),
+
+                        // ── Phone number input ──
+                        Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                width: 1.0,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            // Text field
-                            Expanded(
-                              child: TextField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  FilteringTextInputFormatter.deny(
-                                    RegExp(r'^0'),
-                                  ),
-                                ],
-                                style: const TextStyle(
+                          ),
+                          child: Row(
+                            children: [
+                              // +84 prefix
+                              const Text(
+                                '+84',
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
+                                  fontWeight: FontWeight.w400,
                                 ),
-                                cursorColor: Colors.white,
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: 'Số điện thoại',
-                                  hintStyle: TextStyle(
-                                    color: Color(0x99ffffff),
-                                    fontSize: 14,
+                              ),
+                              const SizedBox(width: 10),
+                              // Text field
+                              Expanded(
+                                child: TextField(
+                                  controller: _phoneController,
+                                  focusNode: _phoneFocusNode,
+                                  keyboardType: TextInputType.phone,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    FilteringTextInputFormatter.deny(
+                                      RegExp(r'^0'),
+                                    ),
+                                  ],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
                                   ),
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
+                                  cursorColor: Colors.white,
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: 'Số điện thoại',
+                                    hintStyle: TextStyle(
+                                      color: Color(0x99ffffff),
+                                      fontSize: 14,
+                                    ),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // ── Quên mật khẩu (right-aligned) ──
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/forgotpass');
+                            },
+                            child: const Text(
+                              'Quên mật khẩu',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white,
+                                decorationThickness: 1.0,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 35),
+
+                        // ── Đăng nhập button ──
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _handleLogin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.black,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Đăng nhập',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // ── Đăng kí ngay ──
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Bạn chưa có tài khoản? ',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, '/register');
+                              },
+                              child: const Text(
+                                'Đăng kí ngay',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 60),
 
-                      // ── Quên mật khẩu (right-aligned) ──
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/forgotpass');
-                          },
-                          child: const Text(
-                            'Quên mật khẩu',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              decoration: TextDecoration.underline,
-                              decorationColor: Colors.white,
-                              decorationThickness: 1.0,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 35),
-
-                      // ── Đăng nhập button ──
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.black,
-                                  ),
-                                )
-                              : const Text(
-                                  'Đăng nhập',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // ── Đăng kí ngay ──
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Bạn chưa có tài khoản? ',
-                            style: TextStyle(color: Colors.white, fontSize: 13),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/register');
-                            },
-                            child: const Text(
-                              'Đăng kí ngay',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                decoration: TextDecoration.underline,
-                                decorationColor: Colors.white,
+                        // ── Divider ──
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                thickness: 0.8,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 60),
+                            const SizedBox(width: 10),
+                            Text(
+                              'hoặc',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                thickness: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 40),
 
-                      // ── Divider ──
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              thickness: 0.8,
+                        // ── Social login icons: G, Apple, F ──
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Google
+                            _SocialIconButton(
+                              onTap: _isGoogleLoading
+                                  ? () {}
+                                  : _handleGoogleLogin,
+                              child: _isGoogleLoading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : _GoogleIcon(),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'hoặc',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 12,
+                            const SizedBox(width: 50),
+                            // Apple
+                            _SocialIconButton(
+                              onTap: () {},
+                              child: const Icon(
+                                Icons.apple,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Divider(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              thickness: 0.8,
+                            const SizedBox(width: 50),
+                            // Facebook
+                            _SocialIconButton(
+                              onTap: () {},
+                              child: const _FacebookIcon(),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-
-                      // ── Social login icons: G, Apple, F ──
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Google
-                          _SocialIconButton(
-                            onTap: _isGoogleLoading
-                                ? () {}
-                                : _handleGoogleLogin,
-                            child: _isGoogleLoading
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : _GoogleIcon(),
-                          ),
-                          const SizedBox(width: 50),
-                          // Apple
-                          _SocialIconButton(
-                            onTap: () {},
-                            child: const Icon(
-                              Icons.apple,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 50),
-                          // Facebook
-                          _SocialIconButton(
-                            onTap: () {},
-                            child: const _FacebookIcon(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 80),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -328,9 +338,7 @@ class _LoginEmailState extends State<LoginEmail>
   Future<void> _handleLogin() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập số điện thoại')),
-      );
+      AppSnackBar.show(context, 'Vui lòng nhập số điện thoại');
       return;
     }
 
@@ -357,15 +365,11 @@ class _LoginEmailState extends State<LoginEmail>
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Đăng nhập thất bại')),
-      );
+      AppSnackBar.show(context, e.message ?? 'Đăng nhập thất bại');
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Đăng nhập thất bại')));
+      AppSnackBar.show(context, 'Đăng nhập thất bại');
     }
   }
 
@@ -423,8 +427,9 @@ class _LoginEmailState extends State<LoginEmail>
       );
 
       // ✅ Check if this Google account already has a phone registered
-      final phoneForThisUid =
-          await GooglePhoneRegistration.getPhoneByGoogleUid(uid);
+      final phoneForThisUid = await GooglePhoneRegistration.getPhoneByGoogleUid(
+        uid,
+      );
 
       if (phoneForThisUid != null) {
         // ✅ Already registered → just update lastLogin
@@ -444,7 +449,9 @@ class _LoginEmailState extends State<LoginEmail>
         );
       } else {
         // ❌ First time Google login → navigate to phone registration screen
-        print('📱 First time Google login → navigating to phone registration screen');
+        print(
+          '📱 First time Google login → navigating to phone registration screen',
+        );
 
         if (!mounted) return;
         setState(() => _isGoogleLoading = false);
@@ -453,9 +460,8 @@ class _LoginEmailState extends State<LoginEmail>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => GooglePhoneRegistrationScreen(
-              firebaseUser: user,
-            ),
+            builder: (context) =>
+                GooglePhoneRegistrationScreen(firebaseUser: user),
           ),
         );
       }
@@ -469,35 +475,30 @@ class _LoginEmailState extends State<LoginEmail>
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Đăng nhập Google thất bại: ${e.description ?? e.code.name}',
-          ),
-        ),
+      AppSnackBar.show(
+        context,
+        'Đăng nhập Google thất bại: ${e.description ?? e.code.name}',
       );
     } on FirebaseAuthException catch (e) {
       print('❌ Firebase Auth Exception: ${e.code} - ${e.message}');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? 'Đăng nhập Google thất bại'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+      AppSnackBar.show(
+        context,
+        e.message ?? 'Đăng nhập Google thất bại',
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
       );
     } catch (e, stackTrace) {
       print('❌ Unexpected error during Google Sign In: $e');
       print('📍 Stack trace: $stackTrace');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đăng nhập Google thất bại: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+      AppSnackBar.show(
+        context,
+        'Đăng nhập Google thất bại: ${e.toString()}',
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
       );
     }
   }

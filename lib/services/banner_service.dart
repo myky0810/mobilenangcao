@@ -21,18 +21,21 @@ import '../screen/banner_offer_screen.dart';
 /// - benefits: List\<string\>
 class BannerService {
   BannerService({FirebaseFirestore? firestore})
-      : _db = firestore ?? FirebaseFirestore.instance;
+    : _db = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _db;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('banners');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('banners');
 
   Stream<List<Map<String, dynamic>>> watchActiveBanners() {
     return _col
         .where('isActive', isEqualTo: true)
         .orderBy('sortOrder')
         .snapshots()
-        .map((snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+        .map(
+          (snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList(),
+        );
   }
 
   Future<void> ensureSeeded() async {
@@ -45,11 +48,7 @@ class BannerService {
 
     for (final (i, item) in _defaultBannerDocs().indexed) {
       final doc = _col.doc('banner_${i + 1}');
-      batch.set(doc, {
-        ...item,
-        'createdAt': now,
-        'updatedAt': now,
-      });
+      batch.set(doc, {...item, 'createdAt': now, 'updatedAt': now});
     }
     await batch.commit();
   }
@@ -63,8 +62,10 @@ class BannerService {
         .toList();
 
     final accent = _colorFromAny(data['accentColor'], fallback: 0xFF55A7FF);
-    final subtitleColor =
-        _colorFromAny(data['subtitleColor'], fallback: 0xFF10B981);
+    final subtitleColor = _colorFromAny(
+      data['subtitleColor'],
+      fallback: 0xFF10B981,
+    );
 
     return BannerUiData(
       badge: (data['badge'] ?? '').toString(),
@@ -82,10 +83,11 @@ class BannerService {
         title: (data['title'] ?? '').toString(),
         subtitle: (data['subtitle'] ?? '').toString(),
         image: (data['image'] ?? '').toString(),
-        gradientColors: (gradientColors.isNotEmpty
-                ? gradientColors
-                : const [Color(0xFF55A7FF), Color(0xFF6EE7F9)])
-            .toList(),
+        gradientColors:
+            (gradientColors.isNotEmpty
+                    ? gradientColors
+                    : const [Color(0xFF55A7FF), Color(0xFF6EE7F9)])
+                .toList(),
         accentColor: accent,
         description: (data['description'] ?? '').toString(),
         benefits: ((data['benefits'] as List?) ?? const [])
@@ -172,7 +174,8 @@ class BannerService {
         'title': 'Ultimate\nLuxury',
         'subtitle': 'Premium Experience',
         'buttonText': 'Xem ngay',
-        'image': 'assets/images/products/Mercedes-Benz-S-Class-2021-1600-01.jpg',
+        'image':
+            'assets/images/products/Mercedes-Benz-S-Class-2021-1600-01.jpg',
         'gradientColors': [0xFF1E1B4B, 0xFF312E81, 0xFF4C1D95],
         'accentColor': 0xFF8B5CF6,
         'subtitleColor': 0xFFF59E0B,

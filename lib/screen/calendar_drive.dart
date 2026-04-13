@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'detail_calendarcar.dart';
 
@@ -14,10 +15,14 @@ class TestDriveScreen extends StatefulWidget {
 }
 
 class _TestDriveScreenState extends State<TestDriveScreen> {
-  // Use Deposit palette
-  static const Color _showroomTop = Color(0xFF1E2A47);
-  static const Color _showroomMid = Color(0xFF1E2A47);
-  static const Color _showroomBase = Color(0xFF1E2A47);
+  // Match HomeScreen background (gray premium)
+  static const Color _showroomBase = Color(0xFF252525);
+  static const List<Color> _showroomGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +32,12 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
         child: Stack(
           children: [
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_showroomTop, _showroomMid, _showroomBase],
+                  colors: _showroomGradient,
+                  stops: const [0.0, 0.35, 0.75, 1.0],
                 ),
               ),
             ),
@@ -88,224 +94,231 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
 
                 // Content
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: ScrollViewAnimation.children(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24),
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
 
-                        // Bookings list from Firestore (lọc theo userPhone)
-                        StreamBuilder<QuerySnapshot>(
-                          stream: () {
-                            final profileRef =
-                                UserService.currentUserProfileRef(
-                                  phoneIdentifier: widget.phoneNumber,
-                                );
-                            final profilePath = profileRef?.path ?? '';
+                          // Bookings list from Firestore (lọc theo userPhone)
+                          StreamBuilder<QuerySnapshot>(
+                            stream: () {
+                              final profileRef =
+                                  UserService.currentUserProfileRef(
+                                    phoneIdentifier: widget.phoneNumber,
+                                  );
+                              final profilePath = profileRef?.path ?? '';
 
-                            if (profilePath.isNotEmpty) {
-                              return FirebaseFirestore.instance
-                                  .collection('test_drive_bookings')
-                                  .where(
-                                    'userProfilePath',
-                                    isEqualTo: profilePath,
-                                  )
-                                  .snapshots();
-                            }
-
-                            // Backward compatibility: older docs used userPhone.
-                            final phone = widget.phoneNumber?.trim() ?? '';
-                            if (phone.isNotEmpty) {
-                              return FirebaseFirestore.instance
-                                  .collection('test_drive_bookings')
-                                  .where('userPhone', isEqualTo: phone)
-                                  .snapshots();
-                            }
-
-                            return FirebaseFirestore.instance
-                                .collection('test_drive_bookings')
-                                .snapshots();
-                          }(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError) {
-                              // Hiện tất cả booking nếu query lỗi (fallback)
-                              return StreamBuilder<QuerySnapshot>(
-                                stream: FirebaseFirestore.instance
+                              if (profilePath.isNotEmpty) {
+                                return FirebaseFirestore.instance
                                     .collection('test_drive_bookings')
-                                    .snapshots(),
-                                builder: (context, fallbackSnap) {
-                                  if (!fallbackSnap.hasData ||
-                                      fallbackSnap.data!.docs.isEmpty) {
-                                    return _buildEmptyState();
-                                  }
+                                    .where(
+                                      'userProfilePath',
+                                      isEqualTo: profilePath,
+                                    )
+                                    .snapshots();
+                              }
 
-                                  final profileRef =
-                                      UserService.currentUserProfileRef(
-                                        phoneIdentifier: widget.phoneNumber,
-                                      );
-                                  final profilePath = profileRef?.path ?? '';
-                                  final docs = fallbackSnap.data!.docs.where((
-                                    doc,
-                                  ) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    if (profilePath.isNotEmpty) {
-                                      final path =
-                                          (data['userProfilePath']
-                                              as String?) ??
-                                          '';
-                                      return path == profilePath;
+                              // Backward compatibility: older docs used userPhone.
+                              final phone = widget.phoneNumber?.trim() ?? '';
+                              if (phone.isNotEmpty) {
+                                return FirebaseFirestore.instance
+                                    .collection('test_drive_bookings')
+                                    .where('userPhone', isEqualTo: phone)
+                                    .snapshots();
+                              }
+
+                              return FirebaseFirestore.instance
+                                  .collection('test_drive_bookings')
+                                  .snapshots();
+                            }(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                // Hiện tất cả booking nếu query lỗi (fallback)
+                                return StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('test_drive_bookings')
+                                      .snapshots(),
+                                  builder: (context, fallbackSnap) {
+                                    if (!fallbackSnap.hasData ||
+                                        fallbackSnap.data!.docs.isEmpty) {
+                                      return _buildEmptyState();
                                     }
-                                    final up =
-                                        (data['userPhone'] as String?) ?? '';
-                                    final phone =
-                                        widget.phoneNumber?.trim() ?? '';
-                                    return phone.isEmpty || up == phone;
-                                  }).toList();
-                                  docs.sort((a, b) {
-                                    final at =
-                                        (a.data()
-                                            as Map<
-                                              String,
-                                              dynamic
-                                            >)['createdAt'];
-                                    final bt =
-                                        (b.data()
-                                            as Map<
-                                              String,
-                                              dynamic
-                                            >)['createdAt'];
-                                    if (at == null && bt == null) return 0;
-                                    if (at == null) return 1;
-                                    if (bt == null) return -1;
-                                    return (bt as dynamic).compareTo(
-                                      at as dynamic,
-                                    );
-                                  });
-                                  if (docs.isEmpty) return _buildEmptyState();
-                                  return Column(
-                                    children: docs.map((doc) {
+
+                                    final profileRef =
+                                        UserService.currentUserProfileRef(
+                                          phoneIdentifier: widget.phoneNumber,
+                                        );
+                                    final profilePath = profileRef?.path ?? '';
+                                    final docs = fallbackSnap.data!.docs.where((
+                                      doc,
+                                    ) {
                                       final data =
                                           doc.data() as Map<String, dynamic>;
-                                      return _buildBookingCard(data, doc.id);
-                                    }).toList(),
-                                  );
-                                },
-                              );
-                            }
+                                      if (profilePath.isNotEmpty) {
+                                        final path =
+                                            (data['userProfilePath']
+                                                as String?) ??
+                                            '';
+                                        return path == profilePath;
+                                      }
+                                      final up =
+                                          (data['userPhone'] as String?) ?? '';
+                                      final phone =
+                                          widget.phoneNumber?.trim() ?? '';
+                                      return phone.isEmpty || up == phone;
+                                    }).toList();
+                                    docs.sort((a, b) {
+                                      final at =
+                                          (a.data()
+                                              as Map<
+                                                String,
+                                                dynamic
+                                              >)['createdAt'];
+                                      final bt =
+                                          (b.data()
+                                              as Map<
+                                                String,
+                                                dynamic
+                                              >)['createdAt'];
+                                      if (at == null && bt == null) return 0;
+                                      if (at == null) return 1;
+                                      if (bt == null) return -1;
+                                      return (bt as dynamic).compareTo(
+                                        at as dynamic,
+                                      );
+                                    });
+                                    if (docs.isEmpty) return _buildEmptyState();
+                                    return Column(
+                                      children: docs.map((doc) {
+                                        final data =
+                                            doc.data() as Map<String, dynamic>;
+                                        return _buildBookingCard(data, doc.id);
+                                      }).toList(),
+                                    );
+                                  },
+                                );
+                              }
 
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(40),
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white54,
-                                  ),
-                                ),
-                              );
-                            }
-
-                            if (!snapshot.hasData ||
-                                snapshot.data!.docs.isEmpty) {
-                              return _buildEmptyState();
-                            }
-
-                            // Sort bằng Dart (không cần Firestore index)
-                            final docs = List.from(snapshot.data!.docs);
-                            docs.sort((a, b) {
-                              final at =
-                                  (a.data()
-                                      as Map<String, dynamic>)['createdAt'];
-                              final bt =
-                                  (b.data()
-                                      as Map<String, dynamic>)['createdAt'];
-                              if (at == null && bt == null) return 0;
-                              if (at == null) return 1;
-                              if (bt == null) return -1;
-                              return (bt as dynamic).compareTo(at as dynamic);
-                            });
-
-                            return Column(
-                              children: docs.map((doc) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                return _buildBookingCard(data, doc.id);
-                              }).toList(),
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        // Đặt lịch lái thử khác
-                        Center(
-                          child: Column(
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/newcar',
-                                    arguments: widget.phoneNumber,
-                                  );
-                                },
-                                child: Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white.withValues(alpha: 0.06),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.1,
-                                      ),
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(40),
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white54,
                                     ),
                                   ),
-                                  child: Icon(
-                                    Icons.directions_car_outlined,
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/newcar',
-                                    arguments: widget.phoneNumber,
-                                  );
-                                },
-                                child: const Text(
-                                  'Đặt lịch lái thử khác?',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontFamily: 'Spartan',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Trải nghiệm những mẫu xe mới\nvà công nghệ hiện đại nhất.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white38,
-                                  fontFamily: 'Spartan',
-                                  fontSize: 12,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                                );
+                              }
 
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                              if (!snapshot.hasData ||
+                                  snapshot.data!.docs.isEmpty) {
+                                return _buildEmptyState();
+                              }
+
+                              // Sort bằng Dart (không cần Firestore index)
+                              final docs = List.from(snapshot.data!.docs);
+                              docs.sort((a, b) {
+                                final at =
+                                    (a.data()
+                                        as Map<String, dynamic>)['createdAt'];
+                                final bt =
+                                    (b.data()
+                                        as Map<String, dynamic>)['createdAt'];
+                                if (at == null && bt == null) return 0;
+                                if (at == null) return 1;
+                                if (bt == null) return -1;
+                                return (bt as dynamic).compareTo(at as dynamic);
+                              });
+
+                              return Column(
+                                children: docs.map((doc) {
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
+                                  return _buildBookingCard(data, doc.id);
+                                }).toList(),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          // Đặt lịch lái thử khác
+                          Center(
+                            child: Column(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/newcar',
+                                      arguments: widget.phoneNumber,
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.06,
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.directions_car_outlined,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      size: 28,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/newcar',
+                                      arguments: widget.phoneNumber,
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Đặt lịch lái thử khác?',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'Spartan',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Trải nghiệm những mẫu xe mới\nvà công nghệ hiện đại nhất.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontFamily: 'Spartan',
+                                    fontSize: 12,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],

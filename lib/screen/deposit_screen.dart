@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/animation_hard.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/app_snackbar.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:doan_cuoiki/services/showroom_api_service.dart';
@@ -44,12 +46,12 @@ class _DepositScreenState extends State<DepositScreen> {
   bool _isLoadingShowrooms = false;
   bool _isCustomAmount = false;
 
-  // Màu sắc - Đồng bộ theo hình 2
-  static const _bg = Color(0xFF1E2A47); // Nền xanh đậm theo hình 2
-  static const _card = Color(
-    0xFF2C3E5C,
-  ); // Input field xanh đậm hơn theo hình 2
-  static const _primaryColor = Color(0xFF5C8CFF); // Màu xanh navbar
+  // Nền đồng bộ với DetailCarScreen (detailcar.dart)
+  static const _bg = Color.fromARGB(255, 18, 32, 47);
+  static const _card = Color.fromARGB(255, 27, 42, 59);
+  // Input như lúc đầu: dùng màu card (sáng hơn nền, dễ nhìn)
+  static const _fieldFill = _card;
+  static const _primaryColor = Color(0xFF5C8CFF);
 
   @override
   void initState() {
@@ -257,7 +259,6 @@ class _DepositScreenState extends State<DepositScreen> {
             const SizedBox(height: 16),
             Flexible(
               child: ListView.builder(
-                shrinkWrap: true,
                 itemCount: showrooms.length,
                 itemBuilder: (context, index) {
                   final showroom = showrooms[index];
@@ -272,7 +273,7 @@ class _DepositScreenState extends State<DepositScreen> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: _bg,
+                      color: _fieldFill,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: Colors.white.withOpacity(0.1),
@@ -420,13 +421,10 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : _primaryColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    AppSnackBar.show(
+      context,
+      message,
+      backgroundColor: isError ? Colors.red : _primaryColor,
     );
   }
 
@@ -437,22 +435,24 @@ class _DepositScreenState extends State<DepositScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  _buildCarInfoCard(),
-                  _buildCustomerInfo(),
-                  _buildDepositAmountSection(),
-                  _buildShowroomSection(),
-                  _buildPaymentMethodSection(),
-                  _buildNotesSection(),
-                  _buildTermsSection(),
-                  const SizedBox(height: 20),
-                ],
-              ),
+            AnimationHard(
+              // Header là widget thường, không phải SliverAppBar.
+              useSafeArea: false,
+              bottomReserve: 0,
+              bodyPadding: EdgeInsets.zero,
+              bodySlivers: [
+                SliverToBoxAdapter(child: _buildHeader()),
+                SliverToBoxAdapter(child: _buildCarInfoCard()),
+                SliverToBoxAdapter(child: _buildCustomerInfo()),
+                SliverToBoxAdapter(child: _buildDepositAmountSection()),
+                SliverToBoxAdapter(child: _buildShowroomSection()),
+                SliverToBoxAdapter(child: _buildPaymentMethodSection()),
+                SliverToBoxAdapter(child: _buildNotesSection()),
+                SliverToBoxAdapter(child: _buildTermsSection()),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                // Chừa đáy cho nút cố định.
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
             ),
             Positioned(
               left: 0,
@@ -1176,36 +1176,47 @@ class _DepositScreenState extends State<DepositScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Checkbox(
-            value: _agreeTerms,
-            onChanged: (value) => setState(() => _agreeTerms = value ?? false),
-            activeColor: _primaryColor,
-            checkColor: Colors.white,
+          Transform.translate(
+            offset: const Offset(0, -1),
+            child: Checkbox(
+              value: _agreeTerms,
+              onChanged: (value) =>
+                  setState(() => _agreeTerms = value ?? false),
+              activeColor: _primaryColor,
+              checkColor: Colors.white,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+            ),
           ),
           Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _agreeTerms = !_agreeTerms),
               child: Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.leagueSpartan(
-                      fontSize: 13,
-                      color: Colors.white70,
-                    ),
-                    children: [
-                      const TextSpan(text: 'Tôi đã đọc và đồng ý với '),
-                      TextSpan(
-                        text: 'Điều khoản đặt cọc',
-                        style: GoogleFonts.leagueSpartan(
-                          fontSize: 13,
-                          color: _primaryColor,
-                          decoration: TextDecoration.underline,
-                        ),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.leagueSpartan(
+                        fontSize: 13,
+                        height: 1.2,
+                        color: Colors.white70,
                       ),
-                    ],
+                      children: [
+                        const TextSpan(text: 'Tôi đã đọc và đồng ý với '),
+                        TextSpan(
+                          text: 'Điều khoản đặt cọc',
+                          style: GoogleFonts.leagueSpartan(
+                            fontSize: 13,
+                            height: 1.2,
+                            color: _primaryColor,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

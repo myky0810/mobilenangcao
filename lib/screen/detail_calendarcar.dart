@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -289,10 +290,10 @@ class DetailCalendarCarScreen extends StatelessWidget {
 
             // Scrollable content
             Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
+              child: ScrollViewAnimation.children(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                children: [
+                  Column(
                     children: [
                       const SizedBox(height: 10),
 
@@ -607,7 +608,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
           ],

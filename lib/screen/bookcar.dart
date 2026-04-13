@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/floating_car_bottom_nav.dart';
+import '../widgets/app_snackbar.dart';
+import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,11 +28,11 @@ class _BookCarScreenState extends State<BookCarScreen> {
   String? _selectedTime;
   String? _selectedLocation;
 
-  int _activeNavIndex = 0;
-
-  // Màu sắc tương tự deposit.dart
-  static const _bg = Color(0xFF1E2A47);
-  static const _card = Color(0xFF2C3E5C);
+  // Nền đồng bộ với DetailCarScreen (detailcar.dart)
+  static const _bg = Color.fromARGB(255, 18, 32, 47);
+  static const _card = Color.fromARGB(255, 27, 42, 59);
+  // Input như lúc đầu: dùng màu card (sáng hơn nền, dễ nhìn)
+  static const _fieldFill = _card;
   static const _primaryColor = Color(0xFF5C8CFF);
 
   @override
@@ -40,50 +41,6 @@ class _BookCarScreenState extends State<BookCarScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
-  }
-
-  void _onNavTap(int index) {
-    setState(() {
-      _activeNavIndex = index;
-    });
-    // Handle navigation based on index
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(
-          context,
-          '/home',
-          arguments: widget.carData['phoneNumber'],
-        );
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(
-          context,
-          '/newcar',
-          arguments: widget.carData['phoneNumber'],
-        );
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(
-          context,
-          '/mycar',
-          arguments: widget.carData['phoneNumber'],
-        );
-        break;
-      case 3:
-        Navigator.pushReplacementNamed(
-          context,
-          '/favorite',
-          arguments: widget.carData['phoneNumber'],
-        );
-        break;
-      case 4:
-        Navigator.pushReplacementNamed(
-          context,
-          '/profile',
-          arguments: widget.carData['phoneNumber'],
-        );
-        break;
-    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -451,7 +408,6 @@ class _BookCarScreenState extends State<BookCarScreen> {
           Positioned(
             left: 16,
             right: 16,
-            bottom: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -622,53 +578,13 @@ class _BookCarScreenState extends State<BookCarScreen> {
     required String message,
     required Color color,
   }) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          duration: const Duration(seconds: 3),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          padding: EdgeInsets.zero,
-          content: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.9),
-                  color.withValues(alpha: 0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(icon, color: Colors.white, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    AppSnackBar.showModern(
+      context,
+      icon: icon,
+      message: message,
+      color: color,
+      durationSeconds: 3,
+    );
   }
 
   @override
@@ -676,8 +592,11 @@ class _BookCarScreenState extends State<BookCarScreen> {
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -693,10 +612,10 @@ class _BookCarScreenState extends State<BookCarScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
+      body: ScrollViewAnimation.children(
+        padding: const EdgeInsets.all(20.0),
+        children: [
+          Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -723,7 +642,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
                     hintText: 'Nhập họ và tên',
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
-                    fillColor: _card,
+                    fillColor: _fieldFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -761,7 +680,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
                     hintText: 'Nhập số điện thoại',
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
-                    fillColor: _card,
+                    fillColor: _fieldFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -802,7 +721,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
                     hintText: 'Nhập email',
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
-                    fillColor: _card,
+                    fillColor: _fieldFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -845,7 +764,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: _card,
+                      color: _fieldFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -970,9 +889,8 @@ class _BookCarScreenState extends State<BookCarScreen> {
               ],
             ),
           ),
-        ),
+        ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -987,7 +905,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? _primaryColor : _card,
+          color: isSelected ? _primaryColor : _fieldFill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
@@ -1015,7 +933,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? _primaryColor : _card,
+          color: isSelected ? _primaryColor : _fieldFill,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
@@ -1025,60 +943,6 @@ class _BookCarScreenState extends State<BookCarScreen> {
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: isSelected ? Colors.white : Colors.white54,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Bottom Navigation from HomeScreen
-  Widget _buildBottomNav() {
-    return FloatingCarBottomNav(
-      currentIndex: _activeNavIndex,
-      onTap: (index) => _onNavTap(index),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, int index) {
-    final isActive = _activeNavIndex == index;
-
-    return GestureDetector(
-      onTap: () => _onNavTap(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: isActive ? 56 : 50,
-        height: isActive ? 56 : 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [const Color(0xFF3b82c8), const Color(0xFF1e5a9e)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF3b82c8).withValues(alpha: 0.6),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: AnimatedScale(
-            scale: isActive ? 1.1 : 1.0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            child: Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.grey[600],
-              size: isActive ? 28 : 26,
             ),
           ),
         ),

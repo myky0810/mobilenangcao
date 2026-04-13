@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
@@ -21,10 +22,14 @@ class InfoScreen extends StatefulWidget {
 }
 
 class _InfoScreenState extends State<InfoScreen> {
-  // Use Deposit palette
-  static const Color _showroomTop = Color(0xFF1E2A47);
-  static const Color _showroomMid = Color(0xFF1E2A47);
-  static const Color _showroomBase = Color(0xFF1E2A47);
+  // Match HomeScreen background (gray premium)
+  static const Color _showroomBase = Color(0xFF252525);
+  static const List<Color> _showroomGradient = [
+    Color(0xFF545454),
+    Color(0xFF3A3A3A),
+    Color(0xFF252525),
+    Color(0xFF171717),
+  ];
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -1414,11 +1419,12 @@ class _InfoScreenState extends State<InfoScreen> {
         body: Stack(
           children: [
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [_showroomTop, _showroomMid, _showroomBase],
+                  colors: _showroomGradient,
+                  stops: const [0.0, 0.35, 0.75, 1.0],
                 ),
               ),
             ),
@@ -1478,492 +1484,496 @@ class _InfoScreenState extends State<InfoScreen> {
                 ),
 
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: ScrollViewAnimation.children(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
+                    children: [
+                      Column(
+                        children: [
+                          const SizedBox(height: 20),
 
-                        SizedBox(
-                          width: 100,
-                          height: 100,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned.fill(
-                                child: ClipOval(
-                                  child: Container(
-                                    color: Colors.grey[700],
-                                    child: _avatarBytes != null
-                                        ? Image.memory(
-                                            _avatarBytes!,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : (_avatarUrl != null &&
-                                              _avatarUrl!.trim().isNotEmpty)
-                                        ? Image.network(
-                                            _avatarUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                                  return Image.asset(
-                                                    'assets/images/RR.jpg',
-                                                    fit: BoxFit.cover,
-                                                  );
-                                                },
-                                          )
-                                        : Image.asset(
-                                            'assets/images/RR.jpg',
-                                            fit: BoxFit.cover,
-                                          ),
+                          SizedBox(
+                            width: 100,
+                            height: 100,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Positioned.fill(
+                                  child: ClipOval(
+                                    child: Container(
+                                      color: Colors.grey[700],
+                                      child: _avatarBytes != null
+                                          ? Image.memory(
+                                              _avatarBytes!,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : (_avatarUrl != null &&
+                                                _avatarUrl!.trim().isNotEmpty)
+                                          ? Image.network(
+                                              _avatarUrl!,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Image.asset(
+                                                      'assets/images/RR.jpg',
+                                                      fit: BoxFit.cover,
+                                                    );
+                                                  },
+                                            )
+                                          : Image.asset(
+                                              'assets/images/RR.jpg',
+                                              fit: BoxFit.cover,
+                                            ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Positioned(
-                                right: -2,
-                                bottom: -2,
-                                child: GestureDetector(
-                                  onTap: _showAvatarPickerSheet,
-                                  child: Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white,
-                                      border: Border.all(
-                                        color: const Color(0xFF333333),
-                                        width: 2,
+                                Positioned(
+                                  right: -2,
+                                  bottom: -2,
+                                  child: GestureDetector(
+                                    onTap: _showAvatarPickerSheet,
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                        border: Border.all(
+                                          color: const Color(0xFF333333),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.all(10),
+                                      child: Image.asset(
+                                        'assets/images/icons8-camera-48.png',
+                                        fit: BoxFit.contain,
                                       ),
                                     ),
-                                    padding: const EdgeInsets.all(10),
-                                    child: Image.asset(
-                                      'assets/images/icons8-camera-48.png',
-                                      fit: BoxFit.contain,
-                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          Text(
+                            _nameController.text.trim().isNotEmpty
+                                ? _nameController.text.trim()
+                                : _formatPhoneNumber(widget.phoneNumber),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          Text(
+                            _formatPhoneNumber(widget.phoneNumber),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          TextField(
+                            controller: _nameController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Họ và tên',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 15,
                               ),
+                              enabledBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white54),
+                              ),
+                              focusedBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                              ),
+                            ),
+                            textInputAction: TextInputAction.next,
+                          ),
+                          const SizedBox(height: 24),
+
+                          TextField(
+                            controller: _phoneController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Nhập 9 chữ số (ví dụ: 374854273) hoặc 0xxxxx',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 15,
+                              ),
+                              enabledBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white54),
+                              ),
+                              focusedBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                              ),
+                            ),
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
                             ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Text(
-                          _nameController.text.trim().isNotEmpty
-                              ? _nameController.text.trim()
-                              : _formatPhoneNumber(widget.phoneNumber),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-
-                        Text(
-                          _formatPhoneNumber(widget.phoneNumber),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        TextField(
-                          controller: _nameController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Họ và tên',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 15,
-                            ),
-                            enabledBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white54),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                            ),
-                          ),
-                          textInputAction: TextInputAction.next,
-                        ),
-                        const SizedBox(height: 24),
-
-                        TextField(
-                          controller: _phoneController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          decoration: InputDecoration(
-                            hintText:
-                                'Nhập 9 chữ số (ví dụ: 374854273) hoặc 0xxxxx',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 15,
-                            ),
-                            enabledBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white54),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                            ),
-                          ),
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(10),
-                          ],
-                          onChanged: (value) {
-                            // Auto-format: remove leading 0 if user pastes +84 number
-                            if (value.startsWith('84') && value.length >= 2) {
-                              _phoneController.text = '0${value.substring(2)}';
-                              _phoneController.selection =
-                                  TextSelection.fromPosition(
-                                    TextPosition(
-                                      offset: _phoneController.text.length,
-                                    ),
-                                  );
-                            }
-                            _checkForChanges();
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        TextField(
-                          controller: _emailController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Email',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 15,
-                            ),
-                            enabledBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white54),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                            ),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 24),
-
-                        RadioGroup<String>(
-                          groupValue: _selectedGender,
-                          onChanged: (value) {
-                            if (value == null) return;
-                            setState(() {
-                              _selectedGender = value;
-                            });
-                            _checkForChanges();
-                          },
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedGender = 'Nam';
-                                    });
-                                    _checkForChanges();
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Radio<String>(
-                                        value: 'Nam',
-                                        fillColor: WidgetStateProperty.all(
-                                          Colors.white,
-                                        ),
+                            onChanged: (value) {
+                              // Auto-format: remove leading 0 if user pastes +84 number
+                              if (value.startsWith('84') && value.length >= 2) {
+                                _phoneController.text =
+                                    '0${value.substring(2)}';
+                                _phoneController.selection =
+                                    TextSelection.fromPosition(
+                                      TextPosition(
+                                        offset: _phoneController.text.length,
                                       ),
-                                      const Text(
-                                        'Nam',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedGender = 'Nữ';
-                                    });
-                                    _checkForChanges();
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Radio<String>(
-                                        value: 'Nữ',
-                                        fillColor: WidgetStateProperty.all(
-                                          Colors.white,
-                                        ),
-                                      ),
-                                      const Text(
-                                        'Nữ',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        InkWell(
-                          onTap: () => _selectDate(context),
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              hintText: 'Chọn ngày sinh',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                              suffixIcon: const Icon(
-                                Icons.calendar_today,
-                                color: Colors.white70,
-                                size: 20,
-                              ),
-                              enabledBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white54),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8,
-                              ),
-                            ),
-                            child: Text(
-                              _selectedDate != null
-                                  ? DateFormat(
-                                      'dd/MM/yyyy',
-                                    ).format(_selectedDate!)
-                                  : 'Chọn ngày sinh',
-                              style: TextStyle(
-                                color: _selectedDate != null
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        InkWell(
-                          onTap: _pickProvince,
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              hintText: 'Chọn Tỉnh/Thành phố',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                              suffixIcon: const Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.white70,
-                              ),
-                              enabledBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white54),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8,
-                              ),
-                            ),
-                            child: Text(
-                              _selectedProvince?.name ?? 'Chọn Tỉnh/Thành phố',
-                              style: TextStyle(
-                                color: _selectedProvince != null
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        InkWell(
-                          onTap: _pickDistrict,
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              hintText: 'Chọn Quận/Huyện',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                              suffixIcon: const Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.white70,
-                              ),
-                              enabledBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white54),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8,
-                              ),
-                            ),
-                            child: Text(
-                              _selectedDistrict?.name ?? 'Chọn Quận/Huyện',
-                              style: TextStyle(
-                                color: _selectedDistrict != null
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        InkWell(
-                          onTap: _pickWard,
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              hintText: 'Chọn Phường/Xã',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                              suffixIcon: const Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.white70,
-                              ),
-                              enabledBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.white54),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8,
-                              ),
-                            ),
-                            child: Text(
-                              _selectedWard?.name ?? 'Chọn Phường/Xã',
-                              style: TextStyle(
-                                color: _selectedWard != null
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.5),
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        TextField(
-                          controller: _streetController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Tên đường',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 15,
-                            ),
-                            enabledBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white54),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 8,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _saveChanges();
+                                    );
+                              }
+                              _checkForChanges();
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF333333),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                              elevation: 0,
+                          ),
+                          const SizedBox(height: 24),
+
+                          TextField(
+                            controller: _emailController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
                             ),
-                            child: const Text(
-                              'Lưu thay đổi',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
+                            decoration: InputDecoration(
+                              hintText: 'Email',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 15,
+                              ),
+                              enabledBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white54),
+                              ),
+                              focusedBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                              ),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 24),
+
+                          RadioGroup<String>(
+                            groupValue: _selectedGender,
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                              _checkForChanges();
+                            },
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedGender = 'Nam';
+                                      });
+                                      _checkForChanges();
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Radio<String>(
+                                          value: 'Nam',
+                                          fillColor: WidgetStateProperty.all(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                        const Text(
+                                          'Nam',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedGender = 'Nữ';
+                                      });
+                                      _checkForChanges();
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Radio<String>(
+                                          value: 'Nữ',
+                                          fillColor: WidgetStateProperty.all(
+                                            Colors.white,
+                                          ),
+                                        ),
+                                        const Text(
+                                          'Nữ',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          InkWell(
+                            onTap: () => _selectDate(context),
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                hintText: 'Chọn ngày sinh',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.calendar_today,
+                                  color: Colors.white70,
+                                  size: 20,
+                                ),
+                                enabledBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white54),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                              ),
+                              child: Text(
+                                _selectedDate != null
+                                    ? DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(_selectedDate!)
+                                    : 'Chọn ngày sinh',
+                                style: TextStyle(
+                                  color: _selectedDate != null
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                          const SizedBox(height: 24),
+
+                          InkWell(
+                            onTap: _pickProvince,
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                hintText: 'Chọn Tỉnh/Thành phố',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.white70,
+                                ),
+                                enabledBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white54),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                              ),
+                              child: Text(
+                                _selectedProvince?.name ??
+                                    'Chọn Tỉnh/Thành phố',
+                                style: TextStyle(
+                                  color: _selectedProvince != null
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          InkWell(
+                            onTap: _pickDistrict,
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                hintText: 'Chọn Quận/Huyện',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.white70,
+                                ),
+                                enabledBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white54),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                              ),
+                              child: Text(
+                                _selectedDistrict?.name ?? 'Chọn Quận/Huyện',
+                                style: TextStyle(
+                                  color: _selectedDistrict != null
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          InkWell(
+                            onTap: _pickWard,
+                            child: InputDecorator(
+                              decoration: InputDecoration(
+                                hintText: 'Chọn Phường/Xã',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                                suffixIcon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.white70,
+                                ),
+                                enabledBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.white54),
+                                ),
+                                focusedBorder: const UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                              ),
+                              child: Text(
+                                _selectedWard?.name ?? 'Chọn Phường/Xã',
+                                style: TextStyle(
+                                  color: _selectedWard != null
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.5),
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          TextField(
+                            controller: _streetController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Tên đường',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 15,
+                              ),
+                              enabledBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white54),
+                              ),
+                              focusedBorder: const UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                _saveChanges();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF333333),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Lưu thay đổi',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],

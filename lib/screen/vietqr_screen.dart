@@ -9,6 +9,7 @@ import '../services/bank_transaction_checker.dart';
 import '../services/email_service.dart';
 import '../services/warranty_service.dart';
 import '../services/garage_service.dart';
+import '../widgets/scrollview_animation.dart';
 
 class VietQRScreen extends StatefulWidget {
   final String carName;
@@ -45,9 +46,9 @@ class _VietQRScreenState extends State<VietQRScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // Colors matching app theme - Updated colors
-  static const Color _backgroundColor = Color(0xFF0A0E27);
-  static const Color _cardColor = Color(0xFF1A1F3A);
+  // Match DetailCar palette
+  static const Color _backgroundColor = Color.fromARGB(255, 18, 32, 47);
+  static const Color _cardColor = Color.fromARGB(255, 27, 42, 59);
   static const Color _primaryColor = Color(0xFF4FC3F7);
   static const Color _accentColor = Color(0xFF00E676);
   static const Color _surfaceColor = Color(0xFF151937);
@@ -1564,15 +1565,15 @@ class _VietQRScreenState extends State<VietQRScreen>
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildTimerHeader(),
-              _buildPaymentCard(),
-              _buildBankGrid(),
-              const SizedBox(height: 20),
-            ],
-          ),
+        child: ScrollViewAnimation.children(
+          useSafeArea: false,
+          padding: EdgeInsets.zero,
+          children: [
+            _buildTimerHeader(),
+            _buildPaymentCard(),
+            _buildBankGrid(),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

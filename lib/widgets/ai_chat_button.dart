@@ -187,8 +187,12 @@ class AIChatBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // HomeScreen uses extendBody:true, so we must lift this badge above the
+    // bottom nav + safe area to avoid it slipping under the navbar.
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    const navBarHeight = 100.0; // matches FloatingCarBottomNav height
     return Positioned(
-      bottom: 24,
+      bottom: bottomInset + navBarHeight + 12,
       right: 20,
       child: Column(
         children: [

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../widgets/scrollview_animation.dart';
+
 class ForgotOtpScreen extends StatefulWidget {
   const ForgotOtpScreen({super.key, required this.phoneNumber});
 
@@ -190,10 +192,10 @@ class _ForgotOtpScreenState extends State<ForgotOtpScreen>
       resizeToAvoidBottomInset: true,
       body: FadeTransition(
         opacity: _fadeAnim,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 26),
-            child: Column(
+        child: ScrollViewAnimation.children(
+          padding: const EdgeInsets.symmetric(horizontal: 26),
+          children: [
+            Column(
               children: [
                 const SizedBox(height: 140),
 
@@ -295,7 +297,7 @@ class _ForgotOtpScreenState extends State<ForgotOtpScreen>
                 const SizedBox(height: 28),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

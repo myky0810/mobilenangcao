@@ -21,6 +21,63 @@ class _CarImageSliderState extends State<CarImageSlider> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
+  bool _isNetworkImage(String path) {
+    final p = path.trim().toLowerCase();
+    return p.startsWith('http://') || p.startsWith('https://');
+  }
+
+  Widget _buildImage(String path) {
+    final normalized = path.trim();
+    if (normalized.isEmpty) {
+      return Container(
+        color: Colors.grey[900],
+        child: const Center(
+          child: Icon(Icons.directions_car, color: Colors.white24, size: 60),
+        ),
+      );
+    }
+
+    final imageWidget = _isNetworkImage(normalized)
+        ? Image.network(
+            normalized,
+            width: double.infinity,
+            height: widget.height,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[900],
+                child: const Center(
+                  child: Icon(
+                    Icons.directions_car,
+                    color: Colors.white24,
+                    size: 60,
+                  ),
+                ),
+              );
+            },
+          )
+        : Image.asset(
+            normalized,
+            width: double.infinity,
+            height: widget.height,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[900],
+                child: const Center(
+                  child: Icon(
+                    Icons.directions_car,
+                    color: Colors.white24,
+                    size: 60,
+                  ),
+                ),
+              );
+            },
+          );
+
+    return RepaintBoundary(child: imageWidget);
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -29,10 +86,16 @@ class _CarImageSliderState extends State<CarImageSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final images = widget.images.isNotEmpty ? widget.images : [''];
+    final images = widget.images.isNotEmpty
+        ? widget.images.where((e) => e.trim().isNotEmpty).toList()
+        : <String>[];
     final radius =
         widget.borderRadius ??
         const BorderRadius.vertical(top: Radius.circular(12));
+
+    if (_currentIndex >= images.length && images.isNotEmpty) {
+      _currentIndex = 0;
+    }
 
     return SizedBox(
       height: widget.height,
@@ -48,27 +111,26 @@ class _CarImageSliderState extends State<CarImageSlider> {
                 setState(() => _currentIndex = index);
               },
               itemBuilder: (context, index) {
-                return Image.asset(
-                  images[index],
-                  width: double.infinity,
-                  height: widget.height,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[900],
-                      child: const Center(
-                        child: Icon(
-                          Icons.directions_car,
-                          color: Colors.white24,
-                          size: 60,
-                        ),
-                      ),
-                    );
-                  },
-                );
+                return _buildImage(images[index]);
               },
             ),
           ),
+
+          // Nếu không có ảnh thì show placeholder
+          if (images.isEmpty)
+            ClipRRect(
+              borderRadius: radius,
+              child: Container(
+                color: Colors.grey[900],
+                child: const Center(
+                  child: Icon(
+                    Icons.directions_car,
+                    color: Colors.white24,
+                    size: 60,
+                  ),
+                ),
+              ),
+            ),
 
           // Chỉ số trang (dots) ở góc dưới phải - chỉ hiện nếu có nhiều hơn 1 ảnh
           if (images.length > 1)
@@ -103,6 +165,7 @@ class _CarImageSliderState extends State<CarImageSlider> {
               top: 0,
               bottom: 0,
               child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 onTap: () {
                   _pageController.previousPage(
                     duration: const Duration(milliseconds: 300),
@@ -133,6 +196,7 @@ class _CarImageSliderState extends State<CarImageSlider> {
               top: 0,
               bottom: 0,
               child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 onTap: () {
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 300),

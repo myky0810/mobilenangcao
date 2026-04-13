@@ -11,6 +11,7 @@ class FloatingCarBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.backgroundColor = const Color(0xFF1A1A1A),
+    this.transparentPill = false,
     this.horizontalPadding = 18,
     this.verticalPadding = 10,
   });
@@ -19,6 +20,7 @@ class FloatingCarBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   final Color backgroundColor;
+  final bool transparentPill;
   final double horizontalPadding;
   final double verticalPadding;
 
@@ -30,48 +32,59 @@ class FloatingCarBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Keep the area *behind* the pill transparent so the navbar sits directly
+    // on the page background (no full-width band color).
     return SafeArea(
       top: false,
-      child: SizedBox(
-        height: 100,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              ),
-              child: Container(
-                height: 70,
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 14,
-                      offset: const Offset(0, -3),
-                    ),
-                  ],
+      child: Material(
+        type: MaterialType.transparency,
+        child: SizedBox(
+          height: 100,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _navIconOnly(context, Icons.home_rounded, 0),
-                    _navIconOnly(context, Icons.search_rounded, 1),
-                    const SizedBox(width: 64),
-                    _navIconOnly(context, Icons.favorite_rounded, 3),
-                    _navIconOnly(context, Icons.person_rounded, 4),
-                  ],
+                child: Container(
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: transparentPill
+                        ? Colors.transparent
+                        : backgroundColor,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.18),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: _navRow(context),
                 ),
               ),
-            ),
-            Positioned(bottom: 34, child: _centerCarButton(context)),
-          ],
+              Positioned(bottom: 34, child: _centerCarButton(context)),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _navRow(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _navIconOnly(context, Icons.home_rounded, 0),
+        _navIconOnly(context, Icons.search_rounded, 1),
+        const SizedBox(width: 64),
+        _navIconOnly(context, Icons.favorite_rounded, 3),
+        _navIconOnly(context, Icons.person_rounded, 4),
+      ],
     );
   }
 

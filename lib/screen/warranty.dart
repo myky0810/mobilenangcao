@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../data/firebase_helper.dart';
 import '../services/warranty_service.dart';
+import '../widgets/app_snackbar.dart';
 import '../widgets/floating_car_bottom_nav.dart';
 
 class WarrantyScreen extends StatefulWidget {
@@ -18,8 +20,8 @@ class WarrantyScreen extends StatefulWidget {
 
 class _WarrantyScreenState extends State<WarrantyScreen> {
   // ── Colors ──
-  // Use Deposit palette
-  static const _bg = Color(0xFF1E2A47);
+  // Match HomeScreen background (gray premium)
+  static const _bg = Color(0xFF252525);
   static const _card = Color(0xFF141822);
   static const _accent = Color(0xFF3B82F6);
   static const _cardSurface = Color(0xFF14161B);
@@ -157,35 +159,19 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
                     // Validate required fields.
                     // Theo yêu cầu: nếu thiếu input fields -> hiển thị đúng message chung.
                     if (vin.isEmpty || odoText.isEmpty || date == null) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: const Text('Vui lòng nhập đầy đủ thông tin'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: const Color(0xFFF59E0B),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.18),
-                            ),
-                          ),
-                        ),
+                      AppSnackBar.show(
+                        ctx,
+                        'Vui lòng nhập đầy đủ thông tin',
+                        backgroundColor: const Color(0xFFF59E0B),
                       );
                       return;
                     }
 
                     if (vin.length != 17) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: const Text('VIN phải đủ 17 ký tự'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: const Color(0xFFF59E0B),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.18),
-                            ),
-                          ),
-                        ),
+                      AppSnackBar.show(
+                        ctx,
+                        'VIN phải đủ 17 ký tự',
+                        backgroundColor: const Color(0xFFF59E0B),
                       );
                       return;
                     }
@@ -204,11 +190,10 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
 
                     if (!ctx.mounted) return;
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                        content: Text('🎉 Kích hoạt bảo hành thành công!'),
-                        backgroundColor: Colors.green,
-                      ),
+                    AppSnackBar.show(
+                      ctx,
+                      '🎉 Kích hoạt bảo hành thành công!',
+                      backgroundColor: Colors.green,
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -396,38 +381,53 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
 
         final warranties = snapshot.data ?? [];
         if (warranties.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.shield_outlined, color: Colors.white24, size: 64),
-                const SizedBox(height: 14),
-                const Text(
-                  'Chưa có bảo hành nào',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
+          return ScrollViewAnimation.children(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
+            children: [
+              const SizedBox(height: 60),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      color: Colors.white24,
+                      size: 64,
+                    ),
+                    SizedBox(height: 14),
+                    Text(
+                      'Chưa có bảo hành nào',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Hãy đặt cọc mua xe để tự động nhận bảo hành',
+                      style: TextStyle(color: Colors.white30, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Hãy đặt cọc mua xe để tự động nhận bảo hành',
-                  style: TextStyle(color: Colors.white30, fontSize: 12),
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 90),
-          itemCount: warranties.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final w = warranties[index];
-            return _buildWarrantyCard(w);
-          },
+        return ScrollViewAnimation.slivers(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
+          slivers: [
+            SliverList.separated(
+              itemCount: warranties.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final w = warranties[index];
+                return _buildWarrantyCard(w);
+              },
+            ),
+          ],
         );
       },
     );
@@ -968,154 +968,157 @@ class _WarrantyDetailsSheet extends StatelessWidget {
                       children: [
                         _HeaderImage(image: resolvedHeader),
                         Expanded(
-                          child: SingleChildScrollView(
+                          child: ScrollViewAnimation.children(
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            title,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w900,
-                                              height: 1.08,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              title,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w900,
+                                                height: 1.08,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            subtitle,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              color: Colors.white54,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              subtitle,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white54,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      _StatusPill(status: status),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _DetailsTile(
+                                          label: 'SỐ VIN',
+                                          value: vinMasked.isNotEmpty
+                                              ? vinMasked
+                                              : '--',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _DetailsTile(
+                                          label: 'SỐ KM (ODO)',
+                                          value: odo.isNotEmpty ? odo : '--',
+                                          subValue: odo.isNotEmpty ? 'km' : '',
+                                          alignEnd: true,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _DetailsTile(
+                                          label: 'SHOWROOM',
+                                          value: showroomName.isNotEmpty
+                                              ? showroomName
+                                              : '--',
+                                          subValue: showroomAddress,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: _DetailsTile(
+                                          label: 'HẾT HẠN',
+                                          value: expStr,
+                                          valueColor: const Color(0xFF55A7FF),
+                                          alignEnd: true,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          'Hạng mục bảo hành',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w900,
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    _StatusPill(status: status),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _DetailsTile(
-                                        label: 'SỐ VIN',
-                                        value: vinMasked.isNotEmpty
-                                            ? vinMasked
-                                            : '--',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _DetailsTile(
-                                        label: 'SỐ KM (ODO)',
-                                        value: odo.isNotEmpty ? odo : '--',
-                                        subValue: odo.isNotEmpty ? 'km' : '',
-                                        alignEnd: true,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _DetailsTile(
-                                        label: 'SHOWROOM',
-                                        value: showroomName.isNotEmpty
-                                            ? showroomName
-                                            : '--',
-                                        subValue: showroomAddress,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _DetailsTile(
-                                        label: 'HẾT HẠN',
-                                        value: expStr,
-                                        valueColor: const Color(0xFF55A7FF),
-                                        alignEnd: true,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                Row(
-                                  children: [
-                                    const Expanded(
-                                      child: Text(
-                                        'Hạng mục bảo hành',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w900,
                                         ),
                                       ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {},
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: _accent,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 6,
+                                      TextButton(
+                                        onPressed: () {},
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: _accent,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 6,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Xem điều khoản',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Xem điều khoản',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                _CoverageItem(
-                                  icon: Icons.settings_suggest_rounded,
-                                  title: 'Động cơ & truyền động',
-                                  subtitle:
-                                      'Bảo hành đầy đủ cho các bộ phận cơ khí chính',
-                                ),
-                                const SizedBox(height: 10),
-                                _CoverageItem(
-                                  icon: Icons.bolt_rounded,
-                                  title: 'Hệ thống điện',
-                                  subtitle:
-                                      'Cảm biến, dây điện và hệ thống ắc quy',
-                                ),
-                                const SizedBox(height: 10),
-                                _CoverageItem(
-                                  icon: Icons.health_and_safety_rounded,
-                                  title: 'Hỗ trợ cứu hộ',
-                                  subtitle: 'Hỗ trợ 24/7 và hỗ trợ khẩn cấp',
-                                ),
-                                const SizedBox(height: 10),
-                                _CoverageItem(
-                                  icon: Icons.format_paint_rounded,
-                                  title: 'Chống gỉ & sơn',
-                                  subtitle:
-                                      'Bảo hành chống gỉ thủng lên đến 12 năm',
-                                ),
-                              ],
-                            ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _CoverageItem(
+                                    icon: Icons.settings_suggest_rounded,
+                                    title: 'Động cơ & truyền động',
+                                    subtitle:
+                                        'Bảo hành đầy đủ cho các bộ phận cơ khí chính',
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _CoverageItem(
+                                    icon: Icons.bolt_rounded,
+                                    title: 'Hệ thống điện',
+                                    subtitle:
+                                        'Cảm biến, dây điện và hệ thống ắc quy',
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _CoverageItem(
+                                    icon: Icons.health_and_safety_rounded,
+                                    title: 'Hỗ trợ cứu hộ',
+                                    subtitle: 'Hỗ trợ 24/7 và hỗ trợ khẩn cấp',
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _CoverageItem(
+                                    icon: Icons.format_paint_rounded,
+                                    title: 'Chống gỉ & sơn',
+                                    subtitle:
+                                        'Bảo hành chống gỉ thủng lên đến 12 năm',
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],

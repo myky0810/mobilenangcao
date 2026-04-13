@@ -16,12 +16,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Match HomeScreen background (gray premium) for the LOWER layer.
+  // Shared navy palette for profile-related screens.
   static const List<Color> _showroomGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    Color(0xFF263D67),
+    Color(0xFF223861),
+    Color(0xFF1E335A),
+    Color(0xFF1B2F55),
   ];
 
   // Match `EliteMembersScreen` background direction + stops.
@@ -32,9 +32,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     stops: [0.0, 0.35, 0.75, 1.0],
   );
 
-  // UPPER overlay (header) with a darker tone that still matches the new gray base.
-  static const Color _headerOverlayTop = Color(0xFF0F0F10);
-  static const Color _headerOverlayBottom = Color(0xCC252525);
+  // UPPER overlay (header) with darker navy tone.
+  static const Color _headerOverlayTop = Color(0xFF162746);
+  static const Color _headerOverlayBottom = Color(0xCC1E335A);
 
   /// ✅ Ưu tiên lấy user từ FirebaseAuth UID, fallback sang phoneNumber
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
@@ -310,7 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 showArrow: true,
                               ),
                               const Divider(
-                                color: Color(0xFF4a4a4a),
+                                color: Color(0xFF3A4F74),
                                 thickness: 1,
                                 height: 1,
                               ),
@@ -328,7 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 showArrow: true,
                               ),
                               const Divider(
-                                color: Color(0xFF4a4a4a),
+                                color: Color(0xFF3A4F74),
                                 thickness: 1,
                                 height: 1,
                               ),
@@ -346,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 showArrow: true,
                               ),
                               const Divider(
-                                color: Color(0xFF4a4a4a),
+                                color: Color(0xFF3A4F74),
                                 thickness: 1,
                                 height: 1,
                               ),
@@ -360,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 onTap: _showFaceIdNotSupportedSnackBar,
                               ),
                               const Divider(
-                                color: Color(0xFF4a4a4a),
+                                color: Color(0xFF3A4F74),
                                 thickness: 1,
                                 height: 1,
                               ),
@@ -374,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 showArrow: true,
                               ),
                               const Divider(
-                                color: Color(0xFF4a4a4a),
+                                color: Color(0xFF3A4F74),
                                 thickness: 1,
                                 height: 1,
                               ),
@@ -388,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 showArrow: false,
                               ),
                               const Divider(
-                                color: Color(0xFF4a4a4a),
+                                color: Color(0xFF3A4F74),
                                 thickness: 1,
                                 height: 1,
                               ),

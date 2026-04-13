@@ -13,23 +13,18 @@ class AppInfoScreen extends StatefulWidget {
 class _AppInfoScreenState extends State<AppInfoScreen> {
   PackageInfo? _packageInfo;
 
-  // Match HomeScreen background (gray premium)
-  static const Color _bg = Color(0xFF252525);
-  static const List<Color> _bgGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
+  // Match admin background tone from chat screen
+  static const Color _bg = Color(0xFF1E2A47);
+  static const List<Color> _bgGradient = [_bg, _bg, _bg, _bg];
 
-  // Premium accent (used subtly)
-  static const Color _accent = Color(0xFF55A7FF);
-  static const Color _accent2 = Color(0xFF6EE7F9);
+  // Premium accent (muted to avoid overly bright highlights)
+  static const Color _accent = Color(0xFF3273AE);
+  static const Color _accent2 = Color(0xFF3F86B9);
 
   // Card surface
-  static const Color _surface = Color(0xFF1F1F1F);
-  static const Color _surface2 = Color(0xFF2A2A2A);
-  static const Color _divider = Color(0xFF3B3B3B);
+  static const Color _surface = Color(0xFF1B2E50);
+  static const Color _surface2 = Color(0xFF22385C);
+  static const Color _divider = Color(0xFF3A4F74);
 
   @override
   void initState() {
@@ -61,8 +56,8 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: _bgGradient,
                     stops: const [0.0, 0.35, 0.75, 1.0],
                   ),
@@ -99,7 +94,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.22),
                           Colors.black.withValues(alpha: 0.0),
                         ],
                       ),
@@ -234,12 +229,12 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withValues(alpha: 0.10),
-            Colors.white.withValues(alpha: 0.06),
-            Colors.black.withValues(alpha: 0.12),
+            Colors.white.withValues(alpha: 0.05),
+            Colors.white.withValues(alpha: 0.025),
+            Colors.black.withValues(alpha: 0.08),
           ],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.45),
@@ -395,8 +390,8 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               borderRadius: BorderRadius.circular(14),
               gradient: LinearGradient(
                 colors: [
-                  _accent.withValues(alpha: 0.35),
-                  _accent2.withValues(alpha: 0.20),
+                  _accent.withValues(alpha: 0.28),
+                  _accent2.withValues(alpha: 0.14),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -543,9 +538,9 @@ class _BackPill extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.10),
+          color: Colors.black.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: const Icon(
           Icons.arrow_back_ios_new_rounded,
@@ -581,19 +576,19 @@ class _PillTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.07),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.90)),
+          Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.86)),
           const SizedBox(width: 6),
           Text(
             text,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.90),
+              color: Colors.white.withValues(alpha: 0.86),
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -634,7 +629,7 @@ class _SettingRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: _AppInfoScreenState._surface2,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
               child: Icon(icon, color: _AppInfoScreenState._accent, size: 20),
             ),
@@ -698,9 +693,9 @@ class _BulletRow extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Icon(icon, size: 18, color: _AppInfoScreenState._accent),
         ),
@@ -817,9 +812,9 @@ class _SupportContactItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Row(
           children: [
@@ -827,7 +822,7 @@ class _SupportContactItem extends StatelessWidget {
               width: 30,
               height: 30,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, size: 16, color: _AppInfoScreenState._accent),

@@ -29,7 +29,6 @@ class _AdminScreenState extends State<AdminScreen> {
   int _selectedIndex = 0;
   final List<int> _navigationStack = [0];
   UserModel? _adminUser;
-  bool _isLoading = true;
   int _unreadChats = 0;
   bool _isMigratingAll = false;
 
@@ -48,16 +47,12 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       final phoneNumber = widget.phoneNumber;
       if (phoneNumber == null || phoneNumber.isEmpty) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
         return;
       }
       final userModel = await UserService.get(phoneNumber);
       if (mounted) {
         setState(() {
           _adminUser = userModel;
-          _isLoading = false;
         });
       }
 
@@ -69,9 +64,7 @@ class _AdminScreenState extends State<AdminScreen> {
         return;
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      // Keep UI responsive even when profile load fails.
     }
   }
 
@@ -94,9 +87,7 @@ class _AdminScreenState extends State<AdminScreen> {
       barrierDismissible: true,
       builder: (dialogContext) => Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
           child: Column(
@@ -305,7 +296,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const AdminMigrationLogsScreen(),
+                                    builder: (_) =>
+                                        const AdminMigrationLogsScreen(),
                                   ),
                                 );
                               },
@@ -353,9 +345,12 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                 ],
                 image: DecorationImage(
-                  image: _adminUser?.avatarUrl != null && _adminUser!.avatarUrl!.isNotEmpty
+                  image:
+                      _adminUser?.avatarUrl != null &&
+                          _adminUser!.avatarUrl!.isNotEmpty
                       ? NetworkImage(_adminUser!.avatarUrl!)
-                      : const AssetImage('assets/images/RR.jpg') as ImageProvider,
+                      : const AssetImage('assets/images/RR.jpg')
+                            as ImageProvider,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -411,10 +406,7 @@ class _AdminScreenState extends State<AdminScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (modalContext) {
-        return MoreOptionsModal(
-          backgroundColor: _card,
-          accentColor: _accent,
-        );
+        return MoreOptionsModal(backgroundColor: _card, accentColor: _accent);
       },
     ).then((selectedIndex) {
       if (selectedIndex != null && mounted && _selectedIndex != selectedIndex) {
@@ -429,7 +421,8 @@ class _AdminScreenState extends State<AdminScreen> {
       return;
     }
 
-    final shouldRun = await showDialog<bool>(
+    final shouldRun =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: const Text('Chạy chuẩn hóa toàn bộ?'),
@@ -473,16 +466,16 @@ class _AdminScreenState extends State<AdminScreen> {
           ? 'Chuẩn hóa toàn bộ xong: quét $scanned, cập nhật $updated.'
           : 'Chuẩn hóa toàn bộ xong: quét $scanned, cập nhật $updated, lỗi $failedCollections collection.';
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Chuẩn hóa toàn bộ thất bại: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Chuẩn hóa toàn bộ thất bại: $e')));
     } finally {
       if (mounted) {
         setState(() => _isMigratingAll = false);
@@ -492,13 +485,6 @@ class _AdminScreenState extends State<AdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: _bg,
-        body: const Center(child: CircularProgressIndicator(color: _accent)),
-      );
-    }
-
     return PopScope(
       canPop: _navigationStack.length <= 1,
       onPopInvokedWithResult: (didPop, result) {
@@ -523,9 +509,12 @@ class _AdminScreenState extends State<AdminScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 2),
                         image: DecorationImage(
-                          image: _adminUser?.avatarUrl != null && _adminUser!.avatarUrl!.isNotEmpty
+                          image:
+                              _adminUser?.avatarUrl != null &&
+                                  _adminUser!.avatarUrl!.isNotEmpty
                               ? NetworkImage(_adminUser!.avatarUrl!)
-                              : const AssetImage('assets/images/RR.jpg') as ImageProvider,
+                              : const AssetImage('assets/images/RR.jpg')
+                                    as ImageProvider,
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -626,9 +615,13 @@ class _AdminScreenState extends State<AdminScreen> {
                     _navItem(0, Icons.home_rounded, 'Dashboard'),
                     _navItem(1, Icons.people_rounded, 'Users'),
                     const SizedBox(width: 64),
-                    _navItem(9, Icons.chat_rounded, 'Chat',
-                        showBadge: _unreadChats > 0,
-                        badgeCount: _unreadChats),
+                    _navItem(
+                      9,
+                      Icons.chat_rounded,
+                      'Chat',
+                      showBadge: _unreadChats > 0,
+                      badgeCount: _unreadChats,
+                    ),
                     _navItem(2, Icons.person_rounded, 'Profile'),
                   ],
                 ),
@@ -666,8 +659,13 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
-  Widget _navItem(int index, IconData icon, String label,
-      {bool showBadge = false, int badgeCount = 0}) {
+  Widget _navItem(
+    int index,
+    IconData icon,
+    String label, {
+    bool showBadge = false,
+    int badgeCount = 0,
+  }) {
     final isActive = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
@@ -742,86 +740,87 @@ class MoreOptionsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      minChildSize: 0.4,
-      maxChildSize: 0.8,
-      expand: false,
-      builder: (sheetContext, scrollController) => Container(
-        color: backgroundColor,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Text(
-              'Quản Lý Khác',
-              style: GoogleFonts.leagueSpartan(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 0.5,
-              ),
+    final maxHeight = MediaQuery.of(context).size.height * 0.65;
+
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          child: Container(
+            color: backgroundColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  'Quản Lý Khác',
+                  style: GoogleFonts.leagueSpartan(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GridView.count(
+                  crossAxisCount: 4,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.85,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  children: [
+                    MoreOptionItem(
+                      icon: Icons.local_car_wash_rounded,
+                      label: 'Xe',
+                      index: 3,
+                      accentColor: accentColor,
+                    ),
+                    MoreOptionItem(
+                      icon: Icons.local_offer_rounded,
+                      label: 'Hãng xe',
+                      index: 4,
+                      accentColor: accentColor,
+                    ),
+                    MoreOptionItem(
+                      icon: Icons.account_balance_wallet_rounded,
+                      label: 'Đặt Cọc',
+                      index: 5,
+                      accentColor: accentColor,
+                    ),
+                    MoreOptionItem(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'Đặt Lịch',
+                      index: 6,
+                      accentColor: accentColor,
+                    ),
+                    MoreOptionItem(
+                      icon: Icons.shield_rounded,
+                      label: 'Bảo Hành',
+                      index: 7,
+                      accentColor: accentColor,
+                    ),
+                    MoreOptionItem(
+                      icon: Icons.notifications_rounded,
+                      label: 'Thông Báo',
+                      index: 8,
+                      accentColor: accentColor,
+                    ),
+                    MoreOptionItem(
+                      icon: Icons.image_rounded,
+                      label: 'Banner',
+                      index: 10,
+                      accentColor: accentColor,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: GridView.count(
-                controller: scrollController,
-                crossAxisCount: 4,
-                shrinkWrap: true,
-                physics: const ClampingScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.85,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                children: [
-                  MoreOptionItem(
-                    icon: Icons.local_car_wash_rounded,
-                    label: 'Xe',
-                    index: 3,
-                    accentColor: accentColor,
-                  ),
-                  MoreOptionItem(
-                    icon: Icons.local_offer_rounded,
-                    label: 'Hãng xe',
-                    index: 4,
-                    accentColor: accentColor,
-                  ),
-                  MoreOptionItem(
-                    icon: Icons.account_balance_wallet_rounded,
-                    label: 'Đặt Cọc',
-                    index: 5,
-                    accentColor: accentColor,
-                  ),
-                  MoreOptionItem(
-                    icon: Icons.calendar_today_rounded,
-                    label: 'Đặt Lịch',
-                    index: 6,
-                    accentColor: accentColor,
-                  ),
-                  MoreOptionItem(
-                    icon: Icons.shield_rounded,
-                    label: 'Bảo Hành',
-                    index: 7,
-                    accentColor: accentColor,
-                  ),
-                  MoreOptionItem(
-                    icon: Icons.notifications_rounded,
-                    label: 'Thông Báo',
-                    index: 8,
-                    accentColor: accentColor,
-                  ),
-                  MoreOptionItem(
-                    icon: Icons.image_rounded,
-                    label: 'Banner',
-                    index: 10,
-                    accentColor: accentColor,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
       ),
     );

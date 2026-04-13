@@ -32,13 +32,26 @@ class BannerService {
       _db.collection('banners');
 
   Stream<List<Map<String, dynamic>>> watchActiveBanners() {
-    return _col
-        .where('isActive', isEqualTo: true)
-        .orderBy('sortOrder')
-        .snapshots()
-        .map(
-          (snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList(),
-        );
+    return _col.where('isActive', isEqualTo: true).snapshots().map((snap) {
+      final items = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+      items.sort((a, b) {
+        final aOrder = _sortOrderFromAny(a['sortOrder']);
+        final bOrder = _sortOrderFromAny(b['sortOrder']);
+        return aOrder.compareTo(bOrder);
+      });
+      return items;
+    });
+  }
+
+  static int _sortOrderFromAny(Object? raw) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) {
+      final parsed = int.tryParse(raw.trim());
+      if (parsed != null) return parsed;
+    }
+    // Missing/invalid sortOrder goes to the end.
+    return 1 << 30;
   }
 
   Future<void> ensureSeeded() async {

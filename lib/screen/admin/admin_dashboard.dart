@@ -186,7 +186,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildBarChart(List<_DashboardMetric> metrics) {
-    final maxValue = metrics.fold<double>(0, (p, e) => e.value > p ? e.value : p);
+    final maxValue = metrics.fold<double>(
+      0,
+      (p, e) => e.value > p ? e.value : p,
+    );
     final safeMax = maxValue <= 0 ? 1.0 : maxValue;
 
     return Container(
@@ -220,7 +223,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     children: [
                       Text(
                         metric.label,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                       Text(
                         metric.value.toInt().toString(),
@@ -313,10 +319,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
             Text(
               '$pendingCount/$totalCount',
-              style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -363,7 +376,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           const SizedBox(height: 10),
           Text(
-            NumberFormat.currency(locale: 'vi_VN', symbol: '₫').format(totalAmount),
+            NumberFormat.currency(
+              locale: 'vi_VN',
+              symbol: '₫',
+            ).format(totalAmount),
             style: GoogleFonts.leagueSpartan(
               color: _accentGreen,
               fontSize: 26,
@@ -383,11 +399,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
         key: ValueKey(_refreshSeed),
         future: _loadDashboardStats(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: _accentBlue));
-          }
-
-          final stats = snapshot.data ?? <String, dynamic>{};
+          final stats =
+              snapshot.data ??
+              <String, dynamic>{
+                'users': 0,
+                'products': 0,
+                'deposits': 0,
+                'bookings': 0,
+                'warranties': 0,
+                'notifications': 0,
+                'pendingDeposits': 0,
+                'pendingBookings': 0,
+                'totalDepositsAmount': 0.0,
+                'loadedAt': DateTime.now(),
+              };
           final loadedAt = (stats['loadedAt'] as DateTime?) ?? DateTime.now();
           final metrics = _buildSystemMetrics(stats);
 
@@ -458,7 +483,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const SizedBox(height: 14),
                 _buildPendingSection(stats),
                 const SizedBox(height: 14),
-                _buildRevenueCard((stats['totalDepositsAmount'] as double?) ?? 0.0),
+                _buildRevenueCard(
+                  (stats['totalDepositsAmount'] as double?) ?? 0.0,
+                ),
               ],
             ),
           );

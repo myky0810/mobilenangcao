@@ -13,14 +13,16 @@ class InfomationScreen extends StatefulWidget {
 }
 
 class _InfomationScreenState extends State<InfomationScreen> {
-  // Match HomeScreen background (gray premium)
-  static const Color _showroomBase = Color(0xFF252525);
+  // Match admin background tone from chat screen
+  static const Color _showroomBase = Color(0xFF1E2A47);
   static const List<Color> _showroomGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    _showroomBase,
+    _showroomBase,
+    _showroomBase,
+    _showroomBase,
   ];
+
+  static const Color _dividerColor = Color(0xFF3A4F74);
 
   int _refreshTick = 0;
 
@@ -240,8 +242,8 @@ class _InfomationScreenState extends State<InfomationScreen> {
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: _showroomGradient,
                   stops: const [0.0, 0.35, 0.75, 1.0],
                 ),
@@ -307,7 +309,7 @@ class _InfomationScreenState extends State<InfomationScreen> {
                         child: Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFF4a4a4a),
+                          color: _dividerColor,
                         ),
                       ),
                       _MenuRow(
@@ -334,7 +336,7 @@ class _InfomationScreenState extends State<InfomationScreen> {
                         child: Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFF4a4a4a),
+                          color: _dividerColor,
                         ),
                       ),
                       _MenuRow(
@@ -359,7 +361,7 @@ class _InfomationScreenState extends State<InfomationScreen> {
                         child: Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFF4a4a4a),
+                          color: _dividerColor,
                         ),
                       ),
                       _MenuRow(
@@ -372,7 +374,7 @@ class _InfomationScreenState extends State<InfomationScreen> {
                         child: Divider(
                           height: 1,
                           thickness: 1,
-                          color: Color(0xFF4a4a4a),
+                          color: _dividerColor,
                         ),
                       ),
                     ],

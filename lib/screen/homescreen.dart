@@ -63,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Banner/animation state (used by the modern banner section).
   int _currentBannerIndex = 0;
+  int _bannerCycleLength = 1;
   late final List<BannerData> _banners = _bannerData;
   late AnimationController _bannerAnimationController;
   late AnimationController _slideAnimationController;
@@ -256,20 +257,44 @@ class _HomeScreenState extends State<HomeScreen>
   void _startBannerTimer() {
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
-        setState(() {
-          _currentBannerIndex = (_currentBannerIndex + 1) % _banners.length;
-        });
-
-        // Restart animations
-        _bannerAnimationController.reset();
-        _slideAnimationController.reset();
-        _bannerAnimationController.forward();
-        _slideAnimationController.forward();
+        _shiftBanner(1);
 
         // Continue timer
         _startBannerTimer();
       }
     });
+  }
+
+  void _restartBannerAnimations() {
+    _bannerAnimationController.reset();
+    _slideAnimationController.reset();
+    _bannerAnimationController.forward();
+    _slideAnimationController.forward();
+  }
+
+  void _goToBanner(int index) {
+    final cycleLength = _bannerCycleLength <= 0 ? 1 : _bannerCycleLength;
+    final normalized = index % cycleLength;
+    setState(() {
+      _currentBannerIndex = normalized < 0
+          ? normalized + cycleLength
+          : normalized;
+    });
+    _restartBannerAnimations();
+  }
+
+  void _shiftBanner(int delta) {
+    _goToBanner(_currentBannerIndex + delta);
+  }
+
+  void _handleBannerSwipe(DragEndDetails details) {
+    final velocityX = details.primaryVelocity ?? 0;
+    // Swipe left -> next banner, swipe right -> previous banner.
+    if (velocityX <= -180) {
+      _shiftBanner(1);
+    } else if (velocityX >= 180) {
+      _shiftBanner(-1);
+    }
   }
 
   @override
@@ -468,6 +493,7 @@ class _HomeScreenState extends State<HomeScreen>
         final uiBanners = docs.map(BannerService.toUiData).toList();
 
         if (uiBanners.isNotEmpty) {
+          _bannerCycleLength = uiBanners.length;
           if (_currentBannerIndex >= uiBanners.length) {
             _currentBannerIndex = 0;
           }
@@ -493,14 +519,20 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               );
             },
+            onHorizontalDragEnd: _handleBannerSwipe,
             child: _buildModernBannerBody(
               currentBanner,
               offerData: current.details,
+              indicatorCount: uiBanners.length,
             ),
           );
         }
 
         // Fallback local
+        _bannerCycleLength = _banners.length;
+        if (_currentBannerIndex >= _banners.length) {
+          _currentBannerIndex = 0;
+        }
         final currentBanner = _banners[_currentBannerIndex];
         final offer = _offers[_currentBannerIndex % _offers.length];
         return GestureDetector(
@@ -515,6 +547,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             );
           },
+          onHorizontalDragEnd: _handleBannerSwipe,
           child: _buildModernBannerBody(currentBanner, offerData: offer),
         );
       },
@@ -524,7 +557,9 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildModernBannerBody(
     BannerData currentBanner, {
     required BannerOfferData offerData,
+    int? indicatorCount,
   }) {
+    final dotsCount = (indicatorCount ?? _banners.length).clamp(1, 999).toInt();
     final screenHeight = MediaQuery.of(context).size.height;
     // Responsive height: giảm xuống để tránh overflow hoàn toàn
     final bannerHeight = screenHeight < 700 ? 140.0 : 160.0;
@@ -822,17 +857,9 @@ class _HomeScreenState extends State<HomeScreen>
           height: 20, // Fix chiều cao của dots container
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_banners.length, (index) {
+            children: List.generate(dotsCount, (index) {
               return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _currentBannerIndex = index;
-                  });
-                  _bannerAnimationController.reset();
-                  _slideAnimationController.reset();
-                  _bannerAnimationController.forward();
-                  _slideAnimationController.forward();
-                },
+                onTap: () => _goToBanner(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   width: index == _currentBannerIndex
@@ -845,7 +872,7 @@ class _HomeScreenState extends State<HomeScreen>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(3),
                     color: index == _currentBannerIndex
-                        ? _banners[_currentBannerIndex].accentColor
+                        ? currentBanner.accentColor
                         : Colors.white24,
                   ),
                 ),

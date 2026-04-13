@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../data/firebase_helper.dart';
-import '../services/google_phone_registration.dart';
 import '../widgets/luxury_logo.dart';
 
 class LoginHasPassScreen extends StatefulWidget {
@@ -81,32 +80,38 @@ class _LoginHasPassScreenState extends State<LoginHasPassScreen>
 
       await FirebaseHelper.login(phone: '+84$phone', password: pass);
 
-      // ✅ Update lastLogin using GooglePhoneRegistration
-      await GooglePhoneRegistration.updateUserFields(
-        '+84$phone',
-        {'lastLogin': DateTime.now()},
-      );
-
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/home',
-        (route) => false,
-        arguments: '+84$phone',
-      );
+      
+      debugPrint('🎉 Chúc mừng bạn đã đăng nhập thành công!');
+      try {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: '+84$phone',
+        );
+      } catch (e) {
+        debugPrint('❌ Navigation error: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Navigation error: $e')),
+        );
+      }
     } on FirebaseException catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+      debugPrint('❌ Firebase error: ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? 'Đăng nhập thất bại')),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Đăng nhập thất bại')));
+      debugPrint('❌ Unexpected error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
     }
   }
 

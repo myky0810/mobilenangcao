@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../data/firebase_helper.dart';
 import '../models/notification.dart';
 
 class NotificationApiService {
@@ -12,6 +13,8 @@ class NotificationApiService {
   // Simulate API data - Trong thực tế sẽ lấy từ server
   List<NotificationModel> _notifications = [];
   bool _isInitialized = false;
+  String? _currentUserPhone;
+  Timer? _periodicTimer;
 
   // Stream controller để real-time updates
   final _notificationStreamController =
@@ -19,82 +22,228 @@ class NotificationApiService {
   Stream<List<NotificationModel>> get notificationStream =>
       _notificationStreamController.stream;
 
-  // Khởi tạo dữ liệu mẫu
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  // Khởi tạo dữ liệu
+  Future<void> initialize({
+    String? userPhone,
+    bool forceRefresh = false,
+  }) async {
+    final requestedPhone = _normalizeUserPhone(userPhone);
+    final normalizedPhone = requestedPhone ?? _currentUserPhone;
+    if (!forceRefresh && _isInitialized && normalizedPhone == _currentUserPhone) {
+      return;
+    }
 
-    final firebaseNotifications = await _fetchFirebaseNotifications();
-    _notifications =
-        firebaseNotifications.isNotEmpty
-        ? firebaseNotifications
-        : _generateSampleData();
+    final firebaseNotifications = await _fetchFirebaseNotifications(
+      userPhone: normalizedPhone,
+    );
+    final shouldUseSampleData = normalizedPhone == null && firebaseNotifications.isEmpty;
+
+    _notifications = shouldUseSampleData
+        ? _generateSampleData()
+        : firebaseNotifications;
     _isInitialized = true;
+    _currentUserPhone = normalizedPhone;
     _notificationStreamController.add(_notifications);
 
-    // Chỉ giả lập update khi chưa có dữ liệu thật từ Firebase.
-    if (firebaseNotifications.isEmpty) {
+    // Chỉ giả lập periodical updates khi chạy chế độ demo (không có user).
+    if (shouldUseSampleData) {
       _startPeriodicUpdates();
+    } else {
+      _stopPeriodicUpdates();
     }
   }
 
-  Future<List<NotificationModel>> _fetchFirebaseNotifications() async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('notifications')
-          .orderBy('createdAt', descending: true)
-          .limit(100)
-          .get();
+  String? _normalizeUserPhone(String? rawPhone) {
+    final value = (rawPhone ?? '').trim();
+    if (value.isEmpty) return null;
+    if (value.contains('@')) return value.toLowerCase();
+    return value;
+  }
 
-      if (snapshot.docs.isEmpty) {
-        return [];
+  String _deriveChatIdFromPhone(String phone) {
+    if (phone.contains('@')) {
+      return phone.toLowerCase();
+    }
+    return FirebaseHelper.normalizePhone(phone);
+  }
+
+  Future<List<NotificationModel>> _fetchFirebaseNotifications({
+    String? userPhone,
+  }) async {
+    try {
+      final List<NotificationModel> allNotifications = [];
+
+      DateTime? parseFlexibleDate(dynamic value) {
+        if (value is Timestamp) return value.toDate();
+        if (value is DateTime) return value;
+        if (value is String) return DateTime.tryParse(value);
+        return null;
       }
 
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        final createdAtRaw = data['createdAt'];
-        DateTime createdAt = DateTime.now();
+      // Fetch promotions/deals từ collection 'notifications'
+      try {
+        final promoSnapshot = await FirebaseFirestore.instance
+            .collection('notifications')
+            .orderBy('createdAt', descending: true)
+            .limit(100)
+            .get();
 
-        if (createdAtRaw is Timestamp) {
-          createdAt = createdAtRaw.toDate();
-        } else if (createdAtRaw is String) {
-          createdAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+        for (var doc in promoSnapshot.docs) {
+          final data = doc.data();
+          final createdAtRaw = data['createdAt'];
+          DateTime createdAt = DateTime.now();
+
+          if (createdAtRaw is Timestamp) {
+            createdAt = createdAtRaw.toDate();
+          } else if (createdAtRaw is String) {
+            createdAt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+          }
+
+          allNotifications.add(
+            NotificationModel(
+              id: (data['id'] as String?)?.trim().isNotEmpty == true
+                  ? data['id'] as String
+                  : doc.id,
+              title: (data['title'] as String?) ?? '',
+              description: (data['description'] as String?) ?? '',
+              type: (data['type'] as String?) ?? 'promotion',
+              bannerKey: (data['bannerKey'] as String?)?.trim(),
+              bannerIndex: data['bannerIndex'] is int
+                  ? data['bannerIndex'] as int
+                  : int.tryParse('${data['bannerIndex'] ?? ''}'),
+              productId: (data['productId'] as String?)?.trim(),
+              carModel: data['carModel'] as String?,
+              originalPrice: data['originalPrice'] as String?,
+              discountPrice: data['discountPrice'] as String?,
+              discountPercent: data['discountPercent'] as String?,
+              createdAt: createdAt,
+              isRead: (data['isRead'] as bool?) ?? false,
+              imageUrl: data['imageUrl'] as String?,
+              startDate: parseFlexibleDate(data['startDate']),
+              endDate: parseFlexibleDate(data['endDate']),
+            ),
+          );
         }
+      } catch (_) {
+        // Ignore errors khi fetch promotions
+      }
 
-        return NotificationModel(
-          id: (data['id'] as String?)?.trim().isNotEmpty == true
-              ? data['id'] as String
-              : doc.id,
-          title: (data['title'] as String?) ?? '',
-          description: (data['description'] as String?) ?? '',
-          type: (data['type'] as String?) ?? 'promotion',
-          bannerKey: (data['bannerKey'] as String?)?.trim(),
-          bannerIndex: data['bannerIndex'] is int
-            ? data['bannerIndex'] as int
-            : int.tryParse('${data['bannerIndex'] ?? ''}'),
-          carModel: data['carModel'] as String?,
-          originalPrice: data['originalPrice'] as String?,
-          discountPrice: data['discountPrice'] as String?,
-          discountPercent: data['discountPercent'] as String?,
-          createdAt: createdAt,
-          isRead: (data['isRead'] as bool?) ?? false,
-          imageUrl: data['imageUrl'] as String?,
-        );
-      }).toList();
+      // Fetch chat notifications từ collection 'admin_notifications' theo user.
+      if (userPhone != null && userPhone.isNotEmpty) {
+        try {
+          final chatByUserSnapshot = await FirebaseFirestore.instance
+              .collection('admin_notifications')
+              .where('userPhone', isEqualTo: userPhone)
+              .limit(200)
+              .get();
+
+          final normalizedChatId = _deriveChatIdFromPhone(userPhone);
+          QuerySnapshot<Map<String, dynamic>>? chatByChatIdSnapshot;
+          if (normalizedChatId.isNotEmpty && normalizedChatId != userPhone) {
+            chatByChatIdSnapshot = await FirebaseFirestore.instance
+                .collection('admin_notifications')
+                .where('chatId', isEqualTo: normalizedChatId)
+                .limit(200)
+                .get();
+          }
+
+          final mergedDocs = <String, QueryDocumentSnapshot<Map<String, dynamic>>>{
+            for (final doc in chatByUserSnapshot.docs) doc.id: doc,
+            if (chatByChatIdSnapshot != null)
+              for (final doc in chatByChatIdSnapshot.docs) doc.id: doc,
+          };
+
+          for (final doc in mergedDocs.values) {
+            final data = doc.data();
+            final createdAt = parseFlexibleDate(data['createdAt']) ?? DateTime.now();
+            final status = (data['status'] as String? ?? '').trim();
+            final rawType = (data['type'] as String? ?? 'system').trim();
+            final message = (data['message'] as String? ?? '').trim();
+            final requestMessage =
+                (data['requestMessage'] as String? ?? '').trim();
+            final chatId =
+                (data['chatId'] as String? ?? data['userPhone'] as String? ?? '')
+                    .trim();
+            final isRead =
+                (data['read'] as bool?) ?? (data['isRead'] as bool?) ?? false;
+
+            var type = rawType;
+            var title = 'Thông báo hệ thống';
+            var description = message.isNotEmpty
+                ? message
+                : (requestMessage.isNotEmpty
+                      ? requestMessage
+                      : 'Bạn có thông báo mới');
+
+            if (rawType == 'human_handoff_request') {
+              if (status == 'approved') {
+                type = 'chat_approved';
+                title = '✅ Nhân viên đã sẵn sàng hỗ trợ';
+                description = 'Nhấn để mở chat trực tiếp với tư vấn viên.';
+              } else if (status == 'rejected') {
+                type = 'chat_rejected';
+                title = 'ℹ️ Yêu cầu hỗ trợ đã được cập nhật';
+                description = 'Yêu cầu chat trực tiếp hiện chưa khả dụng.';
+              } else {
+                type = 'human_handoff_request';
+                title = '🕐 Đang chờ tư vấn viên';
+                description = 'Yêu cầu chat trực tiếp của bạn đang chờ duyệt.';
+              }
+            } else if (rawType == 'admin_message') {
+              type = 'admin_message';
+              title = '💬 Tin nhắn từ tư vấn viên';
+              description =
+                  message.isNotEmpty ? message : 'Bạn có tin nhắn mới từ tư vấn viên.';
+            } else if (rawType == 'chat_approved') {
+              type = 'chat_approved';
+              title = '✅ Nhân viên đã sẵn sàng hỗ trợ';
+              description = 'Nhấn để mở chat trực tiếp với tư vấn viên.';
+            }
+
+            allNotifications.add(
+              NotificationModel(
+                id: doc.id,
+                title: title,
+                description: description,
+                type: type,
+                productId: null,
+                carModel: null,
+                originalPrice: null,
+                discountPrice: null,
+                discountPercent: null,
+                createdAt: createdAt,
+                isRead: isRead,
+                imageUrl: null,
+                bannerKey: chatId,
+              ),
+            );
+          }
+        } catch (_) {
+          // Ignore errors khi fetch chat notifications
+        }
+      }
+
+      // Sort tất cả theo thời gian (newest first)
+      allNotifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return allNotifications;
     } catch (_) {
       return [];
     }
   }
 
   // Lấy tất cả thông báo
-  Future<List<NotificationModel>> getAllNotifications() async {
-    await initialize();
-    return List.from(_notifications)
+  Future<List<NotificationModel>> getAllNotifications({String? userPhone}) async {
+    await initialize(userPhone: userPhone, forceRefresh: true);
+    return _notifications.where((n) => n.isActive()).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   // Lấy thông báo theo ngày
-  Future<Map<String, List<NotificationModel>>> getNotificationsByDate() async {
-    await initialize();
+  Future<Map<String, List<NotificationModel>>> getNotificationsByDate({
+    String? userPhone,
+  }) async {
+    await initialize(userPhone: userPhone, forceRefresh: true);
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -107,6 +256,11 @@ class NotificationApiService {
     };
 
     for (var notification in _notifications) {
+      // Skip notifications không active
+      if (!notification.isActive()) {
+        continue;
+      }
+
       final notificationDate = DateTime(
         notification.createdAt.year,
         notification.createdAt.month,
@@ -131,9 +285,10 @@ class NotificationApiService {
   }
 
   // Lấy thông báo khuyến mãi hot
-  Future<List<NotificationModel>> getHotPromotions() async {
-    await initialize();
+  Future<List<NotificationModel>> getHotPromotions({String? userPhone}) async {
+    await initialize(userPhone: userPhone, forceRefresh: true);
     return _notifications
+        .where((n) => n.isActive()) // Filter chỉ active
         .where((n) => n.type == 'promotion' && n.discountPercent != null)
         .where(
           (n) =>
@@ -151,23 +306,11 @@ class NotificationApiService {
   Future<void> markAsRead(String notificationId) async {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index != -1) {
-      _notifications[index] = NotificationModel(
-        id: _notifications[index].id,
-        title: _notifications[index].title,
-        description: _notifications[index].description,
-        type: _notifications[index].type,
-        bannerKey: _notifications[index].bannerKey,
-        bannerIndex: _notifications[index].bannerIndex,
-        carModel: _notifications[index].carModel,
-        originalPrice: _notifications[index].originalPrice,
-        discountPrice: _notifications[index].discountPrice,
-        discountPercent: _notifications[index].discountPercent,
-        createdAt: _notifications[index].createdAt,
-        isRead: true,
-        imageUrl: _notifications[index].imageUrl,
-      );
+      _notifications[index] = _notifications[index].copyWith(isRead: true);
       _notificationStreamController.add(_notifications);
     }
+
+    await _syncReadStateToFirestore(notificationId, isRead: true);
   }
 
   // Đánh dấu chưa đọc
@@ -177,30 +320,64 @@ class NotificationApiService {
       _notifications[index] = _notifications[index].copyWith(isRead: false);
       _notificationStreamController.add(_notifications);
     }
+
+    await _syncReadStateToFirestore(notificationId, isRead: false);
   }
 
   // Đánh dấu tất cả đã đọc
-  Future<void> markAllAsRead() async {
-    await initialize();
+  Future<void> markAllAsRead({String? userPhone}) async {
+    await initialize(userPhone: userPhone, forceRefresh: true);
 
     bool changed = false;
+    final List<String> unreadIds = [];
     for (var i = 0; i < _notifications.length; i++) {
       final n = _notifications[i];
       if (!n.isRead) {
         _notifications[i] = n.copyWith(isRead: true);
         changed = true;
+        unreadIds.add(n.id);
       }
     }
 
     if (changed) {
       _notificationStreamController.add(_notifications);
     }
+
+    await Future.wait(
+      unreadIds.map((id) => _syncReadStateToFirestore(id, isRead: true)),
+    );
   }
 
   // Số thông báo chưa đọc
-  Future<int> getUnreadCount() async {
-    await initialize();
-    return _notifications.where((n) => !n.isRead).length;
+  Future<int> getUnreadCount({String? userPhone}) async {
+    await initialize(userPhone: userPhone, forceRefresh: true);
+    return _notifications
+        .where((n) => n.isActive() && !n.isRead) // Filter active + unread
+        .length;
+  }
+
+  Future<void> _syncReadStateToFirestore(
+    String notificationId, {
+    required bool isRead,
+  }) async {
+    Future<void> tryUpdate(
+      String collection,
+      Map<String, dynamic> payload,
+    ) async {
+      try {
+        await FirebaseFirestore.instance
+            .collection(collection)
+            .doc(notificationId)
+            .update(payload);
+      } catch (_) {
+        // Ignore when the document belongs to another collection.
+      }
+    }
+
+    await Future.wait([
+      tryUpdate('notifications', {'isRead': isRead}),
+      tryUpdate('admin_notifications', {'read': isRead, 'isRead': isRead}),
+    ]);
   }
 
   // Xóa thông báo
@@ -335,9 +512,15 @@ class NotificationApiService {
 
   // Simulate periodic updates
   void _startPeriodicUpdates() {
-    Timer.periodic(const Duration(minutes: 5), (timer) {
+    if (_periodicTimer != null) return;
+    _periodicTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
       _addRandomNotification();
     });
+  }
+
+  void _stopPeriodicUpdates() {
+    _periodicTimer?.cancel();
+    _periodicTimer = null;
   }
 
   // Thêm thông báo ngẫu nhiên (giả lập từ admin)
@@ -381,6 +564,7 @@ class NotificationApiService {
 
   // Cleanup
   void dispose() {
+    _stopPeriodicUpdates();
     _notificationStreamController.close();
   }
 }

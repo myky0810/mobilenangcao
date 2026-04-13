@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../data/firebase_helper.dart';
 import '../models/user_model.dart';
@@ -14,7 +13,6 @@ class GooglePhoneRegistration {
   GooglePhoneRegistration._();
 
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
   static const String _usersCollection = 'users';
 
   // ============================================================================
@@ -121,28 +119,179 @@ class GooglePhoneRegistration {
 
   /// ✅ Get phone number for a Google UID (if already registered)
   static Future<String?> getPhoneByGoogleUid(String uid) async {
-    try {
-      final snapshot = await _db
-          .collection(_usersCollection)
-          .where('uid', isEqualTo: uid)
-          .limit(1)
-          .get();
+    final snapshot = await _db
+        .collection(_usersCollection)
+        .where('uid', isEqualTo: uid)
+        .limit(1)
+        .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        final phone = snapshot.docs.first.data()['phone'] as String?;
-        return phone;
-      }
-      return null;
-    } catch (e) {
-      print('❌ Error getting phone by UID: $e');
-      return null;
+    if (snapshot.docs.isNotEmpty) {
+      final phone = snapshot.docs.first.data()['phone'] as String?;
+      return phone;
     }
+    return null;
+  }
+
+  /// ✅ Get phone document id by email (fallback when UID not linked yet)
+  static Future<String?> getPhoneByEmail(String email) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) return null;
+
+    final snapshot = await _db
+        .collection(_usersCollection)
+        .where('email', isEqualTo: normalizedEmail)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    final doc = snapshot.docs.first;
+    final phone = (doc.data()['phone'] as String? ?? '').trim();
+    if (phone.isNotEmpty) {
+      return FirebaseHelper.normalizePhone(phone);
+    }
+
+    return FirebaseHelper.normalizePhone(doc.id);
+  }
+
+  /// ✅ Resolve phone for Google quick login (UID first, then email)
+  static Future<String?> resolvePhoneForGoogleLogin({
+    required String uid,
+    required String email,
+    required String displayName,
+    required String photoURL,
+  }) async {
+    final phoneByUid = await getPhoneByGoogleUid(uid);
+    if (phoneByUid != null && phoneByUid.trim().isNotEmpty) {
+      final normalized = FirebaseHelper.normalizePhone(phoneByUid);
+      await _touchGoogleLinkedLogin(
+        phone: normalized,
+        uid: uid,
+        email: email,
+        displayName: displayName,
+        photoURL: photoURL,
+      );
+      return normalized;
+    }
+
+    final phoneByEmail = await getPhoneByEmail(email);
+    if (phoneByEmail != null && phoneByEmail.trim().isNotEmpty) {
+      final normalized = FirebaseHelper.normalizePhone(phoneByEmail);
+      await _linkGoogleToExistingPhone(
+        phone: normalized,
+        uid: uid,
+        email: email,
+        displayName: displayName,
+        photoURL: photoURL,
+      );
+      return normalized;
+    }
+
+    return null;
+  }
+
+  static Future<void> _touchGoogleLinkedLogin({
+    required String phone,
+    required String uid,
+    required String email,
+    required String displayName,
+    required String photoURL,
+  }) async {
+    final normalized = FirebaseHelper.normalizePhone(phone);
+    final ref = _db.collection(_usersCollection).doc(normalized);
+    final existing = await ref.get();
+    final existingData = existing.data() ?? <String, dynamic>{};
+
+    final existingName = (existingData['name'] as String? ?? '').trim();
+    final existingProvider = (existingData['provider'] as String? ?? '').trim();
+    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedPhoto = photoURL.trim();
+
+    final updates = <String, dynamic>{
+      'uid': uid,
+      'googleLinked': true,
+      'lastLogin': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (normalizedEmail.isNotEmpty) {
+      updates['email'] = normalizedEmail;
+    }
+    if (existingProvider.isEmpty) {
+      updates['provider'] = 'google';
+    }
+    if (existingName.isEmpty && displayName.trim().isNotEmpty) {
+      updates['name'] = displayName.trim();
+    }
+    if (normalizedPhoto.isNotEmpty) {
+      updates['avatarUrl'] = normalizedPhoto;
+    }
+
+    await ref.set(updates, SetOptions(merge: true));
+  }
+
+  static Future<void> _linkGoogleToExistingPhone({
+    required String phone,
+    required String uid,
+    required String email,
+    required String displayName,
+    required String photoURL,
+  }) async {
+    final normalized = FirebaseHelper.normalizePhone(phone);
+    final ref = _db.collection(_usersCollection).doc(normalized);
+    final existingDoc = await ref.get();
+    final existingData = existingDoc.data() ?? <String, dynamic>{};
+
+    final existingUid = (existingData['uid'] as String? ?? '').trim();
+    if (existingUid.isNotEmpty && existingUid != uid) {
+      throw FirebaseException(
+        plugin: 'cloud_firestore',
+        code: 'google-account-conflict',
+        message: 'Số điện thoại này đã liên kết với một tài khoản Google khác.',
+      );
+    }
+
+    final existingName = (existingData['name'] as String? ?? '').trim();
+    final existingProvider = (existingData['provider'] as String? ?? '').trim();
+    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedPhoto = photoURL.trim();
+
+    final updates = <String, dynamic>{
+      'phone': normalized,
+      'uid': uid,
+      'googleLinked': true,
+      'lastLogin': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (normalizedEmail.isNotEmpty) {
+      updates['email'] = normalizedEmail;
+    }
+    if (existingProvider.isEmpty) {
+      updates['provider'] = 'google';
+    }
+    if (existingName.isEmpty && displayName.trim().isNotEmpty) {
+      updates['name'] = displayName.trim();
+    }
+    if (normalizedPhoto.isNotEmpty) {
+      updates['avatarUrl'] = normalizedPhoto;
+    }
+
+    if (!existingDoc.exists) {
+      updates['provider'] = 'google';
+      updates['role'] = 'user';
+      updates['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await ref.set(updates, SetOptions(merge: true));
   }
 
   /// ✅ Register Google login with phone number (first time)
   /// Bắt buộc có phone để làm Document ID
   static Future<String> registerGoogleWithPhone({
-    required User firebaseUser,
+    required String uid,
+    required String email,
+    required String displayName,
+    required String photoURL,
     required String phone,
   }) async {
     try {
@@ -156,7 +305,7 @@ class GooglePhoneRegistration {
 
       if (existingDoc.exists) {
         final existingUid = existingDoc.data()?['uid'] as String?;
-        if (existingUid != null && existingUid != firebaseUser.uid) {
+        if (existingUid != null && existingUid != uid) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
             code: 'phone-already-used',
@@ -165,28 +314,38 @@ class GooglePhoneRegistration {
         }
       }
 
-      // Email để lấy thông tin
-      final email = (firebaseUser.email ?? '').toLowerCase();
+      final existingData = existingDoc.data() ?? <String, dynamic>{};
+      final existingRole = (existingData['role'] as String? ?? '').trim();
+      final existingProvider = (existingData['provider'] as String? ?? '').trim();
+      final existingName = (existingData['name'] as String? ?? '').trim();
 
-      // Save user document với phone làm ID
+      final emailLower = email.trim().toLowerCase();
+      final display = displayName.trim();
+      final photo = photoURL.trim();
+
+      // Merge để không làm mất passwordHash/passwordSalt và role hiện có.
       await _db.collection(_usersCollection).doc(normalized).set({
         'phone': normalized,
-        'uid': firebaseUser.uid,
-        'provider': 'google',
-        'role': 'user',
-        'email': email,
-        'name': firebaseUser.displayName ?? 'Người dùng Google',
-        'avatarUrl': firebaseUser.photoURL ?? '',
-        'gender': 'Nam',
-        'dob': null,
-        'provinceCode': null,
-        'districtCode': null,
-        'wardCode': null,
-        'street': '',
-        'createdAt': FieldValue.serverTimestamp(),
+        'uid': uid,
+        'googleLinked': true,
+        'provider': existingProvider.isEmpty ? 'google' : existingProvider,
+        if (existingRole.isEmpty) 'role': 'user',
+        if (emailLower.isNotEmpty) 'email': emailLower,
+        if (existingName.isEmpty)
+          'name': display.isNotEmpty ? display : 'Người dùng Google',
+        if (photo.isNotEmpty) 'avatarUrl': photo,
         'lastLogin': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+        if (!existingDoc.exists) ...{
+          'gender': 'Nam',
+          'dob': null,
+          'provinceCode': null,
+          'districtCode': null,
+          'wardCode': null,
+          'street': '',
+          'createdAt': FieldValue.serverTimestamp(),
+        },
+      }, SetOptions(merge: true));
 
       print('✅ Google +Phone registration success: $normalized');
       return normalized;
@@ -198,9 +357,9 @@ class GooglePhoneRegistration {
 
   /// ✅ Record Google login (if phone already exists)
   /// Dùng khi user đã từng đăng ký Google+Phone
-  static Future<String> recordGoogleLogin(User firebaseUser) async {
+  static Future<String> recordGoogleLogin(String uid) async {
     try {
-      final phone = await getPhoneByGoogleUid(firebaseUser.uid);
+      final phone = await getPhoneByGoogleUid(uid);
       if (phone == null) {
         throw FirebaseException(
           plugin: 'cloud_firestore',
@@ -262,13 +421,10 @@ class GooglePhoneRegistration {
     print('✅ User updated: $normalized');
   }
 
-  /// Logout (Firebase Auth only)
+  /// Logout (Firestore-only, no Firebase Auth)
   static Future<void> logout() async {
-    try {
-      await _auth.signOut();
-    } catch (_) {}
-
-    print('✅ Logged out');
+    // No-op: since we're not using Firebase Auth
+    print('✅ Logged out (Firestore-only)');
   }
 
   /// Check if user exists by phone

@@ -70,6 +70,9 @@ class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
           if (_activeNavIndex == index) return;
           setState(() => _activeNavIndex = index);
 
+          final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+          if (isAdmin) return;
+
           final routes = <int, String>{
             0: '/home',
             1: '/newcar',

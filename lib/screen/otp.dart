@@ -263,6 +263,7 @@ class _OTPScreenState extends State<OTPScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // Gradient background giống HomeScreen
@@ -281,73 +282,74 @@ class _OTPScreenState extends State<OTPScreen>
           ),
 
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 80),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 80),
 
-                  // Success icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4A90E2),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
+                    // Success icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4A90E2),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 45,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 45,
+
+                    const SizedBox(height: 32),
+
+                    // Title với font Spartan
+                    Text(
+                      'Xác thực số điện thoại',
+                      style: GoogleFonts.leagueSpartan(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 12),
 
-                  // Title với font Spartan
-                  Text(
-                    'Xác thực số điện thoại',
-                    style: GoogleFonts.leagueSpartan(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                    // Subtitle với font Spartan
+                    Text(
+                      'Vui lòng nhập mã OTP gồm 6 chữ số đã được\ngửi đến số điện thoại của bạn',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.leagueSpartan(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w300,
+                        height: 1.4,
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 50),
 
-                  // Subtitle với font Spartan
-                  Text(
-                    'Vui lòng nhập mã OTP gồm 6 chữ số đã được\ngửi đến số điện thoại của bạn',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.leagueSpartan(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                      height: 1.4,
+                    // OTP input boxes
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(6, (index) => _buildOtpBox(index)),
                     ),
-                  ),
 
-                  const SizedBox(height: 50),
+                    const SizedBox(height: 30),
 
-                  // OTP input boxes
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(6, (index) => _buildOtpBox(index)),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Countdown text (bỏ dấu chấm)
-                  if (_countdown > 0)
+                    // Countdown text (bỏ dấu chấm)
+                    if (_countdown > 0)
                     Text(
                       'Mã OTP sẽ hết hạn trong ${_countdown.toString().padLeft(2, '0')}:${(0).toString().padLeft(2, '0')}',
                       style: GoogleFonts.leagueSpartan(
@@ -357,7 +359,7 @@ class _OTPScreenState extends State<OTPScreen>
                       ),
                     ),
 
-                  const Spacer(),
+                  const SizedBox(height: 32),
 
                   // Verify button (black text)
                   SizedBox(
@@ -431,6 +433,7 @@ class _OTPScreenState extends State<OTPScreen>
                   const SizedBox(height: 40),
                 ],
               ),
+            ),
             ),
           ),
 

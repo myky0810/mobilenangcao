@@ -46,6 +46,8 @@ class _BookCarScreenState extends State<BookCarScreen> {
     setState(() {
       _activeNavIndex = index;
     });
+    final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+    if (isAdmin) return;
     // Handle navigation based on index
     switch (index) {
       case 0:

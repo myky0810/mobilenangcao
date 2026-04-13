@@ -436,6 +436,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onTap: (index) {
           if (index == 4) return;
 
+          // Nếu là admin, chỉ đổi tab, không điều hướng
+          final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+          if (isAdmin) {
+            setState(() {}); // hoặc cập nhật tab nếu bạn có biến tab riêng
+            return;
+          }
+
           if (index == 0) {
             Navigator.pushReplacementNamed(
               context,

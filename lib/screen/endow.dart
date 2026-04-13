@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/notification.dart';
 import '../services/notification_api_service.dart';
@@ -31,8 +32,12 @@ class _EndowScreenState extends State<EndowScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      final notifications = await _notificationService.getNotificationsByDate();
-      final unreadCount = await _notificationService.getUnreadCount();
+      final notifications = await _notificationService.getNotificationsByDate(
+        userPhone: widget.phoneNumber,
+      );
+      final unreadCount = await _notificationService.getUnreadCount(
+        userPhone: widget.phoneNumber,
+      );
       setState(() {
         _notificationsByDate = notifications;
         _unreadCount = unreadCount;
@@ -197,7 +202,9 @@ class _EndowScreenState extends State<EndowScreen> {
 
   Widget _buildHotPromotionsSection() {
     return FutureBuilder<List<NotificationModel>>(
-      future: _notificationService.getHotPromotions(),
+      future: _notificationService.getHotPromotions(
+        userPhone: widget.phoneNumber,
+      ),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const SizedBox.shrink();
@@ -595,10 +602,222 @@ class _EndowScreenState extends State<EndowScreen> {
     // Mark as read
     if (!notification.isRead) {
       await _notificationService.markAsRead(notification.id);
+      _loadNotifications();
+    }
+
+    if (_isDirectChatNotification(notification)) {
+      _openDirectChat(notification);
+      return;
+    }
+
+    if (notification.type.toLowerCase() == 'promotion') {
+      await _openPromotionProduct(notification);
+      return;
     }
 
     // Hiển thị chi tiết thông báo
     _showNotificationDetails(notification);
+  }
+
+  bool _isDirectChatNotification(NotificationModel notification) {
+    final type = notification.type.toLowerCase();
+    return type == 'admin_message' || type == 'chat_approved';
+  }
+
+  void _openDirectChat(NotificationModel notification) {
+    final chatId = (notification.bannerKey ?? '').trim();
+    final fallbackPhone = (widget.phoneNumber ?? '').trim();
+    final resolvedChatId = chatId.isNotEmpty ? chatId : fallbackPhone;
+    if (resolvedChatId.isEmpty) return;
+
+    Navigator.pushNamed(
+      context,
+      '/direct_chat',
+      arguments: {
+        'phoneNumber': widget.phoneNumber,
+        'chatId': resolvedChatId,
+        'chatTitle': 'Tư vấn viên hỗ trợ',
+      },
+    );
+  }
+
+  Future<void> _openPromotionProduct(NotificationModel notification) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final product = await _findProductForPromotion(notification);
+
+    if (product == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy xe phù hợp với thông báo ưu đãi này'),
+        ),
+      );
+      return;
+    }
+
+    final originalPrice =
+        (product['price'] ?? product['carPrice'] ?? '').toString().trim();
+    final discountedPrice = _resolveDiscountedPrice(
+      originalPrice: originalPrice,
+      discountPercent: notification.discountPercent,
+      fallbackDiscountPrice: notification.discountPrice,
+    );
+
+    final carName =
+        (product['name'] ?? product['carName'] ?? notification.carModel ?? '')
+            .toString();
+    final carBrand =
+        (product['brand'] ?? product['brandName'] ?? product['carBrand'] ?? '')
+            .toString();
+    final carImage =
+        (product['image'] ?? product['carImage'] ?? notification.imageUrl ?? '')
+            .toString();
+
+    final args = <String, dynamic>{
+      ...product,
+      'id': (product['id'] ?? '').toString().isNotEmpty
+          ? product['id']
+          : product['docId'],
+      'carName': carName,
+      'name': carName,
+      'carBrand': carBrand,
+      'brand': carBrand,
+      'carImage': carImage,
+      'image': carImage,
+      'carPrice': discountedPrice,
+      'price': discountedPrice,
+      'phoneNumber': widget.phoneNumber,
+      'promoNotificationId': notification.id,
+      'promoDiscountPercent': notification.discountPercent,
+      'promoOriginalPrice': originalPrice,
+    };
+
+    if (!mounted) return;
+    Navigator.pushNamed(context, '/detailcar', arguments: args);
+  }
+
+  Future<Map<String, dynamic>?> _findProductForPromotion(
+    NotificationModel notification,
+  ) async {
+    final products = FirebaseFirestore.instance.collection('products');
+
+    final productId = (notification.productId ?? '').trim();
+    if (productId.isNotEmpty) {
+      final byId = await products.doc(productId).get();
+      if (byId.exists && byId.data() != null) {
+        return {'docId': byId.id, ...byId.data()!};
+      }
+    }
+
+    Map<String, dynamic>? firstOrNull(
+      QuerySnapshot<Map<String, dynamic>> snapshot,
+    ) {
+      if (snapshot.docs.isEmpty) return null;
+      final doc = snapshot.docs.first;
+      return {'docId': doc.id, ...doc.data()};
+    }
+
+    final imageUrl = (notification.imageUrl ?? '').trim();
+    final carModel = (notification.carModel ?? '').trim();
+
+    if (imageUrl.isNotEmpty) {
+      final byImage = await products.where('image', isEqualTo: imageUrl).limit(1).get();
+      final byImageMatch = firstOrNull(byImage);
+      if (byImageMatch != null) return byImageMatch;
+
+      final byCarImage = await products
+          .where('carImage', isEqualTo: imageUrl)
+          .limit(1)
+          .get();
+      final byCarImageMatch = firstOrNull(byCarImage);
+      if (byCarImageMatch != null) return byCarImageMatch;
+
+      final byGallery = await products
+          .where('gallery', arrayContains: imageUrl)
+          .limit(1)
+          .get();
+      final byGalleryMatch = firstOrNull(byGallery);
+      if (byGalleryMatch != null) return byGalleryMatch;
+    }
+
+    if (carModel.isNotEmpty) {
+      final byName = await products.where('name', isEqualTo: carModel).limit(1).get();
+      final byNameMatch = firstOrNull(byName);
+      if (byNameMatch != null) return byNameMatch;
+
+      final byCarName = await products
+          .where('carName', isEqualTo: carModel)
+          .limit(1)
+          .get();
+      final byCarNameMatch = firstOrNull(byCarName);
+      if (byCarNameMatch != null) return byCarNameMatch;
+    }
+
+    final allDocs = await products.limit(300).get();
+    final normalizedCarModel = _normalizeText(carModel);
+
+    for (final doc in allDocs.docs) {
+      final data = doc.data();
+      final candidateName = _normalizeText(
+        (data['name'] ?? data['carName'] ?? '').toString(),
+      );
+      if (normalizedCarModel.isNotEmpty &&
+          (candidateName.contains(normalizedCarModel) ||
+              normalizedCarModel.contains(candidateName))) {
+        return {'docId': doc.id, ...data};
+      }
+    }
+
+    return null;
+  }
+
+  String _normalizeText(String input) {
+    return input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  String _resolveDiscountedPrice({
+    required String originalPrice,
+    String? discountPercent,
+    String? fallbackDiscountPrice,
+  }) {
+    final original = _parseCurrencyToInt(originalPrice);
+    final percent = _parsePercent(discountPercent);
+
+    if (original != null && percent != null && percent > 0) {
+      final discounted = (original * (100 - percent) / 100).round();
+      return _formatCurrency(discounted);
+    }
+
+    final fallback = (fallbackDiscountPrice ?? '').trim();
+    if (fallback.isNotEmpty) return fallback;
+    return originalPrice;
+  }
+
+  int? _parseCurrencyToInt(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return null;
+    return int.tryParse(digits);
+  }
+
+  double? _parsePercent(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return null;
+    final match = RegExp(r'[0-9]+([.,][0-9]+)?').firstMatch(value);
+    if (match == null) return null;
+    final normalized = match.group(0)!.replaceAll(',', '.');
+    return double.tryParse(normalized);
+  }
+
+  String _formatCurrency(int amount) {
+    final digits = amount.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      buffer.write(digits[i]);
+      final remain = digits.length - i - 1;
+      if (remain > 0 && remain % 3 == 0) {
+        buffer.write('.');
+      }
+    }
+    return '${buffer.toString()}đ';
   }
 
   // Hiển thị menu tùy chọn thông báo
@@ -652,6 +871,7 @@ class _EndowScreenState extends State<EndowScreen> {
                 } else {
                   _notificationService.markAsRead(notification.id);
                 }
+                _loadNotifications();
               },
             ),
             ListTile(
@@ -663,6 +883,7 @@ class _EndowScreenState extends State<EndowScreen> {
               onTap: () {
                 Navigator.pop(context);
                 _notificationService.deleteNotification(notification.id);
+                _loadNotifications();
               },
             ),
           ],
@@ -776,9 +997,15 @@ class _EndowScreenState extends State<EndowScreen> {
                   ),
                   const Spacer(),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context);
-                      // Điều hướng tới chi tiết xe hoặc trang ưu đãi
+                      if (_isDirectChatNotification(notification)) {
+                        _openDirectChat(notification);
+                        return;
+                      }
+                      if (notification.type.toLowerCase() == 'promotion') {
+                        await _openPromotionProduct(notification);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
@@ -786,8 +1013,12 @@ class _EndowScreenState extends State<EndowScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    child: const Text(
-                      'Xem chi tiết',
+                    child: Text(
+                      notification.type.toLowerCase() == 'promotion'
+                          ? 'Xem xe ưu đãi'
+                          : (_isDirectChatNotification(notification)
+                                ? 'Mở chat trực tiếp'
+                                : 'Đóng'),
                       style: TextStyle(color: Colors.white),
                     ),
                   ),

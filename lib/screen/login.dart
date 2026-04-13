@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/widgets/luxury_logo.dart';
 import 'package:doan_cuoiki/data/firebase_helper.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -46,10 +45,10 @@ class _LoginEmailState extends State<LoginEmail>
 
   Future<void> _ensureGoogleSignInInitialized() async {
     if (_googleSignInInitialized) return;
-    print('🔧 Initializing Google Sign In...');
+    debugPrint('🔧 Initializing Google Sign In...');
     await _googleSignIn.initialize();
     _googleSignInInitialized = true;
-    print('✅ Google Sign In initialized');
+    debugPrint('✅ Google Sign In initialized');
   }
 
   @override
@@ -380,26 +379,26 @@ class _LoginEmailState extends State<LoginEmail>
       await _googleSignIn.signOut();
 
       // Sign in with Google - v7.2.0 method
-      print('🔐 Starting Google Sign In...');
+      debugPrint('🔐 Starting Google Sign In...');
       final googleUser = await _googleSignIn.authenticate();
-      print('✅ Google user authenticated: ${googleUser.email}');
+      debugPrint('✅ Google user authenticated: ${googleUser.email}');
 
       // Get authentication details
       final googleAuth = googleUser.authentication;
-      print(
+      debugPrint(
         '🔑 Got authentication tokens - idToken: ${googleAuth.idToken?.substring(0, 20)}...',
       );
 
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
       );
-      print('🎫 Created Firebase credential');
+      debugPrint('🎫 Created Firebase credential');
 
       // Sign in to Firebase
       final userCredential = await FirebaseAuth.instance.signInWithCredential(
         credential,
       );
-      print('🔥 Firebase sign in successful');
+      debugPrint('🔥 Firebase sign in successful');
       final user = userCredential.user;
 
       if (user == null) {
@@ -418,20 +417,24 @@ class _LoginEmailState extends State<LoginEmail>
           .trim();
       final uid = user.uid.trim();
 
-      print(
+      debugPrint(
         '💾 Google authenticated: email=$email, name=$displayName, uid=$uid',
       );
 
-      // ✅ Check if this Google account already has a phone registered
-      final phoneForThisUid =
-          await GooglePhoneRegistration.getPhoneByGoogleUid(uid);
+      // ✅ Resolve canonical phone doc id for Google quick login.
+      // Priority: linked UID -> same email in users -> require phone binding.
+      final resolvedPhone =
+          await GooglePhoneRegistration.resolvePhoneForGoogleLogin(
+        uid: uid,
+        email: email,
+        displayName: displayName,
+        photoURL: user.photoURL ?? '',
+      );
 
-      if (phoneForThisUid != null) {
-        // ✅ Already registered → just update lastLogin
-        print('✅ Google account found with phone: $phoneForThisUid');
-        await GooglePhoneRegistration.recordGoogleLogin(user);
+      if (resolvedPhone != null) {
+        debugPrint('✅ Google account resolved to phone doc: $resolvedPhone');
 
-        print('🎉 Google login successful! Navigating to home...');
+        debugPrint('🎉 Google login successful! Navigating to home...');
 
         if (!mounted) return;
         setState(() => _isGoogleLoading = false);
@@ -440,11 +443,11 @@ class _LoginEmailState extends State<LoginEmail>
           context,
           '/home',
           (route) => false,
-          arguments: phoneForThisUid,
+          arguments: resolvedPhone,
         );
       } else {
         // ❌ First time Google login → navigate to phone registration screen
-        print('📱 First time Google login → navigating to phone registration screen');
+        debugPrint('📱 First time Google login → navigating to phone registration screen');
 
         if (!mounted) return;
         setState(() => _isGoogleLoading = false);
@@ -460,7 +463,7 @@ class _LoginEmailState extends State<LoginEmail>
         );
       }
     } on GoogleSignInException catch (e) {
-      print('❌ Google Sign In Exception: ${e.code} - ${e.description}');
+      debugPrint('❌ Google Sign In Exception: ${e.code} - ${e.description}');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
 
@@ -477,7 +480,7 @@ class _LoginEmailState extends State<LoginEmail>
         ),
       );
     } on FirebaseAuthException catch (e) {
-      print('❌ Firebase Auth Exception: ${e.code} - ${e.message}');
+      debugPrint('❌ Firebase Auth Exception: ${e.code} - ${e.message}');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -487,9 +490,24 @@ class _LoginEmailState extends State<LoginEmail>
           duration: const Duration(seconds: 3),
         ),
       );
+    } on FirebaseException catch (e) {
+      debugPrint('❌ Firestore Exception during Google login: ${e.code} - ${e.message}');
+      if (!mounted) return;
+      setState(() => _isGoogleLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.code == 'unavailable'
+                ? 'Không kết nối được Firestore (DNS/mạng). Kiểm tra Internet rồi thử lại.'
+                : (e.message ?? 'Lỗi Firestore khi đăng nhập Google'),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     } catch (e, stackTrace) {
-      print('❌ Unexpected error during Google Sign In: $e');
-      print('📍 Stack trace: $stackTrace');
+      debugPrint('❌ Unexpected error during Google Sign In: $e');
+      debugPrint('📍 Stack trace: $stackTrace');
       if (!mounted) return;
       setState(() => _isGoogleLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(

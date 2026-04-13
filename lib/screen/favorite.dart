@@ -178,6 +178,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
       onTap: (index) {
         if (_activeNavIndex == index) return;
         setState(() => _activeNavIndex = index);
+
+        // Nếu là admin, chỉ đổi tab, không điều hướng
+        final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+        if (isAdmin) return;
+
         if (index == 0) {
           Navigator.pushReplacementNamed(
             context,

@@ -68,6 +68,12 @@ class _MercedesScreenState extends State<MercedesScreen> with RouteAware {
         onTap: (index) {
           if (index == 0) return;
 
+          final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+          if (isAdmin) {
+            setState(() {});
+            return;
+          }
+
           final routes = <int, String>{
             0: '/home',
             1: '/newcar',

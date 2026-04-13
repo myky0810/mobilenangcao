@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,14 +36,16 @@ import 'package:doan_cuoiki/screen/warranty.dart';
 import 'package:doan_cuoiki/screen/app_info.dart';
 import 'package:doan_cuoiki/screen/calendar_drive.dart';
 import 'package:doan_cuoiki/screen/AIChat.dart';
+import 'package:doan_cuoiki/screen/user_live_chat.dart';
 import 'package:doan_cuoiki/screen/deposit_screen.dart';
 import 'package:doan_cuoiki/screen/mycar.dart';
-import 'package:doan_cuoiki/screen/elite_members.dart';
+import 'package:doan_cuoiki/screen/admin/admin_screen.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/car_data_service.dart';
 import 'package:doan_cuoiki/services/favorite_service.dart';
 import 'package:doan_cuoiki/services/firebase_service.dart';
+import 'package:doan_cuoiki/data/firebase_helper.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
 
 import 'navigation_observer.dart';
@@ -48,25 +53,130 @@ import 'navigation_observer.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
+  // Keep only critical init on startup path.
+  await Future.wait([
+    dotenv.load(fileName: '.env'),
+    Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+  ]);
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await VietnamProvinces.initialize(version: AdministrativeDivisionVersion.v1);
-  await initializeDateFormatting('en_US', null);
-  await CarDataService().initialize();
+  runApp(const MyApp());
 
-  // Làm sạch dữ liệu yêu thích trùng lặp khi ứng dụng khởi động
-  await FavoriteService.deduplicateAndSync();
+  // Warm-up non-critical services in background so first screen appears faster.
+  unawaited(_warmUpBackgroundServices());
+}
 
-  // Chạy dọn dữ liệu đặt cọc cũ một lần (nếu có).
+Future<void> _warmUpBackgroundServices() async {
+  try {
+    await Future.wait([
+      VietnamProvinces.initialize(version: AdministrativeDivisionVersion.v1),
+      initializeDateFormatting('en_US', null),
+      CarDataService().initialize(),
+    ]);
+  } catch (_) {
+    // Best-effort warmup; ignore failures.
+  }
+
+  unawaited(FavoriteService.deduplicateAndSync());
+
   try {
     await FirebaseService.cleanupLegacyDepositDataOnce();
   } catch (_) {
-    // Không chặn app startup nếu cleanup không đủ quyền/không cần thiết.
+    // Không chặn app nếu cleanup không đủ quyền/không cần thiết.
+  }
+}
+
+/// 🔄 Role-based Router Loader - loads role and navigates to correct route
+class _RoleBasedRouterLoader extends StatefulWidget {
+  final String phoneNumber;
+  const _RoleBasedRouterLoader({required this.phoneNumber});
+
+  @override
+  State<_RoleBasedRouterLoader> createState() => _RoleBasedRouterLoaderState();
+}
+
+class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
+  bool _navigating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoleAndNavigate();
   }
 
-  runApp(const MyApp());
+  Future<void> _loadRoleAndNavigate() async {
+    if (_navigating) return; // Prevent duplicate navigation
+    _navigating = true;
+
+    try {
+      final normalizedPhone = widget.phoneNumber.contains('@')
+        ? widget.phoneNumber.trim().toLowerCase()
+        : FirebaseHelper.normalizePhone(widget.phoneNumber);
+
+      final usersRef = FirebaseFirestore.instance.collection('users');
+
+      // Cache-first lookup improves perceived speed on repeat launches.
+      String role = 'user';
+      try {
+        final cachedDoc = await usersRef
+            .doc(normalizedPhone)
+            .get(const GetOptions(source: Source.cache));
+        final cachedRole = (cachedDoc.data()?['role'] as String?)?.trim();
+        if (cachedRole != null && cachedRole.isNotEmpty) {
+          role = cachedRole;
+        }
+      } catch (_) {
+        // Ignore cache errors and fall back to server.
+      }
+
+      final remoteDoc = await usersRef.doc(normalizedPhone).get();
+      final remoteRole = (remoteDoc.data()?['role'] as String?)?.trim();
+      if (remoteRole != null && remoteRole.isNotEmpty) {
+        role = remoteRole;
+      }
+      
+      debugPrint('👤 User role: $role');
+
+      if (!mounted) return;
+
+      if (role == 'admin') {
+        // Push /admin route for admin users
+        debugPrint('👮 Routing to AdminScreen');
+        Navigator.pushReplacementNamed(
+          context,
+          '/admin',
+          arguments: normalizedPhone,
+        );
+      } else {
+        // For users, just return HomeScreen directly (no recursive push)
+        // Replace this loader with HomeScreen
+        Navigator.pushReplacementNamed(
+          context,
+          '/homescreen',
+          arguments: normalizedPhone,
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading user role: $e');
+      if (!mounted) return;
+      // Fallback to direct HomeScreen
+      Navigator.pushReplacementNamed(
+        context,
+        '/homescreen',
+        arguments: widget.phoneNumber.contains('@')
+            ? widget.phoneNumber.trim().toLowerCase()
+            : FirebaseHelper.normalizePhone(widget.phoneNumber),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -92,22 +202,66 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const Welcome(),
+        '/admin': (context) {
+          final phoneNumber = ModalRoute.of(context)!.settings.arguments as String?;
+          return AdminScreen(phoneNumber: phoneNumber);
+        },
         '/home': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments;
-          String? phoneNumber;
+          try {
+            final args = ModalRoute.of(context)!.settings.arguments;
+            String? phoneNumber;
 
-          if (args is String) {
-            phoneNumber = args;
-          } else if (args is Map<String, dynamic>) {
-            phoneNumber = args['phoneNumber'] as String?;
+            if (args is String) {
+              phoneNumber = args;
+            } else if (args is Map<String, dynamic>) {
+              phoneNumber = args['phoneNumber'] as String?;
+            }
+
+            debugPrint('🏠 Home route - phoneNumber: $phoneNumber');
+
+            if (phoneNumber == null || phoneNumber.isEmpty) {
+              debugPrint('🏠 Loading HomeScreen (no phone)');
+              return HomeScreen(phoneNumber: phoneNumber);
+            }
+
+            // Return placeholder, will navigate via Navigator.pushReplacementNamed in initState
+            return _RoleBasedRouterLoader(phoneNumber: phoneNumber);
+          } catch (e) {
+            debugPrint('❌ Home route error: $e');
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text('Lỗi tải Home Screen'),
+                    const SizedBox(height: 8),
+                    Text(
+                      e.toString(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Quay lại'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
-
-          return HomeScreen(phoneNumber: phoneNumber);
         },
         '/profile': (context) {
           final phoneNumber =
               ModalRoute.of(context)!.settings.arguments as String?;
           return ProfileScreen(phoneNumber: phoneNumber);
+        },
+        '/homescreen': (context) {
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return HomeScreen(phoneNumber: phoneNumber);
         },
         '/infomation': (context) {
           final phoneNumber =
@@ -256,6 +410,16 @@ class MyApp extends StatelessWidget {
               ModalRoute.of(context)!.settings.arguments as String?;
           return AIChatScreen(phoneNumber: phoneNumber);
         },
+        '/direct_chat': (context) {
+          final args =
+              (ModalRoute.of(context)?.settings.arguments as Map?) ??
+              const <String, dynamic>{};
+          return UserLiveChatScreen(
+            phoneNumber: args['phoneNumber'] as String?,
+            chatId: args['chatId'] as String?,
+            chatTitle: args['chatTitle'] as String?,
+          );
+        },
         '/deposit': (context) {
           final args =
               ModalRoute.of(context)!.settings.arguments
@@ -272,11 +436,6 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments;
           final phoneNumber = args is String ? args : null;
           return MyCarScreen(phoneNumber: phoneNumber);
-        },
-        EliteMembersScreen.routeName: (context) {
-          final phoneNumber =
-              ModalRoute.of(context)!.settings.arguments as String?;
-          return EliteMembersScreen(phoneNumber: phoneNumber);
         },
       },
     );

@@ -33,12 +33,11 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
 
   void _onBottomNavTap(int index) {
     setState(() => _activeNavIndex = index);
+    final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+    if (isAdmin) return;
     final phoneArg = widget.phoneNumber;
     switch (index) {
       case 0:
-        // Don't clear the whole navigation stack here.
-        // Clearing the stack can drop route arguments (phoneNumber) and make
-        // screens look "logged out" when the user navigates back.
         Navigator.of(
           context,
         ).pushReplacementNamed('/home', arguments: phoneArg);

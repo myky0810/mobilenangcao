@@ -345,6 +345,11 @@ class _WarrantyScreenState extends State<WarrantyScreen> {
         currentIndex: -1,
         onTap: (index) {
           final phone = widget.phoneNumber;
+          final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+          if (isAdmin) {
+            setState(() {});
+            return;
+          }
           if (index == 0) {
             Navigator.pushReplacementNamed(context, '/home', arguments: phone);
           } else if (index == 1) {

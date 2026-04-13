@@ -19,20 +19,26 @@ import '../screen/banner_offer_screen.dart';
 /// - gradientColors: List\<int\> (0xFFRRGGBB)
 /// - description: string
 /// - benefits: List\<string\>
+/// - productId: string (products/{id})
+/// - carModel: string (fallback matching)
+/// - originalPrice, discountPrice, discountPercent: string (promotion pricing)
 class BannerService {
   BannerService({FirebaseFirestore? firestore})
-      : _db = firestore ?? FirebaseFirestore.instance;
+    : _db = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _db;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('banners');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('banners');
 
   Stream<List<Map<String, dynamic>>> watchActiveBanners() {
     return _col
         .where('isActive', isEqualTo: true)
         .orderBy('sortOrder')
         .snapshots()
-        .map((snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+        .map(
+          (snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList(),
+        );
   }
 
   Future<void> ensureSeeded() async {
@@ -45,11 +51,7 @@ class BannerService {
 
     for (final (i, item) in _defaultBannerDocs().indexed) {
       final doc = _col.doc('banner_${i + 1}');
-      batch.set(doc, {
-        ...item,
-        'createdAt': now,
-        'updatedAt': now,
-      });
+      batch.set(doc, {...item, 'createdAt': now, 'updatedAt': now});
     }
     await batch.commit();
   }
@@ -63,15 +65,17 @@ class BannerService {
         .toList();
 
     final accent = _colorFromAny(data['accentColor'], fallback: 0xFF55A7FF);
-    final subtitleColor =
-        _colorFromAny(data['subtitleColor'], fallback: 0xFF10B981);
+    final subtitleColor = _colorFromAny(
+      data['subtitleColor'],
+      fallback: 0xFF10B981,
+    );
 
     return BannerUiData(
       badge: (data['badge'] ?? '').toString(),
       title: (data['title'] ?? '').toString(),
       subtitle: (data['subtitle'] ?? '').toString(),
       buttonText: (data['buttonText'] ?? 'Khám phá').toString(),
-      image: (data['image'] ?? '').toString(),
+      image: (data['image'] ?? data['imageUrl'] ?? '').toString(),
       gradientColors: gradientColors.isNotEmpty
           ? gradientColors
           : const [Color(0xFF0D1117), Color(0xFF161B22), Color(0xFF21262D)],
@@ -81,17 +85,34 @@ class BannerService {
         badge: (data['badge'] ?? '').toString(),
         title: (data['title'] ?? '').toString(),
         subtitle: (data['subtitle'] ?? '').toString(),
-        image: (data['image'] ?? '').toString(),
-        gradientColors: (gradientColors.isNotEmpty
-                ? gradientColors
-                : const [Color(0xFF55A7FF), Color(0xFF6EE7F9)])
-            .toList(),
+        image: (data['image'] ?? data['imageUrl'] ?? '').toString(),
+        gradientColors:
+            (gradientColors.isNotEmpty
+                    ? gradientColors
+                    : const [Color(0xFF55A7FF), Color(0xFF6EE7F9)])
+                .toList(),
         accentColor: accent,
         description: (data['description'] ?? '').toString(),
         benefits: ((data['benefits'] as List?) ?? const [])
             .map((e) => e.toString())
             .where((e) => e.trim().isNotEmpty)
             .toList(),
+        productId: (data['productId'] ?? '').toString().trim().isEmpty
+            ? null
+            : (data['productId'] ?? '').toString().trim(),
+        carModel: (data['carModel'] ?? '').toString().trim().isEmpty
+            ? null
+            : (data['carModel'] ?? '').toString().trim(),
+        originalPrice: (data['originalPrice'] ?? '').toString().trim().isEmpty
+            ? null
+            : (data['originalPrice'] ?? '').toString().trim(),
+        discountPrice: (data['discountPrice'] ?? '').toString().trim().isEmpty
+            ? null
+            : (data['discountPrice'] ?? '').toString().trim(),
+        discountPercent:
+            (data['discountPercent'] ?? '').toString().trim().isEmpty
+            ? null
+            : (data['discountPercent'] ?? '').toString().trim(),
       ),
     );
   }
@@ -145,6 +166,10 @@ class BannerService {
           'Tặng gói nâng cấp nội thất miễn phí',
           'Ưu tiên hỗ trợ 24/7',
         ],
+        'productId': 'bmw_3_series_2019',
+        'carModel': 'BMW 3 Series 2019',
+        'originalPrice': '1.899.000.000đ',
+        'discountPercent': '20%',
       },
       {
         'isActive': true,
@@ -164,6 +189,10 @@ class BannerService {
           'Miễn phí kiểm tra xe trước chuyến đi',
           'Hỗ trợ kỹ thuật nhanh',
         ],
+        'productId': 'tesla_cybertruck_2025',
+        'carModel': 'Tesla Cybertruck 2025',
+        'originalPrice': '2.091.538.525đ',
+        'discountPercent': '12%',
       },
       {
         'isActive': true,
@@ -172,7 +201,8 @@ class BannerService {
         'title': 'Ultimate\nLuxury',
         'subtitle': 'Premium Experience',
         'buttonText': 'Xem ngay',
-        'image': 'assets/images/products/Mercedes-Benz-S-Class-2021-1600-01.jpg',
+        'image':
+            'assets/images/products/Mercedes-Benz-S-Class-2021-1600-01.jpg',
         'gradientColors': [0xFF1E1B4B, 0xFF312E81, 0xFF4C1D95],
         'accentColor': 0xFF8B5CF6,
         'subtitleColor': 0xFFF59E0B,
@@ -183,6 +213,10 @@ class BannerService {
           'Tặng 1 lần nâng hạng xe miễn phí/tháng',
           'Ưu đãi dịch vụ đưa đón',
         ],
+        'productId': 'mercedes_amg_gt_coupe_2024',
+        'carModel': 'Mercedes-Benz AMG GT Coupe 2024',
+        'originalPrice': '8.500.000.000đ',
+        'discountPercent': '8%',
       },
       {
         'isActive': true,
@@ -202,6 +236,10 @@ class BannerService {
           'Miễn phí trang bị bộ cứu hộ tiêu chuẩn',
           'Giảm giá khi thuê dài ngày',
         ],
+        'productId': 'toyota_land_cruiser_2021',
+        'carModel': 'Toyota Land Cruiser 2021',
+        'originalPrice': '4.030.000.000đ',
+        'discountPercent': '10%',
       },
     ];
   }

@@ -225,6 +225,7 @@ class _OTPScreenState extends State<OTPScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // Gradient background giống HomeScreen
@@ -259,9 +260,7 @@ class _OTPScreenState extends State<OTPScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF4A90E2,
-                            ).withValues(alpha: 0.3),
+                            color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 2,
                           ),
@@ -277,6 +276,42 @@ class _OTPScreenState extends State<OTPScreen>
                     const SizedBox(height: 32),
 
                     // Title với font Spartan
+                    Text(
+                      'Xác thực số điện thoại',
+                      style: GoogleFonts.leagueSpartan(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Subtitle với font Spartan
+                    Text(
+                      'Vui lòng nhập mã OTP gồm 6 chữ số đã được\ngửi đến số điện thoại của bạn',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.leagueSpartan(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w300,
+                        height: 1.4,
+                      ),
+                    ),
+
+                    const SizedBox(height: 50),
+
+                    // OTP input boxes
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(6, (index) => _buildOtpBox(index)),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Countdown text (bỏ dấu chấm)
+                    if (_countdown > 0)
                     Text(
                       'Xác thực số điện thoại',
                       style: GoogleFonts.leagueSpartan(

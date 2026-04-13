@@ -71,7 +71,10 @@ class _GooglePhoneRegistrationScreenState
       // Use service to register Google with phone
       final registeredPhone =
           await GooglePhoneRegistration.registerGoogleWithPhone(
-            firebaseUser: widget.firebaseUser,
+            uid: widget.firebaseUser.uid,
+            email: widget.firebaseUser.email ?? '',
+            displayName: widget.firebaseUser.displayName ?? '',
+            photoURL: widget.firebaseUser.photoURL ?? '',
             phone: '+84$phone',
           );
 

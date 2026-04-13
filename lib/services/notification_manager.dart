@@ -13,9 +13,11 @@ class NotificationManager extends ChangeNotifier {
   bool get hasUnread => _hasUnread;
   int get unreadCount => _unreadCount;
 
-  Future<void> checkUnreadNotifications() async {
+  Future<void> checkUnreadNotifications({String? userPhone}) async {
     try {
-      final notifications = await _notificationService.getAllNotifications();
+      final notifications = await _notificationService.getAllNotifications(
+        userPhone: userPhone,
+      );
       final unreadList = notifications.where((n) => !n.isRead).toList();
 
       _hasUnread = unreadList.isNotEmpty;
@@ -29,14 +31,14 @@ class NotificationManager extends ChangeNotifier {
     }
   }
 
-  Future<void> markAsRead(String notificationId) async {
+  Future<void> markAsRead(String notificationId, {String? userPhone}) async {
     // Persist then refresh count
     await _notificationService.markAsRead(notificationId);
-    await checkUnreadNotifications();
+    await checkUnreadNotifications(userPhone: userPhone);
   }
 
-  Future<void> markAllAsRead() async {
-    await _notificationService.markAllAsRead();
-    await checkUnreadNotifications();
+  Future<void> markAllAsRead({String? userPhone}) async {
+    await _notificationService.markAllAsRead(userPhone: userPhone);
+    await checkUnreadNotifications(userPhone: userPhone);
   }
 }

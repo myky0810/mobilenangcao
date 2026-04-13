@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BannerOfferData {
   final String badge;
@@ -9,6 +10,11 @@ class BannerOfferData {
   final Color accentColor;
   final String description;
   final List<String> benefits;
+  final String? productId;
+  final String? carModel;
+  final String? originalPrice;
+  final String? discountPrice;
+  final String? discountPercent;
 
   const BannerOfferData({
     required this.badge,
@@ -19,15 +25,16 @@ class BannerOfferData {
     required this.accentColor,
     required this.description,
     required this.benefits,
+    this.productId,
+    this.carModel,
+    this.originalPrice,
+    this.discountPrice,
+    this.discountPercent,
   });
 }
 
 class BannerOfferScreen extends StatelessWidget {
-  const BannerOfferScreen({
-    super.key,
-    required this.offer,
-    this.phoneNumber,
-  });
+  const BannerOfferScreen({super.key, required this.offer, this.phoneNumber});
 
   final BannerOfferData offer;
   final String? phoneNumber;
@@ -41,7 +48,10 @@ class BannerOfferScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
         ),
         title: const Text(
           'Chi tiết ưu đãi',
@@ -117,11 +127,16 @@ class BannerOfferScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: offer.accentColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: offer.accentColor.withOpacity(0.6)),
+                      border: Border.all(
+                        color: offer.accentColor.withOpacity(0.6),
+                      ),
                     ),
                     child: Text(
                       offer.badge,
@@ -267,13 +282,7 @@ class BannerOfferScreen extends StatelessWidget {
     return SizedBox(
       height: 54,
       child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(
-            context,
-            '/endow',
-            arguments: phoneNumber,
-          );
-        },
+        onPressed: () => _handleReceiveOffer(context),
         style: ElevatedButton.styleFrom(
           elevation: 0,
           foregroundColor: Colors.white,
@@ -283,10 +292,248 @@ class BannerOfferScreen extends StatelessWidget {
           ),
         ),
         child: const Text(
-          'Nhận ưu đãi ngay',
+          'Nhận mã ưu đãi',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
     );
+  }
+
+  Future<void> _handleReceiveOffer(BuildContext context) async {
+    final product = await _findPromotionProduct();
+    if (product == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy xe phù hợp từ banner này'),
+        ),
+      );
+      return;
+    }
+
+    final originalPrice =
+        (offer.originalPrice ?? product['price'] ?? product['carPrice'] ?? '')
+            .toString()
+            .trim();
+    final discountedPrice = _resolveDiscountedPrice(
+      originalPrice: originalPrice,
+      discountPercent: offer.discountPercent,
+      fallbackDiscountPrice: offer.discountPrice,
+    );
+
+    final carName =
+        (product['name'] ?? product['carName'] ?? offer.carModel ?? '')
+            .toString();
+    final carBrand =
+        (product['brand'] ?? product['brandName'] ?? product['carBrand'] ?? '')
+            .toString();
+    final carImage = (product['image'] ?? product['carImage'] ?? offer.image)
+        .toString();
+
+    final args = <String, dynamic>{
+      ...product,
+      'id': (product['id'] ?? '').toString().isNotEmpty
+          ? product['id']
+          : product['docId'],
+      'carName': carName,
+      'name': carName,
+      'carBrand': carBrand,
+      'brand': carBrand,
+      'carImage': carImage,
+      'image': carImage,
+      'carPrice': discountedPrice,
+      'price': discountedPrice,
+      'phoneNumber': phoneNumber,
+      'promoDiscountPercent': offer.discountPercent,
+      'promoOriginalPrice': originalPrice,
+      'promoSource': 'banner',
+    };
+
+    if (!context.mounted) return;
+    Navigator.pushNamed(context, '/detailcar', arguments: args);
+  }
+
+  Future<Map<String, dynamic>?> _findPromotionProduct() async {
+    final products = FirebaseFirestore.instance.collection('products');
+
+    final productIdCandidates = _expandProductIdCandidates(offer.productId);
+
+    for (final productId in productIdCandidates) {
+      final byId = await products.doc(productId).get();
+      if (byId.exists && byId.data() != null) {
+        return {'docId': byId.id, ...byId.data()!};
+      }
+    }
+
+    Map<String, dynamic>? firstOrNull(
+      QuerySnapshot<Map<String, dynamic>> snapshot,
+    ) {
+      if (snapshot.docs.isEmpty) return null;
+      final doc = snapshot.docs.first;
+      return {'docId': doc.id, ...doc.data()};
+    }
+
+    for (final productId in productIdCandidates) {
+      final byFieldId = await products
+          .where('id', isEqualTo: productId)
+          .limit(1)
+          .get();
+      final byFieldIdMatch = firstOrNull(byFieldId);
+      if (byFieldIdMatch != null) return byFieldIdMatch;
+    }
+
+    final imageUrl = offer.image.trim();
+    final carModel = (offer.carModel ?? '').trim();
+
+    if (imageUrl.isNotEmpty) {
+      final byImage = await products
+          .where('image', isEqualTo: imageUrl)
+          .limit(1)
+          .get();
+      final byImageMatch = firstOrNull(byImage);
+      if (byImageMatch != null) return byImageMatch;
+
+      final byCarImage = await products
+          .where('carImage', isEqualTo: imageUrl)
+          .limit(1)
+          .get();
+      final byCarImageMatch = firstOrNull(byCarImage);
+      if (byCarImageMatch != null) return byCarImageMatch;
+
+      final byGallery = await products
+          .where('gallery', arrayContains: imageUrl)
+          .limit(1)
+          .get();
+      final byGalleryMatch = firstOrNull(byGallery);
+      if (byGalleryMatch != null) return byGalleryMatch;
+    }
+
+    if (carModel.isNotEmpty) {
+      final byName = await products
+          .where('name', isEqualTo: carModel)
+          .limit(1)
+          .get();
+      final byNameMatch = firstOrNull(byName);
+      if (byNameMatch != null) return byNameMatch;
+
+      final byCarName = await products
+          .where('carName', isEqualTo: carModel)
+          .limit(1)
+          .get();
+      final byCarNameMatch = firstOrNull(byCarName);
+      if (byCarNameMatch != null) return byCarNameMatch;
+    }
+
+    final allDocs = await products.limit(300).get();
+    final normalizedCarModel = _normalizeText(carModel);
+    final normalizedProductIds = productIdCandidates
+        .map(_normalizeText)
+        .where((value) => value.isNotEmpty)
+        .toSet();
+
+    for (final doc in allDocs.docs) {
+      final data = doc.data();
+      final normalizedDocId = _normalizeText(doc.id);
+      final normalizedDataId = _normalizeText(
+        (data['id'] ?? data['productId'] ?? '').toString(),
+      );
+
+      if (normalizedProductIds.contains(normalizedDocId) ||
+          normalizedProductIds.contains(normalizedDataId)) {
+        return {'docId': doc.id, ...data};
+      }
+
+      final candidateName = _normalizeText(
+        (data['name'] ?? data['carName'] ?? '').toString(),
+      );
+      if (normalizedCarModel.isNotEmpty &&
+          (candidateName.contains(normalizedCarModel) ||
+              normalizedCarModel.contains(candidateName))) {
+        return {'docId': doc.id, ...data};
+      }
+    }
+
+    return null;
+  }
+
+  List<String> _expandProductIdCandidates(String? rawProductId) {
+    final raw = (rawProductId ?? '').trim();
+    if (raw.isEmpty) return const [];
+
+    final values = <String>{};
+
+    void addCandidate(String value) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty) {
+        values.add(trimmed);
+      }
+    }
+
+    addCandidate(raw);
+
+    final pathParts = raw
+        .split('/')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (pathParts.isNotEmpty) {
+      addCandidate(pathParts.last);
+    }
+
+    if (raw.toLowerCase().startsWith('products/')) {
+      addCandidate(raw.substring('products/'.length));
+    }
+
+    return values.toList();
+  }
+
+  String _normalizeText(String input) {
+    return input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
+
+  String _resolveDiscountedPrice({
+    required String originalPrice,
+    String? discountPercent,
+    String? fallbackDiscountPrice,
+  }) {
+    final original = _parseCurrencyToInt(originalPrice);
+    final percent = _parsePercent(discountPercent);
+
+    if (original != null && percent != null && percent > 0) {
+      final discounted = (original * (100 - percent) / 100).round();
+      return _formatCurrency(discounted);
+    }
+
+    final fallback = (fallbackDiscountPrice ?? '').trim();
+    if (fallback.isNotEmpty) return fallback;
+    return originalPrice;
+  }
+
+  int? _parseCurrencyToInt(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return null;
+    return int.tryParse(digits);
+  }
+
+  double? _parsePercent(String? raw) {
+    final value = (raw ?? '').trim();
+    if (value.isEmpty) return null;
+    final match = RegExp(r'[0-9]+([.,][0-9]+)?').firstMatch(value);
+    if (match == null) return null;
+    final normalized = match.group(0)!.replaceAll(',', '.');
+    return double.tryParse(normalized);
+  }
+
+  String _formatCurrency(int amount) {
+    final digits = amount.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      buffer.write(digits[i]);
+      final remain = digits.length - i - 1;
+      if (remain > 0 && remain % 3 == 0) {
+        buffer.write('.');
+      }
+    }
+    return '${buffer.toString()}đ';
   }
 }

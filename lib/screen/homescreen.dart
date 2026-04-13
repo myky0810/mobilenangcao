@@ -85,6 +85,10 @@ class _HomeScreenState extends State<HomeScreen>
         'Tặng gói nâng cấp nội thất miễn phí',
         'Ưu tiên hỗ trợ 24/7',
       ],
+      productId: 'bmw_3_series_2019',
+      carModel: 'BMW 3 Series 2019',
+      originalPrice: '1.899.000.000đ',
+      discountPercent: '20%',
     ),
     const BannerOfferData(
       badge: 'XE ĐIỆN 2026',
@@ -100,6 +104,10 @@ class _HomeScreenState extends State<HomeScreen>
         'Miễn phí kiểm tra xe trước chuyến đi',
         'Hỗ trợ kỹ thuật nhanh',
       ],
+      productId: 'tesla_cybertruck_2025',
+      carModel: 'Tesla Cybertruck 2025',
+      originalPrice: '2.091.538.525đ',
+      discountPercent: '12%',
     ),
     const BannerOfferData(
       badge: 'TRẢI NGHIỆM HẠNG SANG',
@@ -115,6 +123,10 @@ class _HomeScreenState extends State<HomeScreen>
         'Tặng 1 lần nâng hạng xe miễn phí/tháng',
         'Ưu đãi dịch vụ đưa đón',
       ],
+      productId: 'mercedes_amg_gt_coupe_2024',
+      carModel: 'Mercedes-Benz AMG GT Coupe 2024',
+      originalPrice: '8.500.000.000đ',
+      discountPercent: '8%',
     ),
     const BannerOfferData(
       badge: 'DÀNH CHO SUV',
@@ -130,6 +142,10 @@ class _HomeScreenState extends State<HomeScreen>
         'Miễn phí trang bị bộ cứu hộ tiêu chuẩn',
         'Giảm giá khi thuê dài ngày',
       ],
+      productId: 'toyota_land_cruiser_2021',
+      carModel: 'Toyota Land Cruiser 2021',
+      originalPrice: '4.030.000.000đ',
+      discountPercent: '10%',
     ),
   ];
   static final List<BannerData> _bannerData = [
@@ -477,7 +493,10 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               );
             },
-            child: _buildModernBannerBody(currentBanner),
+            child: _buildModernBannerBody(
+              currentBanner,
+              offerData: current.details,
+            ),
           );
         }
 
@@ -496,13 +515,16 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             );
           },
-          child: _buildModernBannerBody(currentBanner),
+          child: _buildModernBannerBody(currentBanner, offerData: offer),
         );
       },
     );
   }
 
-  Widget _buildModernBannerBody(BannerData currentBanner) {
+  Widget _buildModernBannerBody(
+    BannerData currentBanner, {
+    required BannerOfferData offerData,
+  }) {
     final screenHeight = MediaQuery.of(context).size.height;
     // Responsive height: giảm xuống để tránh overflow hoàn toàn
     final bannerHeight = screenHeight < 700 ? 140.0 : 160.0;
@@ -693,13 +715,10 @@ class _HomeScreenState extends State<HomeScreen>
                               // Action button với hover effect
                               GestureDetector(
                                 onTap: () {
-                                  final offer =
-                                      _offers[_currentBannerIndex %
-                                          _offers.length];
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (_) => BannerOfferScreen(
-                                        offer: offer,
+                                        offer: offerData,
                                         phoneNumber: widget.phoneNumber,
                                       ),
                                     ),
@@ -1039,6 +1058,10 @@ class _HomeScreenState extends State<HomeScreen>
       onTap: (index) {
         if (_activeNavIndex == index) return;
         setState(() => _activeNavIndex = index);
+
+        // Nếu là admin, chỉ đổi tab, không điều hướng
+        final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+        if (isAdmin) return;
 
         if (index == 0) {
           // already on Home

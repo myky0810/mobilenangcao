@@ -93,12 +93,22 @@ class _LoginHasPassScreenState extends State<LoginHasPassScreen>
 
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/home',
-        (route) => false,
-        arguments: '+84$phone',
-      );
+      
+      debugPrint('🎉 Chúc mừng bạn đã đăng nhập thành công!');
+      try {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+          arguments: '+84$phone',
+        );
+      } catch (e) {
+        debugPrint('❌ Navigation error: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Navigation error: $e')),
+        );
+      }
     } on FirebaseException catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);

@@ -5,14 +5,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-/// ✅ Unified Phone + Google Authentication Helper
+/// ✅ Phone-based Authentication Helper (Firestore only)
 ///
-/// Collection: `users` (single collection for all users)
-/// Document ID: normalized phone (consistent across both methods)
+/// Collection: `users`
+/// Document ID: normalized phone (unique identifier)
 /// Fields:
 /// - phone: normalized phone
 /// - provider: 'google' or 'phone'
-/// - uid: Firebase UID (optional for Google)
 /// - passwordSalt: random salt (base64) - only for phone provider
 /// - passwordHash: sha256(salt + password) (hex) - only for phone provider
 /// - createdAt: server timestamp
@@ -93,6 +92,7 @@ class FirebaseHelper {
         'createdAt': FieldValue.serverTimestamp(),
       });
     });
+    print('✅ Firestore user created: $normalized');
   }
 
   static Future<void> login({
@@ -100,6 +100,9 @@ class FirebaseHelper {
     required String password,
   }) async {
     final normalized = normalizePhone(phone);
+
+    // Verify password hash from Firestore
+    print('🔧 Verifying password from Firestore...');
     final doc = await _users.doc(normalized).get();
     if (!doc.exists) {
       throw FirebaseException(
@@ -128,6 +131,7 @@ class FirebaseHelper {
         message: 'Mật khẩu không đúng.',
       );
     }
+    print('✅ Password verified - Login successful');
   }
 
   static Future<void> changePassword({

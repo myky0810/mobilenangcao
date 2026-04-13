@@ -267,6 +267,10 @@ class _MyCarScreenState extends State<MyCarScreen> {
         if (_activeNavIndex == index) return;
         setState(() => _activeNavIndex = index);
 
+        // Nếu đang ở admin, chỉ đổi tab, không điều hướng
+        final isAdmin = ModalRoute.of(context)?.settings.name == '/admin';
+        if (isAdmin) return;
+
         Future.delayed(const Duration(milliseconds: 120), () {
           if (!mounted) return;
           final phoneArg = _normalizedPhone;

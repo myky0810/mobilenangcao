@@ -42,7 +42,6 @@ class _BookCarScreenState extends State<BookCarScreen> {
     _emailController.dispose();
     super.dispose();
   }
-
   Future<void> _selectDate(BuildContext context) async {
     final minimumDate = DateTime(2026, 1, 1);
     final maximumDate = DateTime(2027, 12, 31);

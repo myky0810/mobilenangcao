@@ -109,8 +109,8 @@ class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
 
     try {
       final normalizedPhone = widget.phoneNumber.contains('@')
-        ? widget.phoneNumber.trim().toLowerCase()
-        : FirebaseHelper.normalizePhone(widget.phoneNumber);
+          ? widget.phoneNumber.trim().toLowerCase()
+          : FirebaseHelper.normalizePhone(widget.phoneNumber);
 
       final usersRef = FirebaseFirestore.instance.collection('users');
 
@@ -133,7 +133,7 @@ class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
       if (remoteRole != null && remoteRole.isNotEmpty) {
         role = remoteRole;
       }
-      
+
       debugPrint('👤 User role: $role');
 
       if (!mounted) return;
@@ -171,11 +171,9 @@ class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    // Intentionally render nothing to avoid a visible "loading flash".
+    // This widget should exist for only a single frame before replacement.
+    return const SizedBox.shrink();
   }
 }
 
@@ -190,6 +188,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark()
           .copyWith(
             scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: _AppPageTransitionsBuilder(),
+                TargetPlatform.iOS: _AppPageTransitionsBuilder(),
+                TargetPlatform.windows: _AppPageTransitionsBuilder(),
+                TargetPlatform.macOS: _AppPageTransitionsBuilder(),
+                TargetPlatform.linux: _AppPageTransitionsBuilder(),
+              },
+            ),
           )
           .copyWith(
             textTheme: GoogleFonts.leagueSpartanTextTheme(
@@ -203,7 +210,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const Welcome(),
         '/admin': (context) {
-          final phoneNumber = ModalRoute.of(context)!.settings.arguments as String?;
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
           return AdminScreen(phoneNumber: phoneNumber);
         },
         '/home': (context) {
@@ -439,5 +447,60 @@ class MyApp extends StatelessWidget {
         },
       },
     );
+  }
+}
+
+/// Global modern page transition used by Navigator.pushNamed / MaterialPageRoute.
+/// Keeps motion consistent across the whole app without editing every screen.
+class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _AppPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // Don't animate the initial route.
+    if (route.isFirst) return child;
+
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutExpo,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    // Premium iOS-like push: slide from right + subtle fade.
+    final slide = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(curved);
+    final fade = Tween<double>(begin: 0.85, end: 1.0).animate(curved);
+
+    // Optional: slight parallax for the outgoing page (feels more expensive).
+    final secondaryCurved = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    final outgoingSlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-0.12, 0.0),
+    ).animate(secondaryCurved);
+
+    final incoming = FadeTransition(
+      opacity: fade,
+      child: SlideTransition(position: slide, child: child),
+    );
+
+    // If this is a full-screen route, apply outgoing parallax. For overlays/dialog-like
+    // routes, keep default behavior.
+    if (route.opaque) {
+      return SlideTransition(position: outgoingSlide, child: incoming);
+    }
+
+    return incoming;
   }
 }

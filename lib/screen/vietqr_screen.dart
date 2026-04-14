@@ -429,6 +429,67 @@ class _VietQRScreenState extends State<VietQRScreen>
         ),
       };
 
+      // ✅ ALSO SAVE A DEPOSIT RECORD for Admin panel (Admin reads `deposits` collection)
+      // This fixes the case where VietQR flow only created `transactions`/`bookings`.
+      final depositId = (widget.carData['depositId'] ?? '')
+          .toString()
+          .trim()
+          .isNotEmpty
+          ? (widget.carData['depositId'] ?? '').toString().trim()
+          : 'DP${DateTime.now().millisecondsSinceEpoch}';
+
+      final depositData = {
+        // Stable IDs
+        'depositId': depositId,
+        'transactionId': _transactionId,
+        'bookingId': bookingId,
+
+        // Status
+        'depositStatus': 'confirmed',
+        'paymentStatus': 'paid',
+        'paymentMethod': 'vietqr',
+
+        // Car
+        'carName': widget.carName,
+        'carBrand': widget.carData['carBrand'] ?? '',
+        'carImage': widget.carData['carImage'] ?? '',
+        'carPrice': widget.carData['carPrice'] ?? '',
+
+        // Amount
+        'depositAmount': widget.amount,
+
+        // Customer
+        'customerName': widget.carData['customerName'] ?? '',
+        'customerPhone': widget.carData['customerPhone'] ?? '',
+        'customerEmail': widget.customerEmail,
+        'address': widget.carData['address'] ?? '',
+        'notes': widget.carData['notes'] ?? '',
+
+        // Showroom (admin screen supports either a `showroom` map or separated fields)
+        'showroom': widget.carData['showroom'],
+
+        // User linkage
+        'userId': userId,
+        'userEmail': userEmail,
+        'userDisplayName': userDisplayName,
+        'userPhone': widget.phoneNumber,
+        'userProvider': provider,
+        'userProfilePath': profileRef?.path ?? '',
+
+        // Timestamps for Admin sorting
+        'depositDate': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'expiresAt': Timestamp.fromDate(
+          DateTime.now().add(const Duration(days: 7)),
+        ),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('deposits')
+          .doc(depositId)
+          .set(depositData, SetOptions(merge: true));
+
       // Lưu vào collection bookings
       await FirebaseFirestore.instance
           .collection('bookings')

@@ -16,19 +16,7 @@ class FavoriteScreen extends StatefulWidget {
 }
 
 class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
-  static const List<Color> _showroomGradient = <Color>[
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
-
-  static const LinearGradient _showroomBgGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: _showroomGradient,
-    stops: [0.0, 0.35, 0.75, 1.0],
-  );
+  // (Background gradient removed; screen now matches DetailCar dark background.)
 
   List<CarDetailData> _favoriteCars = [];
   int _activeNavIndex = 3;
@@ -73,21 +61,28 @@ class _FavoriteScreenState extends State<FavoriteScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(gradient: _showroomBgGradient),
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      extendBody: true,
+      appBar: AppBar(
         backgroundColor: Colors.transparent,
-        extendBody: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          shadowColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        title: const Text(
+          'YÊU THÍCH',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
         ),
-        body: SafeArea(child: _buildBody()),
-        bottomNavigationBar: _buildBottomNav(),
+        centerTitle: true,
       ),
+      body: SafeArea(child: _buildBody()),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 

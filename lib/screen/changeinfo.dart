@@ -22,17 +22,11 @@ class InfoScreen extends StatefulWidget {
 }
 
 class _InfoScreenState extends State<InfoScreen> {
-  // Match admin background tone from chat screen
-  static const Color _showroomBase = Color(0xFF1E2A47);
-  static const List<Color> _showroomGradient = [
-    _showroomBase,
-    _showroomBase,
-    _showroomBase,
-    _showroomBase,
-  ];
+  // Match DetailCar background.
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
 
   static const Color _avatarFallbackColor = Color(0xFF2A416A);
-  static const Color _cameraBorderColor = _showroomBase;
+  static const Color _cameraBorderColor = _bg;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -1418,19 +1412,10 @@ class _InfoScreenState extends State<InfoScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: _showroomBase,
+    backgroundColor: _bg,
         body: Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _showroomGradient,
-                  stops: const [0.0, 0.35, 0.75, 1.0],
-                ),
-              ),
-            ),
+      const SizedBox.shrink(),
 
             Column(
               children: [

@@ -13,17 +13,17 @@ class AppInfoScreen extends StatefulWidget {
 class _AppInfoScreenState extends State<AppInfoScreen> {
   PackageInfo? _packageInfo;
 
-  // Match admin background tone from chat screen
-  static const Color _bg = Color(0xFF1E2A47);
+  // Match DetailCar background
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
   static const List<Color> _bgGradient = [_bg, _bg, _bg, _bg];
 
-  // Premium accent (muted to avoid overly bright highlights)
-  static const Color _accent = Color(0xFF3273AE);
-  static const Color _accent2 = Color(0xFF3F86B9);
+  // Premium accent (modern car-app vibe)
+  static const Color _accent = Color(0xFF3B82F6);
+  static const Color _accent2 = Color(0xFF22D3EE);
 
-  // Card surface
-  static const Color _surface = Color(0xFF1B2E50);
-  static const Color _surface2 = Color(0xFF22385C);
+  // Card surfaces tuned to the new bg
+  static const Color _surface = Color(0xFF0F1C2E);
+  static const Color _surface2 = Color(0xFF12263F);
   static const Color _divider = Color(0xFF3A4F74);
 
   @override

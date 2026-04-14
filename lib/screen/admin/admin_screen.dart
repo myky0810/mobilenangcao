@@ -9,7 +9,7 @@ import 'admin_users.dart';
 import 'admin_products.dart';
 import 'admin_brands.dart';
 import 'admin_deposits.dart';
-import 'admin_bookings.dart';
+import 'admin_test_drive_bookings.dart';
 import 'admin_live_chat.dart';
 import 'admin_notifications.dart';
 import 'admin_banners.dart';
@@ -193,9 +193,9 @@ class _AdminScreenState extends State<AdminScreen> {
       case 4:
         return const AdminBrandsScreen();
       case 5:
-        return const AdminDepositsScreen();
+  return const AdminDepositsScreen();
       case 6:
-        return const AdminBookingsScreen();
+  return const AdminTestDriveBookingsScreen();
       case 7:
         return const AdminWarrantiesScreen();
       case 8:

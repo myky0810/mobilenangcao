@@ -3,6 +3,7 @@ import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/favorite_service.dart';
 import 'package:doan_cuoiki/services/product_review_service.dart';
 import 'package:doan_cuoiki/widgets/animation_hard.dart';
+import 'package:video_player/video_player.dart';
 
 enum ReviewSortOption { newest, highestRated }
 
@@ -21,6 +22,9 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   bool _isLoadingReviews = true;
   List<ProductReview> _reviews = <ProductReview>[];
   ReviewSortOption _reviewSort = ReviewSortOption.newest;
+
+  VideoPlayerController? _videoController;
+  Future<void>? _videoInit;
 
   static const _bg = Color.fromARGB(255, 18, 32, 47);
   static const _card = Color.fromARGB(255, 27, 42, 59);
@@ -118,11 +122,35 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
     super.initState();
     _loadFavoriteState();
     _loadReviews();
+  _initVideo();
   }
 
   @override
   void dispose() {
+    _videoController?.dispose();
     super.dispose();
+  }
+
+  void _initVideo() {
+    final url = widget.car.videoUrl?.trim();
+    if (url == null || url.isEmpty) return;
+
+    try {
+      if (url.toLowerCase().startsWith('http')) {
+        _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+      } else {
+        // Treat as asset path (e.g. assets/videos/mercedes.mp4)
+        _videoController = VideoPlayerController.asset(url);
+      }
+
+      _videoController!.setLooping(true);
+      _videoInit = _videoController!.initialize().then((_) {
+        if (!mounted) return;
+        setState(() {});
+      });
+    } catch (_) {
+      // Keep UI usable; fallback handled in _buildVideoPreview.
+    }
   }
 
   Future<void> _loadFavoriteState() async {
@@ -904,6 +932,67 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   }
 
   Widget _buildVideoPreview() {
+    final url = widget.car.videoUrl?.trim();
+
+    if (url == null || url.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildDetailImage(
+                  widget.car.images[selectedImageIndex],
+                  fit: BoxFit.cover,
+                ),
+                Container(color: Colors.black.withOpacity(0.28)),
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.16),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.24),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Chưa có video cho sản phẩm này',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.75),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -915,46 +1004,89 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
         borderRadius: BorderRadius.circular(12),
         child: AspectRatio(
           aspectRatio: 16 / 9,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _buildDetailImage(
-                widget.car.images[selectedImageIndex],
-                fit: BoxFit.cover,
-              ),
-              Container(color: Colors.black.withOpacity(0.28)),
-              Center(
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.16),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.24)),
+          child: FutureBuilder<void>(
+            future: _videoInit,
+            builder: (context, snapshot) {
+              final controller = _videoController;
+              final ready = controller != null && controller.value.isInitialized;
+
+              if (!ready) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildDetailImage(
+                      widget.car.images[selectedImageIndex],
+                      fit: BoxFit.cover,
+                    ),
+                    Container(color: Colors.black.withOpacity(0.35)),
+                    const Center(
+                      child: CircularProgressIndicator(color: Colors.white70),
+                    ),
+                  ],
+                );
+              }
+
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  VideoPlayer(controller),
+                  Positioned.fill(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          if (!mounted) return;
+                          setState(() {
+                            if (controller.value.isPlaying) {
+                              controller.pause();
+                            } else {
+                              controller.play();
+                            }
+                          });
+                        },
+                        child: Center(
+                          child: AnimatedOpacity(
+                            opacity: controller.value.isPlaying ? 0.0 : 1.0,
+                            duration: const Duration(milliseconds: 150),
+                            child: Container(
+                              width: 54,
+                              height: 54,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.16),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.24),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 34,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.play_circle_fill,
-                    color: Colors.white,
-                    size: 34,
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 10,
+                    child: Text(
+                      'Video giới thiệu'.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.70),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 10,
-                child: Text(
-                  'Hình ảnh chi tiết xe'.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.70),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),

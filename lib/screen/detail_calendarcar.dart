@@ -499,7 +499,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
                           ),
                           child: Text(
                             'CANCEL BOOKING',
-                            style: GoogleFonts.leagueSpartan(
+                           style: GoogleFonts.leagueSpartan(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1.5,

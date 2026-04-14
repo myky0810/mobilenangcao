@@ -1,8 +1,10 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 
-import '../data/cars_data.dart';
 import '../navigation_observer.dart';
 import '../widgets/car_card.dart';
 import '../widgets/floating_car_bottom_nav.dart';
@@ -19,20 +21,7 @@ class NewCarScreen extends StatefulWidget {
 }
 
 class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
-  // Match `InfomationScreen` / `HomeScreen` background.
-  static const List<Color> _showroomGradient = <Color>[
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
-
-  static const LinearGradient _showroomBgGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: _showroomGradient,
-    stops: [0.0, 0.35, 0.75, 1.0],
-  );
+  // (Background gradient removed; screen now matches DetailCar dark background.)
 
   static const Color _filterSheetBackground = Color(0xFF111623);
   static const Color _filterCardBackground = Color(0xFF1A2233);
@@ -56,10 +45,12 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   PriceSortOption _sortOption = PriceSortOption.none;
   final Set<String> _selectedBrands = <String>{};
 
-  List<String> get _categories {
-    final categories = CarsData.getAllCategories();
-    return ['Tất cả', ...categories];
-  }
+  final CollectionReference<Map<String, dynamic>> _productsRef =
+      FirebaseFirestore.instance.collection('products');
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _productsSub;
+
+  List<String> _categories = const ['Tất cả'];
+
 
   final List<String> _seatFilters = const [
     'Tất cả',
@@ -117,20 +108,104 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
     'Doanh nhân',
   ];
 
-  late List<CarDetailData> _cars = CarsData.allCars;
+  List<CarDetailData> _cars = const [];
 
   @override
   void initState() {
     super.initState();
+    _listenProducts();
   }
 
-  List<String> get _availableBrands => CarsData.getAllBrands();
+  void _listenProducts() {
+    _productsSub?.cancel();
+    _productsSub = _productsRef
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      final cars = snapshot.docs
+          .map((d) => _docToCarDetail(d.id, d.data()))
+          .whereType<CarDetailData>()
+          .toList();
+
+    final categories = cars
+      .map((c) => c.category)
+      .whereType<String>()
+      .map((v) => v.trim())
+      .where((v) => v.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
+
+      if (!mounted) return;
+      setState(() {
+        _cars = cars;
+        _categories = ['Tất cả', ...categories];
+      });
+    });
+  }
+
+  List<String> get _availableBrands {
+    final brands = _cars.map((c) => c.brand).toSet().toList()..sort();
+    return brands;
+  }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
     _searchController.dispose();
+  _productsSub?.cancel();
     super.dispose();
+  }
+
+  CarDetailData? _docToCarDetail(String id, Map<String, dynamic> data) {
+  final name = (data['name'] ?? data['carName'] ?? '').toString().trim();
+  if (name.isEmpty) return null;
+
+  final brand = (data['brand'] ?? data['carBrand'] ?? '').toString().trim();
+  final image = (data['image'] ?? data['imageUrl'] ?? data['thumbnail'] ?? '')
+    .toString()
+    .trim();
+
+  final imagesRaw = data['images'];
+  final List<String> images = imagesRaw is List
+    ? imagesRaw.map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
+    : <String>[];
+
+  final price = (data['price'] ?? data['carPrice'] ?? '').toString();
+  final description = (data['description'] ?? '').toString();
+  final rating =
+    (data['rating'] is num) ? (data['rating'] as num).toDouble() : 4.5;
+  final reviewCount = (data['reviewCount'] is num)
+    ? (data['reviewCount'] as num).toInt()
+    : 0;
+  final isNew = data['isNew'] == true || data['isNewCar'] == true;
+
+  return CarDetailData(
+    id: id,
+    name: name,
+    brand: brand,
+    image: image,
+    images: images.isNotEmpty
+      ? images
+      : (image.isNotEmpty ? [image] : <String>[]),
+    price: price,
+    description: description,
+    rating: rating,
+    reviewCount: reviewCount,
+    isNew: isNew,
+    category: (data['category'] ?? '').toString(),
+    seats: (data['seats'] ?? '').toString(),
+    fuelType: (data['fuelType'] ?? '').toString(),
+    driveType: (data['driveType'] ?? '').toString(),
+    transmission: (data['transmission'] ?? '').toString(),
+    horsepower:
+      (data['horsepower'] is num) ? (data['horsepower'] as num).toInt() : null,
+    engine: (data['engine'] ?? '').toString(),
+    purpose: (data['purpose'] ?? '').toString(),
+    videoUrl: (data['videoUrl'] ?? data['video'] ?? data['videoURL'])
+      ?.toString()
+      .trim(),
+  );
   }
 
   @override
@@ -263,24 +338,22 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   Widget build(BuildContext context) {
     final cars = _filteredCars;
 
-    return Container(
-      decoration: const BoxDecoration(gradient: _showroomBgGradient),
-      child: Scaffold(
-        // Show the page background behind the bottom nav to avoid the "overlay"
-        // band color at the navbar area while keeping the navbar's own color.
-        extendBody: true,
-        backgroundColor: Colors.transparent,
-        appBar: PreferredSize(
-          preferredSize: Size.zero,
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            shadowColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-          ),
+    return Scaffold(
+      // Show the page background behind the bottom nav to avoid the "overlay"
+      // band color at the navbar area while keeping the navbar's own color.
+      extendBody: true,
+      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      appBar: PreferredSize(
+        preferredSize: Size.zero,
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
         ),
-        body: SafeArea(
+      ),
+      body: SafeArea(
           child: ScrollViewAnimation.slivers(
             padding: EdgeInsets.zero,
             slivers: [
@@ -323,9 +396,8 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
               const SliverToBoxAdapter(child: SizedBox(height: 90)),
             ],
           ),
-        ),
-        bottomNavigationBar: _buildBottomNav(),
       ),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 

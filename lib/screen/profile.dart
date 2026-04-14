@@ -16,6 +16,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Match DetailCar background.
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
   // Shared navy palette for profile-related screens.
   static const List<Color> _showroomGradient = [
     Color(0xFF263D67),
@@ -223,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Draw the page background behind the bottom nav so there's no
         // full-width "band" color under the navbar.
         extendBody: true,
-        backgroundColor: Colors.transparent,
+  backgroundColor: _bg,
         body: Stack(
           children: [
             // Header overlay “đè” lên nền (thay cho mảng xám cũ)

@@ -20,6 +20,8 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
   static const Color _danger = Color(0xFFEF4444);
   static const Color _success = Color(0xFF22C55E);
 
+  // NOTE: Admin deposit view should be sourced from `transactions`.
+  // `deposits` is kept for legacy/migration only.
   final CollectionReference<Map<String, dynamic>> _depositsRef =
       FirebaseFirestore.instance.collection('deposits');
   final CollectionReference<Map<String, dynamic>> _transactionsRef =
@@ -130,130 +132,95 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _depositsRef.snapshots(),
-              builder: (context, depositsSnapshot) {
-                if (depositsSnapshot.connectionState ==
+              stream: _transactionsRef.snapshots(),
+              builder: (context, transactionsSnapshot) {
+                if (transactionsSnapshot.connectionState ==
                     ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(color: _accent),
                   );
                 }
 
-                if (depositsSnapshot.hasError) {
+                if (transactionsSnapshot.hasError) {
                   return Center(
                     child: Text(
-                      'Không thể tải dữ liệu đặt cọc: ${depositsSnapshot.error}',
+                      'Không thể tải dữ liệu giao dịch: ${transactionsSnapshot.error}',
                       style: const TextStyle(color: Colors.white),
                     ),
                   );
                 }
 
-                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _transactionsRef.snapshots(),
-                  builder: (context, transactionsSnapshot) {
-                    if (transactionsSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: _accent),
-                      );
-                    }
+                final transactions = (transactionsSnapshot.data?.docs ?? [])
+                    .map((doc) => {'docId': doc.id, ...doc.data()})
+                    .toList();
 
-                    if (transactionsSnapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Không thể tải dữ liệu giao dịch: ${transactionsSnapshot.error}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      );
-                    }
+                // Project transaction docs into the deposit-like shape expected by UI.
+                final deposits = transactions
+                    .map<Map<String, dynamic>>(_transactionToDeposit)
+                    .toList();
 
-                    final deposits = (depositsSnapshot.data?.docs ?? [])
-                        .map((doc) => {'docId': doc.id, ...doc.data()})
-                        .toList();
-
-                    final transactions = (transactionsSnapshot.data?.docs ?? [])
-                        .map((doc) => {'docId': doc.id, ...doc.data()})
-                        .toList();
-
-                    final filteredDeposits =
-                        deposits.where(_matchesDeposit).toList()..sort(
-                          (a, b) =>
-                              _extractDate(
-                                b['depositDate'] ??
-                                    b['createdAt'] ??
-                                    b['updatedAt'],
-                              ).compareTo(
-                                _extractDate(
-                                  a['depositDate'] ??
-                                      a['createdAt'] ??
-                                      a['updatedAt'],
-                                ),
-                              ),
-                        );
-
-                    final stats = _computeStats(
-                      deposits: deposits,
-                      filteredDeposits: filteredDeposits,
-                      transactions: transactions,
-                    );
-
-                    final transactionByDocId = <String, Map<String, dynamic>>{};
-                    final transactionByTxId = <String, Map<String, dynamic>>{};
-
-                    for (final tx in transactions) {
-                      final docId = (tx['docId'] ?? '').toString();
-                      if (docId.isNotEmpty) {
-                        transactionByDocId[docId] = tx;
-                      }
-
-                      final txId = (tx['transactionId'] ?? '')
-                          .toString()
-                          .trim();
-                      if (txId.isNotEmpty &&
-                          !transactionByTxId.containsKey(txId)) {
-                        transactionByTxId[txId] = tx;
-                      }
-                    }
-
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildStatsSection(stats),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Hiển thị ${filteredDeposits.length}/${deposits.length} đơn đặt cọc',
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            if (filteredDeposits.isEmpty)
-                              _buildEmptyState(
-                                'Không có đặt cọc phù hợp bộ lọc',
-                              )
-                            else
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: filteredDeposits.length,
-                                itemBuilder: (context, index) {
-                                  final deposit = filteredDeposits[index];
-                                  return _buildDepositCard(
-                                    deposit,
-                                    transactionByDocId,
-                                    transactionByTxId,
-                                  );
-                                },
-                              ),
-                          ],
+                final filteredDeposits =
+                    deposits.where(_matchesDeposit).toList()..sort(
+                      (a, b) => _extractDate(
+                        b['depositDate'] ?? b['createdAt'] ?? b['updatedAt'],
+                      ).compareTo(
+                        _extractDate(
+                          a['depositDate'] ?? a['createdAt'] ?? a['updatedAt'],
                         ),
                       ),
                     );
-                  },
+
+                final stats = _computeStats(
+                  deposits: deposits,
+                  filteredDeposits: filteredDeposits,
+                  transactions: transactions,
+                );
+
+                // For transaction-sourced rows, the linked transaction is itself.
+                final transactionByDocId = <String, Map<String, dynamic>>{
+                  for (final tx in transactions)
+                    (tx['docId'] ?? '').toString(): tx,
+                };
+                final transactionByTxId = <String, Map<String, dynamic>>{
+                  for (final tx in transactions)
+                    (tx['transactionId'] ?? '').toString().trim(): tx,
+                };
+
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildStatsSection(stats),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Hiển thị ${filteredDeposits.length}/${deposits.length} giao dịch đặt cọc',
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (filteredDeposits.isEmpty)
+                          _buildEmptyState('Không có đặt cọc phù hợp bộ lọc')
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filteredDeposits.length,
+                            itemBuilder: (context, index) {
+                              final deposit = filteredDeposits[index];
+                              return _buildDepositCard(
+                                deposit,
+                                transactionByDocId,
+                                transactionByTxId,
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
@@ -723,10 +690,21 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
   Future<void> _updateDepositStatus(String docId, String newStatus) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await _depositsRef.doc(docId).update({
+      // Update both places when possible:
+      // - Primary: transaction doc
+      // - Legacy: deposit doc (if exists)
+      await _transactionsRef.doc(docId).set({
+        'depositStatus': newStatus,
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Best-effort legacy sync.
+      // ignore: discarded_futures
+      _depositsRef.doc(docId).set({
         'depositStatus': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
 
       messenger.showSnackBar(
         SnackBar(
@@ -740,6 +718,44 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
         SnackBar(content: Text('Không thể cập nhật trạng thái: $e')),
       );
     }
+  }
+
+  Map<String, dynamic> _transactionToDeposit(Map<String, dynamic> tx) {
+    final docId = (tx['docId'] ?? '').toString();
+    final txId = (tx['transactionId'] ?? docId).toString();
+
+    return {
+      // Keep docId stable and show it as "Mã".
+      'docId': docId,
+      'depositId': txId,
+      'transactionId': txId,
+
+      // Car fields
+      'carName': tx['carName'] ?? tx['productName'] ?? tx['name'],
+      'carBrand': tx['carBrand'] ?? tx['brand'],
+
+      // Customer fields
+      'customerName': tx['customerName'] ?? tx['userName'] ?? tx['name'],
+      'customerPhone': tx['customerPhone'] ?? tx['phone'] ?? tx['userPhone'],
+      'customerEmail': tx['customerEmail'] ?? tx['email'] ?? tx['userEmail'],
+      'customerAddress':
+          tx['customerAddress'] ?? tx['address'] ?? tx['userAddress'],
+      'address': tx['address'] ?? tx['customerAddress'] ?? tx['userAddress'],
+
+      // Amount & dates
+      'depositAmount': tx['depositAmount'] ?? tx['amount'] ?? tx['totalAmount'],
+      'depositDate': tx['depositDate'] ?? tx['createdAt'] ?? tx['paidAt'],
+
+      // Status
+      'depositStatus': tx['depositStatus'] ?? tx['status'],
+      'paymentStatus': tx['paymentStatus'] ?? tx['status'],
+      'paymentMethod': tx['paymentMethod'],
+
+      // Timestamps for sorting
+      'createdAt': tx['createdAt'],
+      'updatedAt': tx['updatedAt'],
+      'notes': tx['notes'],
+    };
   }
 
   bool _matchesDeposit(Map<String, dynamic> deposit) {

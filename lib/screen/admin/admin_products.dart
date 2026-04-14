@@ -1198,6 +1198,11 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           .where((item) => item.trim().isNotEmpty)
           .join('\n'),
     );
+    final videoUrlController = TextEditingController(
+      text: (product?['videoUrl'] ?? product?['video'] ?? product?['videoURL'] ??
+              '')
+          .toString(),
+    );
     final ratingController = TextEditingController(
       text: (product?['rating'] ?? 4.5).toString(),
     );
@@ -1402,6 +1407,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       hintText:
                           'https://example.com/car-1.jpg\nhttps://example.com/car-2.jpg',
                     ),
+                    _buildTextField(
+                      'Video URL (mp4) / asset path',
+                      videoUrlController,
+                      keyboardType: TextInputType.url,
+                      hintText:
+                          'https://.../video.mp4 hoặc assets/videos/mercedes.mp4',
+                    ),
                     _buildTextField('Mô tả', descController, maxLines: 3),
                     _buildTextField('Rating (vd: 4.8)', ratingController),
                     _buildTextField('Số lượt đánh giá', reviewCountController),
@@ -1547,6 +1559,11 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       'engine': engineController.text.trim(),
                       'dimensions': dimensionsController.text.trim(),
                       'purpose': purposeController.text.trim(),
+                      // Video: app detail screen ưu tiên `videoUrl`, vẫn ghi kèm alias
+                      // để tương thích với dữ liệu cũ/nhánh khác.
+                      'videoUrl': videoUrlController.text.trim(),
+                      'video': videoUrlController.text.trim(),
+                      'videoURL': videoUrlController.text.trim(),
                     };
 
                     try {

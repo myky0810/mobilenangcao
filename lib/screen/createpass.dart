@@ -34,6 +34,9 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
   bool _hasUpperAndLower = false;
   bool _hasSpecialChar = false;
 
+  // Match DetailCar background
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
+
   @override
   void initState() {
     super.initState();
@@ -186,9 +189,9 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E2A47),
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E2A47),
+        backgroundColor: _bg,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),

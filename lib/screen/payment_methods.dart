@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/app_page_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/user_service.dart';
 import '../widgets/scrollview_animation.dart';
 
 // Import VietQRScreen from correct file
@@ -31,6 +33,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   static const Color _cardColor = Color.fromARGB(255, 27, 42, 59);
   final Color _primaryColor = const Color(0xFF4FC3F7);
   final Color _accentColor = const Color(0xFF00E676);
+
+  /// Safely closes the top-most route (dialog/screen) if it can.
+  void _safePop() {
+    if (!mounted) return;
+    final nav = Navigator.of(context);
+    if (nav.canPop()) nav.pop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -593,23 +602,21 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         Navigator.of(context).pop(); // Đóng loading dialog
 
         // Chuyển đến màn hình VietQR
-        Navigator.push(
+        pushAppRoute(
           context,
-          MaterialPageRoute(
-            builder: (context) => VietQRScreen(
-              carName: widget.carName,
-              amount: widget.amount,
-              carData: widget.bookingData ?? {},
-              // bookingData is built in DepositScreen and uses key 'userPhone'.
-              // If we pass empty here, VietQR->Home will lose user context.
-              phoneNumber:
-                  (widget.bookingData?['userPhone'] ??
-                          widget.bookingData?['phoneNumber'] ??
-                          '')
-                      .toString(),
-              customerEmail:
-                  widget.bookingData?['customerEmail'] ?? '', // ✅ Truyền email
-            ),
+          VietQRScreen(
+            carName: widget.carName,
+            amount: widget.amount,
+            carData: widget.bookingData ?? {},
+            // bookingData is built in DepositScreen and uses key 'userPhone'.
+            // If we pass empty here, VietQR->Home will lose user context.
+            phoneNumber:
+                (widget.bookingData?['userPhone'] ??
+                        widget.bookingData?['phoneNumber'] ??
+                        '')
+                    .toString(),
+            customerEmail:
+                widget.bookingData?['customerEmail'] ?? '', // ✅ Truyền email
           ),
         );
       });
@@ -652,26 +659,76 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
     // Simulate payment processing
     Future.delayed(const Duration(seconds: 2), () async {
-      Navigator.of(context).pop(); // Close loading dialog
+  // Close loading dialog (if still mounted)
+  _safePop();
 
       try {
         // Lưu booking data vào Firestore
         if (widget.bookingData != null) {
+          final now = Timestamp.now();
+
+          final userPhone = (widget.bookingData?['userPhone'] ?? '').toString();
+          if (userPhone.trim().isEmpty) {
+            throw Exception('Thiếu userPhone nên không thể lưu đặt cọc.');
+          }
+
+          // Use a stable, readable doc id so admin can always load it.
+          // We still store the same value in-field for cross-references.
+          final depositId = (widget.bookingData?['depositId'] ?? '')
+              .toString()
+              .trim()
+              .isNotEmpty
+              ? (widget.bookingData?['depositId'] ?? '').toString().trim()
+              : DateTime.now().millisecondsSinceEpoch.toString();
+
           final depositData = {
             ...widget.bookingData!,
+            'depositId': depositId,
             'paymentMethod': _selectedPaymentMethod,
-            'depositId': DateTime.now().millisecondsSinceEpoch.toString(),
-            'depositStatus': 'confirmed',
-            'paymentStatus': 'paid',
+            'depositStatus': (widget.bookingData?['depositStatus'] ?? 'pending')
+                .toString()
+                .trim()
+                .isEmpty
+                ? 'pending'
+                : (widget.bookingData?['depositStatus'] ?? 'pending'),
+            'paymentStatus': (widget.bookingData?['paymentStatus'] ?? 'paid')
+                .toString()
+                .trim()
+                .isEmpty
+                ? 'paid'
+                : (widget.bookingData?['paymentStatus'] ?? 'paid'),
+            // Admin screens expect Timestamp fields for sorting.
             'depositDate': FieldValue.serverTimestamp(),
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+            // Keep local 'now' as a fallback if serverTimestamp isn't resolved yet.
+            'clientCreatedAt': now,
             'expiresAt': Timestamp.fromDate(
               DateTime.now().add(const Duration(days: 7)),
             ),
           };
 
-          await FirebaseFirestore.instance
+          final savedRef = FirebaseFirestore.instance
               .collection('deposits')
-              .add(depositData);
+              .doc(depositId);
+          await savedRef.set(depositData, SetOptions(merge: true));
+
+          // Lưu snapshot nhanh vào profile để dễ debug + một số màn khác có thể đọc.
+          try {
+            final profileRef = UserService.currentUserProfileRef(
+              phoneIdentifier: userPhone,
+            );
+            if (profileRef != null) {
+              await profileRef.set({
+                'lastDeposit': {
+                  ...depositData,
+                  'docId': savedRef.id,
+                },
+              }, SetOptions(merge: true));
+            }
+          } catch (_) {
+            // Ignore profile snapshot failures.
+          }
 
           // ✅ TỰ TẠO WARRANTY PENDING KHI ĐẶT CỌC THÀNH CÔNG
           final phone = (widget.bookingData?['userPhone'] ?? '')
@@ -758,24 +815,19 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close success dialog
-                        Navigator.of(
-                          context,
-                        ).pop(); // Go back to previous screen
-                        Navigator.of(context).pop(); // Go back to home
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(true);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        backgroundColor: _accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       child: Text(
                         'Done',
                         style: GoogleFonts.leagueSpartan(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
                         ),
                       ),
                     ),
@@ -786,9 +838,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           ),
         );
       } catch (e) {
-        Navigator.of(context).pop(); // Close loading dialog if still open
+        debugPrint('❌ Deposit save failed: $e');
 
-        // Show error dialog
         if (!mounted) return;
         showDialog(
           context: context,
@@ -799,7 +850,19 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error, color: Colors.red, size: 60),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Payment Failed',
@@ -811,7 +874,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'There was an error processing your payment. Please try again.',
+                    'Không lưu được đặt cọc: $e',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: Colors.white70,
@@ -823,19 +886,17 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        backgroundColor: _accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       child: Text(
                         'Try Again',
                         style: GoogleFonts.leagueSpartan(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
                         ),
                       ),
                     ),

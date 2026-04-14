@@ -488,6 +488,16 @@ class _BookCarScreenState extends State<BookCarScreen> {
       );
       final provider = UserService.currentProvider();
 
+      final rawPhone = (widget.carData['phoneNumber'] ?? '').toString().trim();
+      if (rawPhone.isEmpty) {
+        _showModernSnackBar(
+          icon: Icons.error_rounded,
+          message: 'Không tìm thấy số điện thoại đăng nhập. Vui lòng đăng nhập lại.',
+          color: Colors.redAccent,
+        );
+        return;
+      }
+
       final bookingData = {
         'carName': widget.carData['name'] ?? '',
         'carBrand': widget.carData['brand'] ?? '',
@@ -504,7 +514,7 @@ class _BookCarScreenState extends State<BookCarScreen> {
         'userProvider': provider,
         'userProfilePath': profileRef?.path ?? '',
         // Keep for backward compatibility with existing screens/indexes
-        'userPhone': widget.carData['phoneNumber']?.toString().trim() ?? '',
+  'userPhone': rawPhone,
       };
 
       if (!mounted) return;
@@ -533,10 +543,20 @@ class _BookCarScreenState extends State<BookCarScreen> {
           bookingData['googleMapsUrl'] = googleMapsUrl;
           bookingData['status'] = 'confirmed';
 
-          // Lưu vào Firestore
-          await FirebaseFirestore.instance
+          // Lưu vào Firestore + update nhanh vào user profile để dễ check
+          final bookingRef = await FirebaseFirestore.instance
               .collection('test_drive_bookings')
               .add(bookingData);
+
+          // Lưu snapshot booking vào profile để một số màn (nếu có) đọc nhanh.
+          if (profileRef != null) {
+            await profileRef.set({
+              'testDriveBooking': {
+                ...bookingData,
+                'id': bookingRef.id,
+              },
+            }, SetOptions(merge: true));
+          }
 
           if (!mounted) return;
 

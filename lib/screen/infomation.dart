@@ -13,14 +13,8 @@ class InfomationScreen extends StatefulWidget {
 }
 
 class _InfomationScreenState extends State<InfomationScreen> {
-  // Match admin background tone from chat screen
-  static const Color _showroomBase = Color(0xFF1E2A47);
-  static const List<Color> _showroomGradient = [
-    _showroomBase,
-    _showroomBase,
-    _showroomBase,
-    _showroomBase,
-  ];
+  // Match DetailCar background.
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
 
   static const Color _dividerColor = Color(0xFF3A4F74);
 
@@ -234,21 +228,12 @@ class _InfomationScreenState extends State<InfomationScreen> {
     );
 
     return Scaffold(
-      backgroundColor: _showroomBase,
+  backgroundColor: _bg,
       body: SafeArea(
         child: Stack(
           children: [
             // Nền đơn giản giống HomeScreen
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _showroomGradient,
-                  stops: const [0.0, 0.35, 0.75, 1.0],
-                ),
-              ),
-            ),
+    const SizedBox.shrink(),
 
             Column(
               children: [

@@ -14,14 +14,8 @@ class ChangePassScreen extends StatefulWidget {
 }
 
 class _ChangePassScreenState extends State<ChangePassScreen> {
-  // Match admin background tone from chat screen
-  static const Color _showroomBase = Color(0xFF1E2A47);
-  static const List<Color> _showroomGradient = [
-    _showroomBase,
-    _showroomBase,
-    _showroomBase,
-    _showroomBase,
-  ];
+  // Match DetailCar background.
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
 
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
@@ -160,20 +154,11 @@ class _ChangePassScreenState extends State<ChangePassScreen> {
     );
 
     return Scaffold(
-      backgroundColor: _showroomBase,
+  backgroundColor: _bg,
       body: SafeArea(
         child: Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _showroomGradient,
-                  stops: const [0.0, 0.35, 0.75, 1.0],
-                ),
-              ),
-            ),
+    const SizedBox.shrink(),
 
             Column(
               children: [

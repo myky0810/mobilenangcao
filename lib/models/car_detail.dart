@@ -19,6 +19,7 @@ class CarDetailData {
   final String? engine;
   final String? dimensions;
   final String? purpose;
+  final String? videoUrl;
 
   const CarDetailData({
     required this.id,
@@ -41,6 +42,7 @@ class CarDetailData {
     this.engine,
     this.dimensions,
     this.purpose,
+  this.videoUrl,
   });
 
   factory CarDetailData.fromRouteArguments(Object? args) {
@@ -132,6 +134,9 @@ class CarDetailData {
       engine: (map['engine'] as String?)?.trim(),
       dimensions: (map['dimensions'] as String?)?.trim(),
       purpose: (map['purpose'] as String?)?.trim(),
+    videoUrl: (map['videoUrl'] ?? map['video'] ?? map['videoURL'])
+      ?.toString()
+      .trim(),
     );
   }
 
@@ -157,6 +162,7 @@ class CarDetailData {
       'engine': engine,
       'dimensions': dimensions,
       'purpose': purpose,
+  'videoUrl': videoUrl,
     };
   }
 }

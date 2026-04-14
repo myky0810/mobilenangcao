@@ -15,32 +15,17 @@ class TestDriveScreen extends StatefulWidget {
 }
 
 class _TestDriveScreenState extends State<TestDriveScreen> {
-  // Match HomeScreen background (gray premium)
-  static const Color _showroomBase = Color(0xFF252525);
-  static const List<Color> _showroomGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
+  // Match DetailCar background
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _showroomBase,
+  backgroundColor: _bg,
       body: SafeArea(
         child: Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: _showroomGradient,
-                  stops: const [0.0, 0.35, 0.75, 1.0],
-                ),
-              ),
-            ),
+    const SizedBox.shrink(),
 
             Column(
               children: [

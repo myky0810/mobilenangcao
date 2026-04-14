@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/app_page_route.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:doan_cuoiki/widgets/floating_car_bottom_nav.dart';
@@ -23,21 +24,7 @@ class _HomeScreenState extends State<HomeScreen>
     with RouteAware, TickerProviderStateMixin {
   // Background is the original dark theme.
 
-  // Match `InfomationScreen` background.
-  static const List<Color> _showroomGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
-
-  // Match `EliteMembersScreen` background direction + stops.
-  static const LinearGradient _showroomBgGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: _showroomGradient,
-    stops: [0.0, 0.35, 0.75, 1.0],
-  );
+  // (Background gradient removed; Home now matches DetailCar dark background.)
 
   final BannerService _bannerService = BannerService();
   bool _bannerSeeded = false;
@@ -338,40 +325,37 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Wrap with a diagonal gradient like `EliteMembersScreen`.
-    return Container(
-      decoration: const BoxDecoration(gradient: _showroomBgGradient),
-      child: Scaffold(
-        // Let the background show through behind the bottom nav.
-        extendBody: true,
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            // Main content
-            SafeArea(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(child: _buildHeader()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  SliverToBoxAdapter(child: _buildModernBanner()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  _buildBrandsSliver(),
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                  SliverToBoxAdapter(child: _buildThinhHanhSection()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  _buildCarListSliver(),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                ],
-              ),
+    // Match DetailCar background.
+    return Scaffold(
+      // Let the background show through behind the bottom nav.
+      extendBody: true,
+      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      body: Stack(
+        children: [
+          // Main content
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader()),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(child: _buildModernBanner()),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                _buildBrandsSliver(),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                SliverToBoxAdapter(child: _buildThinhHanhSection()),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                _buildCarListSliver(),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              ],
             ),
+          ),
 
-            // AI Chat Button - floating trên navbar
-            AIChatBadge(phoneNumber: widget.phoneNumber),
-          ],
-        ),
-        bottomNavigationBar: _buildBottomNav(),
+          // AI Chat Button - floating trên navbar
+          AIChatBadge(phoneNumber: widget.phoneNumber),
+        ],
       ),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -509,13 +493,11 @@ class _HomeScreenState extends State<HomeScreen>
           );
           return GestureDetector(
             onTap: () {
-              Navigator.push(
+              pushAppRoute(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => BannerOfferScreen(
-                    offer: current.details,
-                    phoneNumber: widget.phoneNumber,
-                  ),
+                BannerOfferScreen(
+                  offer: current.details,
+                  phoneNumber: widget.phoneNumber,
                 ),
               );
             },
@@ -537,13 +519,11 @@ class _HomeScreenState extends State<HomeScreen>
         final offer = _offers[_currentBannerIndex % _offers.length];
         return GestureDetector(
           onTap: () {
-            Navigator.push(
+            pushAppRoute(
               context,
-              MaterialPageRoute(
-                builder: (_) => BannerOfferScreen(
-                  offer: offer,
-                  phoneNumber: widget.phoneNumber,
-                ),
+              BannerOfferScreen(
+                offer: offer,
+                phoneNumber: widget.phoneNumber,
               ),
             );
           },

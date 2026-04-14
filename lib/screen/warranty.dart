@@ -20,8 +20,8 @@ class WarrantyScreen extends StatefulWidget {
 
 class _WarrantyScreenState extends State<WarrantyScreen> {
   // ── Colors ──
-  // Match HomeScreen background (gray premium)
-  static const _bg = Color(0xFF252525);
+  // Match DetailCar background
+  static const _bg = Color.fromARGB(255, 18, 32, 47);
   static const _card = Color(0xFF141822);
   static const _accent = Color(0xFF3B82F6);
   static const _cardSurface = Color(0xFF14161B);

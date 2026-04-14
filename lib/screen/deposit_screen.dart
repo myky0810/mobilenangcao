@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/app_page_route.dart';
 import 'package:doan_cuoiki/widgets/animation_hard.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -408,14 +409,12 @@ class _DepositScreenState extends State<DepositScreen> {
     };
 
     // Điều hướng đến màn hình payment methods
-    Navigator.push(
+    pushAppRoute(
       context,
-      MaterialPageRoute(
-        builder: (context) => PaymentMethodsScreen(
-          amount: depositAmount.toDouble(),
-          carName: widget.carName,
-          bookingData: bookingData,
-        ),
+      PaymentMethodsScreen(
+        amount: depositAmount.toDouble(),
+        carName: widget.carName,
+        bookingData: bookingData,
       ),
     );
   }

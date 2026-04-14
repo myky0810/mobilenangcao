@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:doan_cuoiki/widgets/app_page_route.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../screen/AIChat.dart';
 
@@ -69,29 +70,9 @@ class _AIChatButtonState extends State<AIChatButton>
         });
 
         // Chuyển sang trang AI Chat
-        Navigator.push(
+        pushAppRoute(
           context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                AIChatScreen(phoneNumber: widget.phoneNumber),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(1.0, 0.0);
-                  const end = Offset.zero;
-                  const curve = Curves.easeInOutCubic;
-
-                  final tween = Tween(
-                    begin: begin,
-                    end: end,
-                  ).chain(CurveTween(curve: curve));
-
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
-            transitionDuration: const Duration(milliseconds: 400),
-          ),
+          AIChatScreen(phoneNumber: widget.phoneNumber),
         );
       }
     });

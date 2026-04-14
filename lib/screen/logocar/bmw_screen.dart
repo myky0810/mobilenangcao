@@ -14,19 +14,7 @@ class BMWScreen extends StatefulWidget {
 }
 
 class _BMWScreenState extends State<BMWScreen> with RouteAware {
-  static const List<Color> _showroomGradient = <Color>[
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
-
-  static const LinearGradient _showroomBgGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: _showroomGradient,
-    stops: [0.0, 0.35, 0.75, 1.0],
-  );
+  static const Color _bg = Color.fromARGB(255, 18, 32, 47);
 
   late List<Map<String, dynamic>> _bmwCars;
 
@@ -64,15 +52,12 @@ class _BMWScreenState extends State<BMWScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(gradient: _showroomBgGradient),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        extendBodyBehindAppBar: true,
-        appBar: _buildAppBar(),
-        body: _buildBody(),
-      ),
+    return Scaffold(
+      backgroundColor: _bg,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(),
+      body: _buildBody(),
     );
   }
 

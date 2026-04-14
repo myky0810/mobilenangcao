@@ -17,19 +17,7 @@ class MyCarScreen extends StatefulWidget {
 
 class _MyCarScreenState extends State<MyCarScreen> {
   static const _cardSurface = Color(0xFF14161B);
-  static const List<Color> _showroomGradient = <Color>[
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
-  ];
-
-  static const LinearGradient _showroomBgGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: _showroomGradient,
-    stops: [0.0, 0.35, 0.75, 1.0],
-  );
+  // (Background gradient removed; screen now matches DetailCar dark background.)
 
   int _activeNavIndex = 2;
 
@@ -55,12 +43,10 @@ class _MyCarScreenState extends State<MyCarScreen> {
   Widget build(BuildContext context) {
     final userId = _normalizedPhone;
 
-    return Container(
-      decoration: const BoxDecoration(gradient: _showroomBgGradient),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        body: SafeArea(
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 18, 32, 47),
+      extendBody: true,
+      body: SafeArea(
           child: userId == null
               ? ScrollViewAnimation.children(
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
@@ -122,9 +108,8 @@ class _MyCarScreenState extends State<MyCarScreen> {
                     );
                   },
                 ),
-        ),
-        bottomNavigationBar: _buildBottomNav(),
       ),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 

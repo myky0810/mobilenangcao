@@ -18,7 +18,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationManager _notificationManager = NotificationManager();
   List<NotificationModel> _notifications = [];
   bool _isLoading = true;
-
   static const Color _pageBg = Color(0xFF1E335A);
   static const List<Color> _pageBgGradient = [
     Color(0xFF263D67),
@@ -85,26 +84,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: _pageBgGradient,
-            stops: [0.0, 0.35, 0.75, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : _notifications.isEmpty
-              ? _buildEmptyState()
-              : _buildNotificationList(),
-        ),
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : _notifications.isEmpty
+            ? _buildEmptyState()
+            : _buildNotificationList(),
       ),
     );
   }

@@ -1238,7 +1238,7 @@ class _MapScreenState extends State<MapScreen> {
       if (name.isNotEmpty && brand.isNotEmpty) {
         address = '$name - $brand Showroom';
       } else if (name.isNotEmpty) {
-        address = '$name';
+        address = name;
       } else {
         address = 'Showroom $brand';
       }

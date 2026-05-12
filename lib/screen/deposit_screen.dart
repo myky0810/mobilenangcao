@@ -38,7 +38,7 @@ class _DepositScreenState extends State<DepositScreen> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _customAmountController = TextEditingController();
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _agreeTerms = false;
   int? _selectedDepositAmount;
   String _selectedPaymentMethod = 'bank_transfer';
@@ -330,7 +330,7 @@ class _DepositScreenState extends State<DepositScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                '${distanceKm} km',
+                                '$distanceKm km',
                                 style: const TextStyle(
                                   color: _primaryColor,
                                   fontSize: 12,

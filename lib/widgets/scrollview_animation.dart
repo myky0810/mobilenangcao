@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// ScrollView dùng chung để tạo cảm giác vuốt lên/xuống mượt như HomeScreen/AppInfo.

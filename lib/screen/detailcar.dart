@@ -768,7 +768,7 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
                     reviewId: review.id,
                   );
                   if (!mounted) return;
-                  ScaffoldMessenger.of(this.context).showSnackBar(
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Đã gửi báo cáo đánh giá.')),
                   );
                 },

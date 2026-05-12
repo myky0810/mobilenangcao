@@ -36,8 +36,8 @@ class _AIChatScreenState extends State<AIChatScreen>
 
   /// Ultra AI service - Multi-AI Intelligence System
   late final UltraAIService _ultraAI; // Khởi tạo Ultra AI
-  bool _useUltraAI = true; // Bật Ultra AI thông minh
-  bool _aiAvailable = true; // Trạng thái AI (có thể dùng không)
+  final bool _useUltraAI = true; // Bật Ultra AI thông minh
+  final bool _aiAvailable = true; // Trạng thái AI (có thể dùng không)
 
   late AnimationController _fadeController;
   late AnimationController _slideController;

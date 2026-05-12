@@ -897,7 +897,7 @@ class _HomeScreenState extends State<HomeScreen>
 
         const SizedBox(height: 8), // Giảm từ 12 -> 8
         // Banner indicators (dots) - compact version
-        Container(
+        SizedBox(
           height: 20, // Fix chiều cao của dots container
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

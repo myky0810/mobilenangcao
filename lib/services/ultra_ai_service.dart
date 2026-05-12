@@ -31,7 +31,7 @@ class UltraAIService {
 
     try {
       final pubspec = await rootBundle.loadString('pubspec.yaml');
-      _projectContext = baseContext + '\nTech: $pubspec';
+      _projectContext = '$baseContext\nTech: $pubspec';
     } catch (e) {
       _projectContext = baseContext;
     }

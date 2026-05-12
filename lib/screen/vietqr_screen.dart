@@ -984,7 +984,7 @@ class _VietQRScreenState extends State<VietQRScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${widget.amount.toStringAsFixed(0)}',
+                      widget.amount.toStringAsFixed(0),
                       style: GoogleFonts.leagueSpartan(
                         color: _accentColor,
                         fontSize: 28,

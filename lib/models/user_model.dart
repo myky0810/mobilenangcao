@@ -46,7 +46,7 @@ class UserModel {
   factory UserModel.fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
 
-    DateTime? _parseDateTime(dynamic value) {
+    DateTime? parseDateTime(dynamic value) {
       if (value == null) return null;
       if (value is Timestamp) return value.toDate();
       if (value is DateTime) return value;
@@ -54,7 +54,7 @@ class UserModel {
       return null;
     }
 
-    int? _parseInt(dynamic value) {
+    int? parseInt(dynamic value) {
       if (value == null) return null;
       if (value is int) return value;
       if (value is String) return int.tryParse(value);
@@ -67,23 +67,23 @@ class UserModel {
       name: (data['name'] as String?)?.trim(),
       avatarUrl: (data['avatarUrl'] as String?)?.trim(),
       gender: (data['gender'] as String?)?.trim(),
-      dob: _parseDateTime(data['dob']),
-      provinceCode: _parseInt(data['provinceCode']),
-      districtCode: _parseInt(data['districtCode']),
-      wardCode: _parseInt(data['wardCode']),
+      dob: parseDateTime(data['dob']),
+      provinceCode: parseInt(data['provinceCode']),
+      districtCode: parseInt(data['districtCode']),
+      wardCode: parseInt(data['wardCode']),
       street: (data['street'] as String?)?.trim(),
       provider: (data['provider'] as String?)?.trim(),
       uid: (data['uid'] as String?)?.trim(),
       role: (data['role'] as String?)?.trim() ?? 'user',
-      createdAt: _parseDateTime(data['createdAt']),
-      lastLogin: _parseDateTime(data['lastLogin']),
-      updatedAt: _parseDateTime(data['updatedAt']),
+      createdAt: parseDateTime(data['createdAt']),
+      lastLogin: parseDateTime(data['lastLogin']),
+      updatedAt: parseDateTime(data['updatedAt']),
     );
   }
 
   /// Create UserModel from JSON map
   factory UserModel.fromMap(Map<String, dynamic> data) {
-    DateTime? _parseDateTime(dynamic value) {
+    DateTime? parseDateTime(dynamic value) {
       if (value == null) return null;
       if (value is Timestamp) return value.toDate();
       if (value is DateTime) return value;
@@ -91,7 +91,7 @@ class UserModel {
       return null;
     }
 
-    int? _parseInt(dynamic value) {
+    int? parseInt(dynamic value) {
       if (value == null) return null;
       if (value is int) return value;
       if (value is String) return int.tryParse(value);
@@ -104,17 +104,17 @@ class UserModel {
       name: (data['name'] as String?)?.trim(),
       avatarUrl: (data['avatarUrl'] as String?)?.trim(),
       gender: (data['gender'] as String?)?.trim(),
-      dob: _parseDateTime(data['dob']),
-      provinceCode: _parseInt(data['provinceCode']),
-      districtCode: _parseInt(data['districtCode']),
-      wardCode: _parseInt(data['wardCode']),
+      dob: parseDateTime(data['dob']),
+      provinceCode: parseInt(data['provinceCode']),
+      districtCode: parseInt(data['districtCode']),
+      wardCode: parseInt(data['wardCode']),
       street: (data['street'] as String?)?.trim(),
       provider: (data['provider'] as String?)?.trim(),
       uid: (data['uid'] as String?)?.trim(),
       role: (data['role'] as String?)?.trim() ?? 'user',
-      createdAt: _parseDateTime(data['createdAt']),
-      lastLogin: _parseDateTime(data['lastLogin']),
-      updatedAt: _parseDateTime(data['updatedAt']),
+      createdAt: parseDateTime(data['createdAt']),
+      lastLogin: parseDateTime(data['lastLogin']),
+      updatedAt: parseDateTime(data['updatedAt']),
     );
   }
 

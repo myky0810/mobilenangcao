@@ -15,13 +15,13 @@ class TestDriveScreen extends StatefulWidget {
 }
 
 class _TestDriveScreenState extends State<TestDriveScreen> {
-  // Match HomeScreen background (gray premium)
-  static const Color _showroomBase = Color(0xFF252525);
+  // Match HomeScreen background (blue premium)
+  static const Color _showroomBase = Color(0xFF1E335A);
   static const List<Color> _showroomGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    Color(0xFF263D67),
+    Color(0xFF223861),
+    Color(0xFF1E335A),
+    Color(0xFF1B2F55),
   ];
 
   @override
@@ -380,7 +380,7 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
         statusText = 'ĐÃ XÁC NHẬN';
         break;
       case 'completed':
-        statusColor = const Color(0xFF6B7280);
+        statusColor = const Color(0xFF616161);
         statusText = 'HOÀN THÀNH';
         break;
       default:
@@ -391,7 +391,7 @@ class _TestDriveScreenState extends State<TestDriveScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1a1a1a),
+        color: const Color(0xFF1B2F55),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),

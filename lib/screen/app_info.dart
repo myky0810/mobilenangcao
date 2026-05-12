@@ -14,7 +14,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
   PackageInfo? _packageInfo;
 
   // Match admin background tone from chat screen
-  static const Color _bg = Color(0xFF1E2A47);
+  static const Color _bg = Color(0xFF1E335A);
   static const List<Color> _bgGradient = [_bg, _bg, _bg, _bg];
 
   // Premium accent (muted to avoid overly bright highlights)

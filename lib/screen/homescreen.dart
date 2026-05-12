@@ -10,6 +10,7 @@ import '../widgets/car_card.dart';
 
 import 'banner_offer_screen.dart';
 import '../services/banner_service.dart';
+import '../services/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.phoneNumber});
@@ -25,10 +26,10 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Match `InfomationScreen` background.
   static const List<Color> _showroomGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    Color(0xFF263D67),
+    Color(0xFF223861),
+    Color(0xFF1E335A),
+    Color(0xFF1B2F55),
   ];
 
   // Match `EliteMembersScreen` background direction + stops.
@@ -227,9 +228,52 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   DocumentReference<Map<String, dynamic>>? _userDocRef() {
-    final phone = widget.phoneNumber?.trim();
-    if (phone == null || phone.isEmpty) return null;
-    return FirebaseFirestore.instance.collection('users').doc(phone);
+    return UserService.currentUserProfileRef(
+      phoneIdentifier: widget.phoneNumber,
+    );
+  }
+
+  String? _avatarUrlFromData(Map<String, dynamic>? data) {
+    final candidates = <dynamic>[
+      data?['avatarUrl'],
+      data?['avatar'],
+      data?['imageUrl'],
+      data?['photoURL'],
+      data?['photoUrl'],
+    ];
+
+    for (final raw in candidates) {
+      if (raw == null) continue;
+      final value = raw.toString().trim();
+      if (value.isNotEmpty && value.toLowerCase() != 'null') {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  Widget _buildHeaderAvatar(Map<String, dynamic>? data) {
+    final avatarUrl = _avatarUrlFromData(data);
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.10),
+      ),
+      child: ClipOval(
+        child: avatarUrl == null
+            ? const Icon(Icons.person, color: Colors.white, size: 22)
+            : Image.network(
+                avatarUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.person, color: Colors.white, size: 22);
+                },
+              ),
+      ),
+    );
   }
 
   void _ensureBannersSeeded() {
@@ -382,15 +426,15 @@ class _HomeScreenState extends State<HomeScreen>
       child: Row(
         children: [
           // Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.10),
+          if (userRef == null)
+            _buildHeaderAvatar(null)
+          else
+            StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              stream: userRef.snapshots(),
+              builder: (context, snapshot) {
+                return _buildHeaderAvatar(snapshot.data?.data());
+              },
             ),
-            child: const Icon(Icons.person, color: Colors.white, size: 22),
-          ),
           const SizedBox(width: 12),
 
           // Greeting + name
@@ -453,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen>
               margin: const EdgeInsets.only(right: 8),
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF1a1a1a),
+                color: Color(0xFF1B2F55),
               ),
               child: Center(
                 child: Image.asset(
@@ -1046,37 +1090,121 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   SliverToBoxAdapter _buildCarListSliver() {
-    final cars = CarsData.allCars;
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            for (final car in cars)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: CarCard.fromMap(
-                  {
-                    'id': car.id,
-                    'name': car.name,
-                    'brand': car.brand,
-                    'price': car.price,
-                    'priceNote': 'Liên hệ',
-                    'image': car.image,
-                    'gallery': car.images,
-                    'rating': car.rating,
-                    'reviewCount': car.reviewCount,
-                    'isNew': car.isNew,
-                    'description': car.description,
-                  },
-                  phoneNumber: widget.phoneNumber,
-                  showBrandBadge: false,
-                ),
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('products')
+            .orderBy('updatedAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          final docs = snapshot.data?.docs ?? const [];
+          final remoteCars = docs
+              .map((doc) => _carCardMapFromProduct(doc.id, doc.data()))
+              .toList();
+
+          final fallbackCars = CarsData.allCars
+              .map(
+                (car) => {
+                  'id': car.id,
+                  'name': car.name,
+                  'brand': car.brand,
+                  'price': car.price,
+                  'priceNote': 'Liên hệ',
+                  'image': car.image,
+                  'gallery': car.images,
+                  'rating': car.rating,
+                  'reviewCount': car.reviewCount,
+                  'isNew': car.isNew,
+                  'description': car.description,
+                },
+              )
+              .toList();
+
+          final cars = remoteCars.isNotEmpty ? remoteCars : fallbackCars;
+
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: CircularProgressIndicator(color: Colors.white70),
               ),
-          ],
-        ),
+            );
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                for (final car in cars)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: CarCard.fromMap(
+                      car,
+                      phoneNumber: widget.phoneNumber,
+                      showBrandBadge: false,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
+  }
+
+  Map<String, dynamic> _carCardMapFromProduct(
+    String docId,
+    Map<String, dynamic> data,
+  ) {
+    final gallery = _stringListFromAny(
+      data['gallery'] ?? data['images'] ?? data['carImages'],
+    );
+    final image = (data['image'] ?? data['carImage'] ?? '').toString().trim();
+
+    if (image.isNotEmpty && !gallery.contains(image)) {
+      gallery.insert(0, image);
+    }
+
+    final safeImage = gallery.isNotEmpty
+        ? gallery.first
+        : (image.isNotEmpty ? image : 'assets/images/RR.jpg');
+
+    return {
+      'id': (data['id'] ?? docId).toString(),
+      'name': (data['name'] ?? data['carName'] ?? 'Xe mới').toString(),
+      'brand': (data['brand'] ?? data['brandName'] ?? data['carBrand'] ?? 'N/A')
+          .toString(),
+      'price': (data['price'] ?? data['carPrice'] ?? 'Liên hệ').toString(),
+      'priceNote': (data['priceNote'] ?? 'Liên hệ').toString(),
+      'image': safeImage,
+      'gallery': gallery,
+      'rating': _toDouble(data['rating'], 4.5),
+      'reviewCount': _toInt(data['reviewCount'], 0),
+      'isNew': data['isNew'] == true,
+        'videoUrl': (data['videoUrl'] ?? data['video'] ?? data['carVideo'])
+          ?.toString(),
+      'description': (data['description'] ?? data['carDescription'] ?? '')
+          .toString(),
+    };
+  }
+
+  List<String> _stringListFromAny(dynamic raw) {
+    if (raw is! List) return <String>[];
+    return raw
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  double _toDouble(dynamic raw, double fallback) {
+    if (raw is num) return raw.toDouble();
+    return double.tryParse(raw?.toString() ?? '') ?? fallback;
+  }
+
+  int _toInt(dynamic raw, int fallback) {
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw?.toString() ?? '') ?? fallback;
   }
 
   Widget _buildBottomNav() {

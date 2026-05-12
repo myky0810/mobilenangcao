@@ -3,6 +3,7 @@ import 'package:doan_cuoiki/models/car_detail.dart';
 import 'package:doan_cuoiki/services/favorite_service.dart';
 import 'package:doan_cuoiki/services/product_review_service.dart';
 import 'package:doan_cuoiki/widgets/animation_hard.dart';
+import 'package:video_player/video_player.dart';
 
 enum ReviewSortOption { newest, highestRated }
 
@@ -21,6 +22,8 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   bool _isLoadingReviews = true;
   List<ProductReview> _reviews = <ProductReview>[];
   ReviewSortOption _reviewSort = ReviewSortOption.newest;
+  VideoPlayerController? _videoController;
+  bool _isVideoInitializing = false;
 
   static const _bg = Color.fromARGB(255, 18, 32, 47);
   static const _card = Color.fromARGB(255, 27, 42, 59);
@@ -118,11 +121,70 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
     super.initState();
     _loadFavoriteState();
     _loadReviews();
+    _initVideoPreview();
   }
 
   @override
   void dispose() {
+    _videoController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _initVideoPreview() async {
+    final source = _resolveVideoSource();
+    if (source == null || source.isEmpty) return;
+
+    setState(() => _isVideoInitializing = true);
+    try {
+      final controller = source.toLowerCase().startsWith('http')
+          ? VideoPlayerController.networkUrl(Uri.parse(source))
+          : VideoPlayerController.asset(source);
+
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      await controller.play();
+
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+
+      setState(() {
+        _videoController = controller;
+        _isVideoInitializing = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isVideoInitializing = false);
+    }
+  }
+
+  String? _resolveVideoSource() {
+    final explicit = (widget.car.videoUrl ?? '').trim();
+    if (_isVideoSource(explicit)) return explicit;
+
+    for (final item in widget.car.images) {
+      if (_isVideoSource(item)) return item;
+    }
+    return null;
+  }
+
+  bool _isVideoSource(String value) {
+    if (value.isEmpty) return false;
+    final lower = value.toLowerCase();
+    return lower.endsWith('.mp4') ||
+        lower.contains('.mp4?') ||
+        lower.endsWith('.mov') ||
+        lower.contains('.mov?') ||
+        lower.endsWith('.webm') ||
+        lower.contains('.webm?');
+  }
+
+  bool _isGifSource(String value) {
+    if (value.isEmpty) return false;
+    final lower = value.toLowerCase();
+    return lower.endsWith('.gif') || lower.contains('.gif?');
   }
 
   Future<void> _loadFavoriteState() async {
@@ -904,6 +966,11 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
   }
 
   Widget _buildVideoPreview() {
+    final gifSource = _isGifSource((widget.car.videoUrl ?? '').trim())
+        ? widget.car.videoUrl!.trim()
+        : widget.car.images[selectedImageIndex];
+    final hasVideo = _videoController != null && _videoController!.value.isInitialized;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -918,33 +985,96 @@ class _DetailCarScreenState extends State<DetailCarScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              _buildDetailImage(
-                widget.car.images[selectedImageIndex],
-                fit: BoxFit.cover,
-              ),
-              Container(color: Colors.black.withOpacity(0.28)),
-              Center(
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.16),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.24)),
+              if (hasVideo)
+                GestureDetector(
+                  onTap: () {
+                    final ctrl = _videoController;
+                    if (ctrl == null) return;
+                    if (ctrl.value.isPlaying) {
+                      ctrl.pause();
+                    } else {
+                      ctrl.play();
+                    }
+                    setState(() {});
+                  },
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: _videoController!.value.size.width,
+                      height: _videoController!.value.size.height,
+                      child: VideoPlayer(_videoController!),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.play_circle_fill,
+                )
+              else
+                _buildDetailImage(gifSource, fit: BoxFit.cover),
+              if (!hasVideo) Container(color: Colors.black.withOpacity(0.28)),
+              if (_isVideoInitializing)
+                const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
                     color: Colors.white,
-                    size: 34,
+                  ),
+                )
+              else if (hasVideo)
+                Positioned(
+                  right: 10,
+                  bottom: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _videoController!.value.isPlaying
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Video',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Center(
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.24)),
+                    ),
+                    child: const Icon(
+                      Icons.image_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                   ),
                 ),
-              ),
               Positioned(
                 left: 12,
                 right: 12,
                 bottom: 10,
                 child: Text(
-                  'Hình ảnh chi tiết xe'.toUpperCase(),
+                  hasVideo ? 'Video giới thiệu xe' : 'Hình ảnh chi tiết xe'.toUpperCase(),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.70),

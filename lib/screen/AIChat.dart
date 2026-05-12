@@ -931,7 +931,7 @@ class _AIChatScreenState extends State<AIChatScreen>
             Container(
               margin: const EdgeInsets.only(top: 35), // Space for robot icon
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: const Color(0xFF121A2B),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),

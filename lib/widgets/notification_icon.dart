@@ -134,7 +134,7 @@ class _SimpleNotificationIconState extends State<SimpleNotificationIcon> {
             height: 40,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF1a1a1a),
+              color: Color(0xFF1B2F55),
             ),
             child: Stack(
               clipBehavior: Clip.none,

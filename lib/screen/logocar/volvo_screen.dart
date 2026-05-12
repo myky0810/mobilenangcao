@@ -15,10 +15,10 @@ class VolvoScreen extends StatefulWidget {
 
 class _VolvoScreenState extends State<VolvoScreen> with RouteAware {
   static const List<Color> _showroomGradient = <Color>[
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    Color(0xFF263D67),
+    Color(0xFF223861),
+    Color(0xFF1E335A),
+    Color(0xFF1B2F55),
   ];
 
   static const LinearGradient _showroomBgGradient = LinearGradient(

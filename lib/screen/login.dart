@@ -447,7 +447,10 @@ class _LoginEmailState extends State<LoginEmail>
           context,
           '/home',
           (route) => false,
-          arguments: resolvedPhone,
+          arguments: {
+            'phoneNumber': resolvedPhone,
+            'forceRoleCheck': true,
+          },
         );
       } else {
         // ❌ First time Google login → navigate to phone registration screen

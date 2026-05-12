@@ -87,7 +87,10 @@ class _GooglePhoneRegistrationScreenState
         context,
         '/home',
         (route) => false,
-        arguments: registeredPhone,
+        arguments: {
+          'phoneNumber': registeredPhone,
+          'forceRoleCheck': true,
+        },
       );
     } on FirebaseException catch (e) {
       print('❌ Firebase error: ${e.code} - ${e.message}');
@@ -232,7 +235,7 @@ class _GooglePhoneRegistrationScreenState
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black,
-                            disabledBackgroundColor: Colors.grey,
+                            disabledBackgroundColor: Colors.grey[500],
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),

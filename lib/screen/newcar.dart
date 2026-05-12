@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:doan_cuoiki/widgets/scrollview_animation.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
 
@@ -21,10 +22,10 @@ class NewCarScreen extends StatefulWidget {
 class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   // Match `InfomationScreen` / `HomeScreen` background.
   static const List<Color> _showroomGradient = <Color>[
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    Color(0xFF263D67),
+    Color(0xFF223861),
+    Color(0xFF1E335A),
+    Color(0xFF1B2F55),
   ];
 
   static const LinearGradient _showroomBgGradient = LinearGradient(
@@ -57,7 +58,12 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
   final Set<String> _selectedBrands = <String>{};
 
   List<String> get _categories {
-    final categories = CarsData.getAllCategories();
+    final categories = _cars
+        .map((car) => car.category?.trim() ?? '')
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
     return ['Tất cả', ...categories];
   }
 
@@ -117,14 +123,22 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
     'Doanh nhân',
   ];
 
-  late List<CarDetailData> _cars = CarsData.allCars;
+  List<CarDetailData> _cars = CarsData.allCars;
 
   @override
   void initState() {
     super.initState();
   }
 
-  List<String> get _availableBrands => CarsData.getAllBrands();
+  List<String> get _availableBrands {
+    final brands = _cars
+        .map((car) => car.brand.trim())
+        .where((item) => item.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return brands;
+  }
 
   @override
   void dispose() {
@@ -261,8 +275,6 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    final cars = _filteredCars;
-
     return Container(
       decoration: const BoxDecoration(gradient: _showroomBgGradient),
       child: Scaffold(
@@ -281,47 +293,71 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
           ),
         ),
         body: SafeArea(
-          child: ScrollViewAnimation.slivers(
-            padding: EdgeInsets.zero,
-            slivers: [
-              SliverToBoxAdapter(child: _buildHeader()),
-              SliverToBoxAdapter(child: _buildSearchAndFilterBar()),
-              const SliverToBoxAdapter(child: SizedBox(height: 12)),
-              if (cars.isEmpty)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Text(
-                      'Không tìm thấy mẫu xe phù hợp',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
+          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('products')
+                .orderBy('updatedAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              final docs = snapshot.data?.docs ?? const [];
+              final remoteCars = docs
+                  .map((doc) => _carDetailFromProduct(doc.id, doc.data()))
+                  .toList();
+
+              _cars = remoteCars.isNotEmpty ? remoteCars : CarsData.allCars;
+              final cars = _filteredCars;
+
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  snapshot.data == null) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white70),
+                );
+              }
+
+              return ScrollViewAnimation.slivers(
+                padding: EdgeInsets.zero,
+                slivers: [
+                  SliverToBoxAdapter(child: _buildHeader()),
+                  SliverToBoxAdapter(child: _buildSearchAndFilterBar()),
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                  if (cars.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Text(
+                          'Không tìm thấy mẫu xe phù hợp',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverList.builder(
+                      itemCount: cars.length,
+                      itemBuilder: (context, index) {
+                        final car = cars[index];
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: CarCard.fromMap({
+                            'id': car.id,
+                            'name': car.name,
+                            'brand': car.brand,
+                            'price': car.price,
+                            'priceNote': 'Lăn bánh từ ${car.price}',
+                            'image': car.image,
+                            'gallery': car.images,
+                            'rating': car.rating,
+                            'reviewCount': car.reviewCount,
+                            'isNew': car.isNew,
+                            'videoUrl': car.videoUrl,
+                            'description': car.description,
+                          }, phoneNumber: widget.phoneNumber),
+                        );
+                      },
                     ),
-                  ),
-                )
-              else
-                SliverList.builder(
-                  itemCount: cars.length,
-                  itemBuilder: (context, index) {
-                    final car = cars[index];
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: CarCard.fromMap({
-                        'id': car.id,
-                        'name': car.name,
-                        'brand': car.brand,
-                        'price': car.price,
-                        'priceNote': 'Lăn bánh từ ${car.price}',
-                        'image': car.image,
-                        'gallery': car.images,
-                        'rating': car.rating,
-                        'reviewCount': car.reviewCount,
-                        'isNew': car.isNew,
-                        'description': car.description,
-                      }, phoneNumber: widget.phoneNumber),
-                    );
-                  },
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 90)),
-            ],
+                  const SliverToBoxAdapter(child: SizedBox(height: 90)),
+                ],
+              );
+            },
           ),
         ),
         bottomNavigationBar: _buildBottomNav(),
@@ -329,12 +365,77 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
     );
   }
 
+  CarDetailData _carDetailFromProduct(String docId, Map<String, dynamic> data) {
+    final image = (data['image'] ?? data['carImage'] ?? '').toString().trim();
+    final images = _stringListFromAny(
+      data['gallery'] ?? data['images'] ?? data['carImages'],
+    );
+    if (image.isNotEmpty && !images.contains(image)) {
+      images.insert(0, image);
+    }
+
+    final safeImages = images.isNotEmpty
+        ? images
+        : <String>[if (image.isNotEmpty) image else 'assets/images/RR.jpg'];
+
+    return CarDetailData(
+      id: (data['id'] ?? docId).toString(),
+      name: (data['name'] ?? data['carName'] ?? 'Xe mới').toString(),
+      brand: (data['brand'] ?? data['brandName'] ?? data['carBrand'] ?? 'N/A')
+          .toString(),
+      image: safeImages.first,
+      price: (data['price'] ?? data['carPrice'] ?? 'Liên hệ').toString(),
+      description: (data['description'] ?? data['carDescription'] ?? '')
+          .toString(),
+      images: safeImages,
+      rating: _toDouble(data['rating'], 4.5),
+      reviewCount: _toInt(data['reviewCount'], 0),
+      isNew: data['isNew'] == true,
+      phoneNumber: widget.phoneNumber,
+        videoUrl: (data['videoUrl'] ?? data['video'] ?? data['carVideo'])
+          ?.toString(),
+      category: (data['category'] as String?)?.trim(),
+      seats: (data['seats'] as String?)?.trim(),
+      fuelType: (data['fuelType'] as String?)?.trim(),
+      driveType: (data['driveType'] as String?)?.trim(),
+      transmission: (data['transmission'] as String?)?.trim(),
+      horsepower: _toNullableInt(data['horsepower']),
+      engine: (data['engine'] as String?)?.trim(),
+      dimensions: (data['dimensions'] as String?)?.trim(),
+      purpose: (data['purpose'] as String?)?.trim(),
+    );
+  }
+
+  List<String> _stringListFromAny(dynamic raw) {
+    if (raw is! List) return <String>[];
+    return raw
+        .map((item) => item.toString().trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  double _toDouble(dynamic raw, double fallback) {
+    if (raw is num) return raw.toDouble();
+    return double.tryParse(raw?.toString() ?? '') ?? fallback;
+  }
+
+  int _toInt(dynamic raw, int fallback) {
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw?.toString() ?? '') ?? fallback;
+  }
+
+  int? _toNullableInt(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is num) return raw.toInt();
+    return int.tryParse(raw.toString());
+  }
+
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Center(
         child: Text(
-          'Xe mới',
+          'Tổng quan về các mẫu xe mới nhất',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
@@ -352,14 +453,14 @@ class _NewCarScreenState extends State<NewCarScreen> with RouteAware {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF111318),
+          color: const Color(0xFF121A2B),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Row(
           children: [
-            Icon(Icons.search, color: Colors.grey, size: 22),
+            Icon(Icons.search, color: Colors.grey[500], size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: TextField(

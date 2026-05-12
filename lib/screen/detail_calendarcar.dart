@@ -45,7 +45,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
         barrierDismissible: false,
         builder: (context) {
           return AlertDialog(
-            backgroundColor: const Color(0xFF1a1a1a),
+            backgroundColor: const Color(0xFF1B2F55),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
@@ -626,7 +626,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1a1a1a),
+        color: const Color(0xFF1B2F55),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
@@ -693,7 +693,7 @@ class DetailCalendarCarScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1a1a1a),
+        color: const Color(0xFF1B2F55),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),

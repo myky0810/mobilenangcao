@@ -22,13 +22,13 @@ class AppBackground extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   /// Base background color (same as `DepositScreen._bg`).
-  static const Color base = Color(0xFF1E2A47);
+  static const Color base = Color(0xFF1E335A);
 
   /// Gradient background used on HomeScreen.
   static const List<Color> gradient = <Color>[
     Color(0xFF2C3E5C),
     Color(0xFF253553),
-    Color(0xFF1E2A47),
+    Color(0xFF1E335A),
     Color(0xFF18233B),
   ];
 

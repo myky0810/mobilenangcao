@@ -62,6 +62,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return 'Người dùng';
   }
 
+  String? _avatarUrlFromData(Map<String, dynamic>? data) {
+    final candidates = <dynamic>[
+      data?['avatarUrl'],
+      data?['avatar'],
+      data?['imageUrl'],
+      data?['photoURL'],
+      data?['photoUrl'],
+    ];
+
+    for (final raw in candidates) {
+      if (raw == null) continue;
+      final value = raw.toString().trim();
+      if (value.isNotEmpty && value.toLowerCase() != 'null') {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  Widget _buildProfileAvatar(Map<String, dynamic>? data) {
+    final avatarUrl = _avatarUrlFromData(data);
+
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.12),
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: avatarUrl == null
+            ? const Icon(Icons.person, color: Colors.white, size: 46)
+            : Image.network(
+                avatarUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.person, color: Colors.white, size: 46);
+                },
+              ),
+      ),
+    );
+  }
+
   bool _looksLikePhone(String value) {
     final v = value.trim();
     if (v.isEmpty) return false;
@@ -408,29 +459,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               left:
                   MediaQuery.of(context).size.width / 2 -
                   50, // Center horizontally
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey[700],
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 3,
-                  ), // Viền trắng để nổi bật
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/RR.jpg'),
-                    fit: BoxFit.cover,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              child: userRef == null
+                  ? _buildProfileAvatar(null)
+                  : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: userRef.snapshots(),
+                      builder: (context, snapshot) {
+                        return _buildProfileAvatar(snapshot.data?.data());
+                      },
                     ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),

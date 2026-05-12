@@ -175,8 +175,11 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
                         .map((doc) => {'docId': doc.id, ...doc.data()})
                         .toList();
 
-                    final filteredDeposits =
-                        deposits.where(_matchesDeposit).toList()..sort(
+                    final mergedDeposits =
+                        _buildUnifiedDeposits(
+                          transactions: transactions,
+                          legacyDeposits: deposits,
+                        ).toList()..sort(
                           (a, b) =>
                               _extractDate(
                                 b['depositDate'] ??
@@ -191,29 +194,15 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
                               ),
                         );
 
+                    final filteredDeposits = mergedDeposits
+                        .where(_matchesDeposit)
+                        .toList();
+
                     final stats = _computeStats(
-                      deposits: deposits,
+                      deposits: mergedDeposits,
                       filteredDeposits: filteredDeposits,
                       transactions: transactions,
                     );
-
-                    final transactionByDocId = <String, Map<String, dynamic>>{};
-                    final transactionByTxId = <String, Map<String, dynamic>>{};
-
-                    for (final tx in transactions) {
-                      final docId = (tx['docId'] ?? '').toString();
-                      if (docId.isNotEmpty) {
-                        transactionByDocId[docId] = tx;
-                      }
-
-                      final txId = (tx['transactionId'] ?? '')
-                          .toString()
-                          .trim();
-                      if (txId.isNotEmpty &&
-                          !transactionByTxId.containsKey(txId)) {
-                        transactionByTxId[txId] = tx;
-                      }
-                    }
 
                     return SingleChildScrollView(
                       child: Padding(
@@ -224,7 +213,7 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
                             _buildStatsSection(stats),
                             const SizedBox(height: 10),
                             Text(
-                              'Hiển thị ${filteredDeposits.length}/${deposits.length} đơn đặt cọc',
+                              'Hiển thị ${filteredDeposits.length}/${mergedDeposits.length} đơn đặt cọc',
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 12,
@@ -242,11 +231,7 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
                                 itemCount: filteredDeposits.length,
                                 itemBuilder: (context, index) {
                                   final deposit = filteredDeposits[index];
-                                  return _buildDepositCard(
-                                    deposit,
-                                    transactionByDocId,
-                                    transactionByTxId,
-                                  );
+                                  return _buildDepositCard(deposit);
                                 },
                               ),
                           ],
@@ -302,12 +287,25 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
   Future<void> _runMigrateDeposits() async {
     setState(() => _isMigrating = true);
     try {
-      final result = await AdminMigrationService.migrateDeposits();
+      final depositResult = await AdminMigrationService.migrateDeposits(
+        logRun: false,
+      );
+      final transactionResult = await AdminMigrationService.migrateTransactions(
+        logRun: false,
+      );
+      final result = {
+        'scanned':
+            (depositResult['scanned'] ?? 0) +
+            (transactionResult['scanned'] ?? 0),
+        'updated':
+            (depositResult['updated'] ?? 0) +
+            (transactionResult['updated'] ?? 0),
+      };
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Chuẩn hóa đặt cọc xong: quét ${result['scanned']}, cập nhật ${result['updated']}',
+            'Chuẩn hóa đặt cọc + giao dịch xong: quét ${result['scanned']}, cập nhật ${result['updated']}',
           ),
         ),
       );
@@ -384,21 +382,13 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
     );
   }
 
-  Widget _buildDepositCard(
-    Map<String, dynamic> deposit,
-    Map<String, Map<String, dynamic>> transactionByDocId,
-    Map<String, Map<String, dynamic>> transactionByTxId,
-  ) {
+  Widget _buildDepositCard(Map<String, dynamic> deposit) {
     final status = _normalizeStatus(deposit['depositStatus']);
     final amount = _toDouble(deposit['depositAmount']);
     final carName = (deposit['carName'] ?? 'Không xác định').toString();
     final customerName = (deposit['customerName'] ?? 'Khách hàng').toString();
     final docId = (deposit['docId'] ?? '').toString();
-    final linkedTransaction = _findLinkedTransaction(
-      deposit,
-      transactionByDocId,
-      transactionByTxId,
-    );
+    final linkedTransaction = _linkedTransactionFromDeposit(deposit);
     final date = _extractDate(
       deposit['depositDate'] ?? deposit['createdAt'] ?? deposit['updatedAt'],
     );
@@ -523,7 +513,7 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
                   color: _card,
                   onSelected: (newStatus) {
                     if (newStatus == status) return;
-                    _updateDepositStatus(docId, newStatus);
+                    _updateDepositStatus(deposit, newStatus);
                   },
                   itemBuilder: (context) {
                     return _statusOptions
@@ -720,13 +710,53 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
     );
   }
 
-  Future<void> _updateDepositStatus(String docId, String newStatus) async {
+  Future<void> _updateDepositStatus(
+    Map<String, dynamic> deposit,
+    String newStatus,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await _depositsRef.doc(docId).update({
-        'depositStatus': newStatus,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final transactionDocId =
+          (deposit['transactionDocId'] ??
+                  deposit['transactionId'] ??
+                  deposit['docId'] ??
+                  '')
+              .toString()
+              .trim();
+      final projectionDocId =
+          (deposit['transactionId'] ?? deposit['docId'] ?? transactionDocId)
+              .toString()
+              .trim();
+
+      if (transactionDocId.isEmpty && projectionDocId.isEmpty) {
+        throw StateError('Không xác định được mã giao dịch để cập nhật');
+      }
+
+      if (transactionDocId.isNotEmpty) {
+        await _transactionsRef.doc(transactionDocId).set({
+          'depositStatus': newStatus,
+          'paymentStatus': _paymentStatusFromDepositStatus(newStatus),
+          'status': _transactionStatusFromDepositStatus(newStatus),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
+      if (projectionDocId.isNotEmpty) {
+        await _depositsRef.doc(projectionDocId).set({
+          'transactionId': projectionDocId,
+          'depositId': (deposit['depositId'] ?? projectionDocId).toString(),
+          'carName': (deposit['carName'] ?? '').toString(),
+          'carBrand': (deposit['carBrand'] ?? '').toString(),
+          'customerName': (deposit['customerName'] ?? '').toString(),
+          'customerPhone': (deposit['customerPhone'] ?? '').toString(),
+          'customerEmail': (deposit['customerEmail'] ?? '').toString(),
+          'depositAmount': deposit['depositAmount'] ?? 0,
+          'paymentMethod': (deposit['paymentMethod'] ?? '').toString(),
+          'depositStatus': newStatus,
+          'paymentStatus': _paymentStatusFromDepositStatus(newStatus),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
 
       messenger.showSnackBar(
         SnackBar(
@@ -788,6 +818,7 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
 
     var paidTransactionsRevenue = 0.0;
     for (final tx in transactions) {
+      if (!_isDepositTransaction(tx)) continue;
       final paymentStatus = (tx['paymentStatus'] ?? tx['status'] ?? '')
           .toString()
           .toLowerCase();
@@ -812,27 +843,157 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen> {
     };
   }
 
-  Map<String, dynamic>? _findLinkedTransaction(
-    Map<String, dynamic> deposit,
-    Map<String, Map<String, dynamic>> transactionByDocId,
-    Map<String, Map<String, dynamic>> transactionByTxId,
+  Iterable<Map<String, dynamic>> _buildUnifiedDeposits({
+    required List<Map<String, dynamic>> transactions,
+    required List<Map<String, dynamic>> legacyDeposits,
+  }) {
+    final merged = <String, Map<String, dynamic>>{};
+
+    for (final tx in transactions) {
+      if (!_isDepositTransaction(tx)) continue;
+      final projection = _transactionToDepositProjection(tx);
+      final key = (projection['docId'] ?? '').toString().trim();
+      if (key.isEmpty) continue;
+      merged[key] = projection;
+    }
+
+    for (final legacy in legacyDeposits) {
+      final transactionId = (legacy['transactionId'] ?? '').toString().trim();
+      final legacyDocId = (legacy['docId'] ?? '').toString().trim();
+      final key = transactionId.isNotEmpty ? transactionId : legacyDocId;
+      if (key.isEmpty) continue;
+
+      final legacyNormalized = <String, dynamic>{
+        ...legacy,
+        'docId': key,
+        'transactionId': transactionId.isNotEmpty ? transactionId : key,
+      };
+
+      if (!merged.containsKey(key)) {
+        merged[key] = legacyNormalized;
+        continue;
+      }
+
+      final current = merged[key]!;
+      merged[key] = {
+        ...legacyNormalized,
+        ...current,
+        '_linkedTransaction': current['_linkedTransaction'],
+      };
+    }
+
+    return merged.values;
+  }
+
+  bool _isDepositTransaction(Map<String, dynamic> tx) {
+    final kind = (tx['kind'] ?? tx['type'] ?? tx['flow'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (kind == 'deposit' || kind == 'car_deposit') return true;
+
+    final transferContent = (tx['transferContent'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (transferContent.contains('dat coc') ||
+        transferContent.contains('đặt cọc')) {
+      return true;
+    }
+
+    final hasAmount =
+        _toDouble(tx['amount'] ?? tx['depositAmount'] ?? tx['totalAmount']) > 0;
+    final hasCar = (tx['carName'] ?? '').toString().trim().isNotEmpty;
+    final hasContact = (tx['customerPhone'] ?? tx['userPhone'] ?? '')
+        .toString()
+        .trim()
+        .isNotEmpty;
+
+    return hasAmount && hasCar && hasContact;
+  }
+
+  Map<String, dynamic> _transactionToDepositProjection(
+    Map<String, dynamic> tx,
   ) {
-    final txId = (deposit['transactionId'] ?? '').toString().trim();
-    if (txId.isNotEmpty) {
-      if (transactionByDocId.containsKey(txId)) {
-        return transactionByDocId[txId];
-      }
-      if (transactionByTxId.containsKey(txId)) {
-        return transactionByTxId[txId];
-      }
+    final txDocId = (tx['docId'] ?? '').toString().trim();
+    final txId = (tx['transactionId'] ?? '').toString().trim();
+    final canonicalId = txId.isNotEmpty ? txId : txDocId;
+
+    String showroomName = '';
+    String showroomAddress = '';
+    final showroomRaw = tx['showroom'];
+    if (showroomRaw is Map) {
+      showroomName = (showroomRaw['name'] ?? '').toString();
+      showroomAddress = (showroomRaw['address'] ?? '').toString();
     }
 
-    final depositId = (deposit['depositId'] ?? '').toString().trim();
-    if (depositId.isNotEmpty && transactionByTxId.containsKey(depositId)) {
-      return transactionByTxId[depositId];
-    }
+    return {
+      ...tx,
+      'docId': canonicalId,
+      'transactionDocId': txDocId,
+      'transactionId': canonicalId,
+      'depositId': (tx['depositId'] ?? canonicalId).toString(),
+      'depositStatus': _normalizeDepositStatusFromTransaction(tx),
+      'paymentStatus': (tx['paymentStatus'] ?? tx['status'] ?? '').toString(),
+      'depositAmount': tx['depositAmount'] ?? tx['amount'] ?? 0,
+      'depositDate': tx['paidAt'] ?? tx['createdAt'] ?? tx['updatedAt'],
+      'customerName': tx['customerName'] ?? tx['userDisplayName'] ?? '',
+      'customerPhone': tx['customerPhone'] ?? tx['userPhone'] ?? '',
+      'customerEmail': tx['customerEmail'] ?? tx['userEmail'] ?? '',
+      'showroomName': (tx['showroomName'] ?? showroomName).toString(),
+      'showroomAddress': (tx['showroomAddress'] ?? showroomAddress).toString(),
+      '_linkedTransaction': tx,
+    };
+  }
 
+  Map<String, dynamic>? _linkedTransactionFromDeposit(
+    Map<String, dynamic> deposit,
+  ) {
+    final raw = deposit['_linkedTransaction'];
+    if (raw is Map) {
+      return Map<String, dynamic>.from(raw);
+    }
     return null;
+  }
+
+  String _normalizeDepositStatusFromTransaction(Map<String, dynamic> tx) {
+    final explicit = (tx['depositStatus'] ?? '').toString().trim();
+    if (explicit.isNotEmpty) {
+      return _normalizeStatus(explicit);
+    }
+
+    final payment = _normalizeStatus(tx['paymentStatus'] ?? tx['status']);
+    if (payment == 'paid' ||
+        payment == 'success' ||
+        payment == 'completed' ||
+        payment == 'confirmed') {
+      return 'confirmed';
+    }
+
+    if (payment == 'cancelled' ||
+        payment == 'canceled' ||
+        payment == 'failed' ||
+        payment == 'timeout' ||
+        payment == 'expired' ||
+        payment == 'rejected') {
+      return 'cancelled';
+    }
+
+    return 'pending';
+  }
+
+  String _paymentStatusFromDepositStatus(String status) {
+    final normalized = _normalizeStatus(status);
+    if (normalized == 'confirmed') return 'paid';
+    if (normalized == 'cancelled') return 'cancelled';
+    return 'pending';
+  }
+
+  String _transactionStatusFromDepositStatus(String status) {
+    final normalized = _normalizeStatus(status);
+    if (normalized == 'confirmed') return 'paid';
+    if (normalized == 'cancelled') return 'failed';
+    return 'pending';
   }
 
   String _statusLabel(String rawStatus) {

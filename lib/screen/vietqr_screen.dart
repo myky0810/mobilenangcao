@@ -158,7 +158,11 @@ class _VietQRScreenState extends State<VietQRScreen>
           .set({
             // Thông tin giao dịch
             'transactionId': _transactionId,
+            'kind': 'deposit',
+            'source': 'vietqr',
             'status': 'pending', // pending | paid | failed | timeout
+            'paymentStatus': 'pending',
+            'depositStatus': 'pending',
             'amount': widget.amount,
             'paymentMethod': 'vietqr',
             'transferContent': _transferContent,
@@ -441,8 +445,41 @@ class _VietQRScreenState extends State<VietQRScreen>
           .doc(_transactionId)
           .update({
             'bookingId': bookingId,
+            'status': 'paid',
+            'paymentStatus': 'paid',
+            'depositStatus': 'confirmed',
+            'paidAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           });
+
+      // Đồng bộ projection deposits để các màn đang đọc deposits vẫn khớp
+      await FirebaseFirestore.instance
+          .collection('deposits')
+          .doc(_transactionId)
+          .set({
+            'depositId': _transactionId,
+            'transactionId': _transactionId,
+            'paymentMethod': 'vietqr',
+            'depositStatus': 'confirmed',
+            'paymentStatus': 'paid',
+            'depositAmount': widget.amount,
+            'depositDate': FieldValue.serverTimestamp(),
+            'carName': widget.carName,
+            'carBrand': widget.carData['carBrand'] ?? '',
+            'carImage': widget.carData['carImage'] ?? '',
+            'customerName': widget.carData['customerName'] ?? '',
+            'customerPhone': widget.carData['customerPhone'] ?? '',
+            'customerEmail': widget.customerEmail,
+            'customerAddress': widget.carData['address'] ?? '',
+            'notes': widget.carData['notes'] ?? '',
+            'showroomName': widget.carData['showroom']?['name'] ?? '',
+            'showroomAddress': widget.carData['showroom']?['address'] ?? '',
+            'userPhone': widget.phoneNumber,
+            'userProvider': provider,
+            'userProfilePath': profileRef?.path ?? '',
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
 
       // ✅ TỰ TẠO WARRANTY PENDING KHI ĐẶT CỌC THÀNH CÔNG
       final warrantyPhone = widget.phoneNumber.trim();
@@ -707,18 +744,29 @@ class _VietQRScreenState extends State<VietQRScreen>
   // Helper widget cho chi tiết trong success dialog
   Widget _buildSuccessDetailRow(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.leagueSpartan(color: Colors.white70, fontSize: 14),
+        SizedBox(
+          width: 92,
+          child: Text(
+            label,
+            style: GoogleFonts.leagueSpartan(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
         ),
-        Text(
-          value,
-          style: GoogleFonts.leagueSpartan(
-            color: _accentColor,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.leagueSpartan(
+              color: _accentColor,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -911,8 +959,11 @@ class _VietQRScreenState extends State<VietQRScreen>
           const SizedBox(height: 20),
 
           // Amount
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -952,7 +1003,6 @@ class _VietQRScreenState extends State<VietQRScreen>
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -1444,46 +1494,65 @@ class _VietQRScreenState extends State<VietQRScreen>
                           ]
                         : null,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Stack(
                     children: [
-                      // Bank logo with improved design
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: _getBankColor(bank['id']!),
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getBankColor(
-                                bank['id']!,
-                              ).withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Bank logo with improved design
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: _getBankColor(bank['id']!),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _getBankColor(
+                                      bank['id']!,
+                                    ).withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: _buildBankIcon(bank['id']!),
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              child: Text(
+                                bank['shortName']!,
+                                style: GoogleFonts.leagueSpartan(
+                                  color: isSelected
+                                      ? _accentColor
+                                      : Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
-                        child: _buildBankIcon(bank['id']!),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        bank['shortName']!,
-                        style: GoogleFonts.leagueSpartan(
-                          color: isSelected ? _accentColor : Colors.white,
-                          fontSize: 11,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.w600,
+                      if (isSelected)
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: Icon(
+                            Icons.check_circle,
+                            color: _accentColor,
+                            size: 14,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(height: 4),
-                        Icon(Icons.check_circle, color: _accentColor, size: 16),
-                      ],
                     ],
                   ),
                 ),
@@ -1519,7 +1588,7 @@ class _VietQRScreenState extends State<VietQRScreen>
       case 'VCB':
         return const Color(0xFF007A33);
       case 'BIDV':
-        return const Color(0xFF1E3A8A);
+        return const Color(0xFF223861);
       case 'VTB':
         return const Color(0xFF0066CC);
       case 'AGR':

@@ -30,7 +30,7 @@ class _CarImageSliderState extends State<CarImageSlider> {
     final normalized = path.trim();
     if (normalized.isEmpty) {
       return Container(
-        color: Colors.grey[900],
+        color: const Color(0xFF223861),
         child: const Center(
           child: Icon(Icons.directions_car, color: Colors.white24, size: 60),
         ),
@@ -45,7 +45,7 @@ class _CarImageSliderState extends State<CarImageSlider> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: Colors.grey[900],
+                color: const Color(0xFF223861),
                 child: const Center(
                   child: Icon(
                     Icons.directions_car,
@@ -63,7 +63,7 @@ class _CarImageSliderState extends State<CarImageSlider> {
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: Colors.grey[900],
+                color: const Color(0xFF223861),
                 child: const Center(
                   child: Icon(
                     Icons.directions_car,
@@ -121,7 +121,7 @@ class _CarImageSliderState extends State<CarImageSlider> {
             ClipRRect(
               borderRadius: radius,
               child: Container(
-                color: Colors.grey[900],
+                color: const Color(0xFF223861),
                 child: const Center(
                   child: Icon(
                     Icons.directions_car,

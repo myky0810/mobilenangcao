@@ -201,7 +201,7 @@ class NotificationModel {
       case 'chat_rejected':
         return Colors.redAccent;
       default:
-        return Colors.grey;
+        return const Color(0xFF9E9E9E);
     }
   }
 }

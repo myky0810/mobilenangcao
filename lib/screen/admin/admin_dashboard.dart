@@ -34,6 +34,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return value.count ?? 0;
   }
 
+  Future<int> _countCollectionGroup(String collection) async {
+    final value = await FirebaseFirestore.instance
+        .collectionGroup(collection)
+        .count()
+        .get();
+    return value.count ?? 0;
+  }
+
   Future<int> _countWhere(
     String collection,
     String field,
@@ -47,21 +55,69 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return value.count ?? 0;
   }
 
-  Future<double> _sumConfirmedDeposits() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('deposits')
-        .where('depositStatus', isEqualTo: 'confirmed')
-        .get();
+  bool _isDepositTransaction(Map<String, dynamic> tx) {
+    final kind = (tx['kind'] ?? tx['type'] ?? tx['flow'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (kind == 'deposit' || kind == 'car_deposit') return true;
 
-    var total = 0.0;
-    for (final doc in snapshot.docs) {
-      final data = doc.data();
-      final raw = data['depositAmount'];
-      if (raw is num) {
-        total += raw.toDouble();
-      }
+    final transferContent = (tx['transferContent'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (transferContent.contains('dat coc') ||
+        transferContent.contains('đặt cọc')) {
+      return true;
     }
-    return total;
+
+    final amount = tx['amount'] ?? tx['depositAmount'] ?? tx['totalAmount'];
+    final hasAmount = _amountToDouble(amount) > 0;
+    final hasCar = (tx['carName'] ?? '').toString().trim().isNotEmpty;
+    final hasContact = (tx['customerPhone'] ?? tx['userPhone'] ?? '')
+        .toString()
+        .trim()
+        .isNotEmpty;
+
+    return hasAmount && hasCar && hasContact;
+  }
+
+  String _normalizeDepositStatusFromTransaction(Map<String, dynamic> tx) {
+    final explicit = (tx['depositStatus'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (explicit.isNotEmpty) return explicit;
+
+    final payment = (tx['paymentStatus'] ?? tx['status'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+
+    if (payment == 'paid' ||
+        payment == 'success' ||
+        payment == 'completed' ||
+        payment == 'confirmed') {
+      return 'confirmed';
+    }
+
+    if (payment == 'cancelled' ||
+        payment == 'canceled' ||
+        payment == 'failed' ||
+        payment == 'timeout' ||
+        payment == 'expired') {
+      return 'cancelled';
+    }
+
+    return 'pending';
+  }
+
+  double _amountToDouble(dynamic raw) {
+    if (raw == null) return 0;
+    if (raw is num) return raw.toDouble();
+    final cleaned = raw.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+    if (cleaned.isEmpty) return 0;
+    return double.tryParse(cleaned) ?? 0;
   }
 
   Future<Map<String, dynamic>> _loadDashboardStats() async {
@@ -69,25 +125,41 @@ class _AdminDashboardState extends State<AdminDashboard> {
       final values = await Future.wait<dynamic>([
         _countCollection('users'),
         _countCollection('products'),
-        _countCollection('deposits'),
         _countCollection('test_drive_bookings'),
-        _countCollection('warranties'),
+        _countCollectionGroup('warranties'),
         _countCollection('notifications'),
-        _countWhere('deposits', 'depositStatus', 'pending'),
         _countWhere('test_drive_bookings', 'status', 'pending'),
-        _sumConfirmedDeposits(),
+        FirebaseFirestore.instance.collection('transactions').get(),
       ]);
+
+      final transactionsSnap = values[6] as QuerySnapshot<Map<String, dynamic>>;
+      final depositTransactions = transactionsSnap.docs
+          .map((doc) => doc.data())
+          .where(_isDepositTransaction)
+          .toList();
+
+      var pendingDeposits = 0;
+      var totalDepositsAmount = 0.0;
+      for (final tx in depositTransactions) {
+        final status = _normalizeDepositStatusFromTransaction(tx);
+        if (status == 'pending') pendingDeposits += 1;
+        if (status == 'confirmed') {
+          final amount =
+              tx['amount'] ?? tx['depositAmount'] ?? tx['totalAmount'];
+          totalDepositsAmount += _amountToDouble(amount);
+        }
+      }
 
       return {
         'users': values[0] as int,
         'products': values[1] as int,
-        'deposits': values[2] as int,
-        'bookings': values[3] as int,
-        'warranties': values[4] as int,
-        'notifications': values[5] as int,
-        'pendingDeposits': values[6] as int,
-        'pendingBookings': values[7] as int,
-        'totalDepositsAmount': values[8] as double,
+        'deposits': depositTransactions.length,
+        'bookings': values[2] as int,
+        'warranties': values[3] as int,
+        'notifications': values[4] as int,
+        'pendingDeposits': pendingDeposits,
+        'pendingBookings': values[5] as int,
+        'totalDepositsAmount': totalDepositsAmount,
         'loadedAt': DateTime.now(),
       };
     } catch (_) {

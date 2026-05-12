@@ -21,7 +21,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
   static const Color _danger = Color(0xFFEF4444);
 
   final CollectionReference<Map<String, dynamic>> _bookingsRef =
-      FirebaseFirestore.instance.collection('bookings');
+      FirebaseFirestore.instance.collection('test_drive_bookings');
   final TextEditingController _searchController = TextEditingController();
 
   String _filterStatus = 'all';
@@ -142,7 +142,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
-                      'Không thể tải lịch đặt cọc: ${snapshot.error}',
+                      'Không thể tải lịch đăng ký lái thử: ${snapshot.error}',
                       style: const TextStyle(color: Colors.white),
                     ),
                   );
@@ -227,22 +227,19 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
         ),
         _buildStatCard(
           title: 'Hôm nay',
-          value:
-              '${stats['todayCount']} lịch | ${_formatCurrency(stats['todayRevenue'] as double)}',
+          value: '${stats['todayCount']} lịch',
           color: const Color(0xFF38BDF8),
           fullWidth: true,
         ),
         _buildStatCard(
           title: 'Tháng này',
-          value:
-              '${stats['monthCount']} lịch | ${_formatCurrency(stats['monthRevenue'] as double)}',
+          value: '${stats['monthCount']} lịch',
           color: const Color(0xFF22D3EE),
           fullWidth: true,
         ),
         _buildStatCard(
           title: 'Năm nay',
-          value:
-              '${stats['yearCount']} lịch | ${_formatCurrency(stats['yearRevenue'] as double)}',
+          value: '${stats['yearCount']} lịch',
           color: const Color(0xFF4ADE80),
           fullWidth: true,
         ),
@@ -253,19 +250,19 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
   Future<void> _runMigrateBookings() async {
     setState(() => _isMigrating = true);
     try {
-      final result = await AdminMigrationService.migrateBookings();
+      final result = await AdminMigrationService.migrateTestDriveBookings();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Chuẩn hóa lịch đặt xong: quét ${result['scanned']}, cập nhật ${result['updated']}',
+            'Chuẩn hóa lịch lái thử xong: quét ${result['scanned']}, cập nhật ${result['updated']}',
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Chuẩn hóa lịch đặt thất bại: $e')),
+        SnackBar(content: Text('Chuẩn hóa lịch lái thử thất bại: $e')),
       );
     } finally {
       if (mounted) {
@@ -344,9 +341,8 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     final bookingDate = _extractDate(
       booking['createdAt'] ?? booking['paidAt'] ?? booking['updatedAt'],
     );
-    final depositAmount = _toDouble(
-      booking['depositAmount'] ?? booking['amount'] ?? 0,
-    );
+    final scheduleDate = (booking['date'] ?? '').toString();
+    final scheduleTime = (booking['time'] ?? '').toString();
 
     Color statusColor;
     switch (status) {
@@ -432,7 +428,9 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Tiền cọc: ${_formatCurrency(depositAmount)}',
+            scheduleDate.isEmpty && scheduleTime.isEmpty
+                ? 'Chưa có lịch hẹn cụ thể'
+                : 'Lịch hẹn: $scheduleDate${scheduleTime.isNotEmpty ? ' • $scheduleTime' : ''}',
             style: const TextStyle(color: _accent, fontSize: 12),
           ),
           const SizedBox(height: 4),
@@ -509,8 +507,34 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     final bookingDate = _extractDate(
       booking['createdAt'] ?? booking['paidAt'] ?? booking['updatedAt'],
     );
-    final paidDate = _extractDate(booking['paidAt']);
-    final expiryDate = _extractDate(booking['expiryDate']);
+    final updatedDate = _extractDate(booking['updatedAt']);
+
+    final bookingId =
+        ((booking['bookingId'] ?? '').toString().trim().isNotEmpty)
+        ? (booking['bookingId'] ?? '').toString()
+        : (booking['docId'] ?? '').toString();
+
+    final scheduleDate = (booking['date'] ?? '').toString();
+    final scheduleTime = (booking['time'] ?? '').toString();
+    final scheduleLocation =
+        (booking['location'] ?? booking['customerAddress'] ?? '').toString();
+
+    final customerPhone =
+        (booking['phone'] ??
+                booking['customerPhone'] ??
+                booking['userPhone'] ??
+                '')
+            .toString();
+    final customerEmail =
+        (booking['email'] ??
+                booking['customerEmail'] ??
+                booking['userEmail'] ??
+                '')
+            .toString();
+
+    final showroomName = (booking['showroomName'] ?? '').toString();
+    final showroomAddress = (booking['showroomAddress'] ?? '').toString();
+    final mapsUrl = (booking['googleMapsUrl'] ?? '').toString();
 
     showModalBottomSheet(
       context: context,
@@ -541,7 +565,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Chi tiết booking',
+                    'Chi tiết lịch lái thử',
                     style: GoogleFonts.leagueSpartan(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -553,17 +577,10 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                     'Document ID',
                     (booking['docId'] ?? '').toString(),
                   ),
-                  _buildDetailRow(
-                    'Booking ID',
-                    (booking['bookingId'] ?? '').toString(),
-                  ),
+                  _buildDetailRow('Booking ID', bookingId),
                   _buildDetailRow(
                     'Trạng thái',
                     _statusLabel(_normalizeStatus(booking['status'])),
-                  ),
-                  _buildDetailRow(
-                    'Trạng thái thanh toán',
-                    (booking['paymentStatus'] ?? '').toString(),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -580,20 +597,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                     'Hãng',
                     (booking['carBrand'] ?? '').toString(),
                   ),
-                  _buildDetailRow(
-                    'Giá xe',
-                    (booking['carPrice'] ?? '').toString(),
-                  ),
-                  _buildDetailRow(
-                    'Tổng tiền',
-                    (booking['totalPrice'] ?? '').toString(),
-                  ),
-                  _buildDetailRow(
-                    'Tiền cọc',
-                    _formatCurrency(
-                      _toDouble(booking['depositAmount'] ?? booking['amount']),
-                    ),
-                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Thông tin khách hàng',
@@ -605,27 +608,16 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                   ),
                   const SizedBox(height: 10),
                   _buildDetailRow('Tên', _bookingCustomerName(booking)),
-                  _buildDetailRow(
-                    'SĐT',
-                    (booking['customerPhone'] ?? booking['userPhone'] ?? '')
-                        .toString(),
-                  ),
-                  _buildDetailRow(
-                    'Email',
-                    (booking['customerEmail'] ?? booking['userEmail'] ?? '')
-                        .toString(),
-                  ),
-                  _buildDetailRow(
-                    'Địa chỉ',
-                    (booking['customerAddress'] ?? '').toString(),
-                  ),
+                  _buildDetailRow('SĐT', customerPhone),
+                  _buildDetailRow('Email', customerEmail),
+                  _buildDetailRow('Địa chỉ', scheduleLocation),
                   _buildDetailRow(
                     'Ghi chú',
                     (booking['notes'] ?? '').toString(),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Thông tin showroom và giao dịch',
+                    'Lịch hẹn và showroom',
                     style: GoogleFonts.leagueSpartan(
                       color: Colors.white,
                       fontSize: 18,
@@ -633,25 +625,17 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildDetailRow(
-                    'Showroom',
-                    (booking['showroomName'] ?? '').toString(),
-                  ),
-                  _buildDetailRow(
-                    'Địa chỉ showroom',
-                    (booking['showroomAddress'] ?? '').toString(),
-                  ),
-                  _buildDetailRow(
-                    'Transaction ID',
-                    (booking['transactionId'] ?? '').toString(),
-                  ),
-                  _buildDetailRow(
-                    'Phương thức',
-                    (booking['paymentMethod'] ?? '').toString(),
-                  ),
+                  _buildDetailRow('Ngày hẹn', scheduleDate),
+                  _buildDetailRow('Giờ hẹn', scheduleTime),
+                  _buildDetailRow('Địa điểm mong muốn', scheduleLocation),
+                  _buildDetailRow('Showroom', showroomName),
+                  _buildDetailRow('Địa chỉ showroom', showroomAddress),
+                  _buildDetailRow('Google Maps URL', mapsUrl),
                   _buildDetailRow('Ngày tạo', _formatDateTime(bookingDate)),
-                  _buildDetailRow('Ngày thanh toán', _formatDateTime(paidDate)),
-                  _buildDetailRow('Hết hạn', _formatDateTime(expiryDate)),
+                  _buildDetailRow(
+                    'Cập nhật gần nhất',
+                    _formatDateTime(updatedDate),
+                  ),
                 ],
               ),
             ),
@@ -662,6 +646,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final display = value.trim().isEmpty ? '-' : value;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -676,7 +661,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
           ),
           Expanded(
             child: Text(
-              value,
+              display,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,

@@ -39,6 +39,7 @@ import 'package:doan_cuoiki/screen/AIChat.dart';
 import 'package:doan_cuoiki/screen/user_live_chat.dart';
 import 'package:doan_cuoiki/screen/deposit_screen.dart';
 import 'package:doan_cuoiki/screen/mycar.dart';
+import 'package:doan_cuoiki/screen/elite_members.dart';
 import 'package:doan_cuoiki/screen/admin/admin_screen.dart';
 import 'package:doan_cuoiki/firebase_options.dart';
 import 'package:doan_cuoiki/models/car_detail.dart';
@@ -109,8 +110,8 @@ class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
 
     try {
       final normalizedPhone = widget.phoneNumber.contains('@')
-        ? widget.phoneNumber.trim().toLowerCase()
-        : FirebaseHelper.normalizePhone(widget.phoneNumber);
+          ? widget.phoneNumber.trim().toLowerCase()
+          : FirebaseHelper.normalizePhone(widget.phoneNumber);
 
       final usersRef = FirebaseFirestore.instance.collection('users');
 
@@ -133,7 +134,7 @@ class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
       if (remoteRole != null && remoteRole.isNotEmpty) {
         role = remoteRole;
       }
-      
+
       debugPrint('👤 User role: $role');
 
       if (!mounted) return;
@@ -171,11 +172,7 @@ class _RoleBasedRouterLoaderState extends State<_RoleBasedRouterLoader> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
@@ -203,29 +200,45 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const Welcome(),
         '/admin': (context) {
-          final phoneNumber = ModalRoute.of(context)!.settings.arguments as String?;
+          final phoneNumber =
+              ModalRoute.of(context)!.settings.arguments as String?;
           return AdminScreen(phoneNumber: phoneNumber);
         },
         '/home': (context) {
           try {
             final args = ModalRoute.of(context)!.settings.arguments;
             String? phoneNumber;
+            bool forceRoleCheck = false;
 
             if (args is String) {
               phoneNumber = args;
             } else if (args is Map<String, dynamic>) {
               phoneNumber = args['phoneNumber'] as String?;
+              forceRoleCheck = args['forceRoleCheck'] == true;
             }
 
-            debugPrint('🏠 Home route - phoneNumber: $phoneNumber');
+            final normalizedPhone = (phoneNumber == null || phoneNumber.isEmpty)
+                ? phoneNumber
+                : (phoneNumber.contains('@')
+                      ? phoneNumber.trim().toLowerCase()
+                      : FirebaseHelper.normalizePhone(phoneNumber));
 
-            if (phoneNumber == null || phoneNumber.isEmpty) {
+            debugPrint(
+              '🏠 Home route - phoneNumber: $normalizedPhone, forceRoleCheck: $forceRoleCheck',
+            );
+
+            if (normalizedPhone == null || normalizedPhone.isEmpty) {
               debugPrint('🏠 Loading HomeScreen (no phone)');
-              return HomeScreen(phoneNumber: phoneNumber);
+              return HomeScreen(phoneNumber: normalizedPhone);
             }
 
-            // Return placeholder, will navigate via Navigator.pushReplacementNamed in initState
-            return _RoleBasedRouterLoader(phoneNumber: phoneNumber);
+            if (forceRoleCheck) {
+              // Keep role check for login entry flow only.
+              return _RoleBasedRouterLoader(phoneNumber: normalizedPhone);
+            }
+
+            // Default path for in-app navigation: no loader, go straight to HomeScreen.
+            return HomeScreen(phoneNumber: normalizedPhone);
           } catch (e) {
             debugPrint('❌ Home route error: $e');
             return Scaffold(
@@ -436,6 +449,11 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments;
           final phoneNumber = args is String ? args : null;
           return MyCarScreen(phoneNumber: phoneNumber);
+        },
+        EliteMembersScreen.routeName: (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final phoneNumber = args is String ? args : null;
+          return EliteMembersScreen(phoneNumber: phoneNumber);
         },
       },
     );

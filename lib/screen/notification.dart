@@ -19,12 +19,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
   List<NotificationModel> _notifications = [];
   bool _isLoading = true;
 
-  static const Color _pageBg = Color(0xFF252525);
+  static const Color _pageBg = Color(0xFF1E335A);
   static const List<Color> _pageBgGradient = [
-    Color(0xFF545454),
-    Color(0xFF3A3A3A),
-    Color(0xFF252525),
-    Color(0xFF171717),
+    Color(0xFF263D67),
+    Color(0xFF223861),
+    Color(0xFF1E335A),
+    Color(0xFF1B2F55),
   ];
 
   @override
@@ -139,7 +139,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             icon: const Icon(Icons.refresh_rounded),
             label: const Text('Làm mới'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3A3A3A),
+              backgroundColor: const Color(0xFF223861),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -192,7 +192,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       decoration: BoxDecoration(
         color: notification.isRead
             ? const Color(0xFF121212)
-            : const Color(0xFF171717),
+            : const Color(0xFF121A2B),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: notification.isRead
@@ -347,7 +347,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       case 'system':
         return Colors.purple;
       default:
-        return Colors.grey;
+        return const Color(0xFF9E9E9E);
     }
   }
 

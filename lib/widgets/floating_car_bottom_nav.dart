@@ -10,7 +10,7 @@ class FloatingCarBottomNav extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.onTap,
-    this.backgroundColor = const Color(0xFF1A1A1A),
+    this.backgroundColor = const Color(0xFF121A2B),
     this.transparentPill = false,
     this.horizontalPadding = 18,
     this.verticalPadding = 10,

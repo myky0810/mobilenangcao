@@ -18,6 +18,7 @@ class CarCard extends StatefulWidget {
   final String? phoneNumber;
   final bool isNew;
   final String description;
+  final String? videoUrl;
   final VoidCallback? onTap;
   final bool showBrandBadge;
 
@@ -35,6 +36,7 @@ class CarCard extends StatefulWidget {
     this.phoneNumber,
     this.isNew = false,
     this.description = '',
+    this.videoUrl,
     this.onTap,
     this.showBrandBadge = true,
   });
@@ -57,6 +59,8 @@ class CarCard extends StatefulWidget {
       reviewCount: (map['reviewCount'] as int?) ?? 50,
       isNew: map['isNew'] as bool? ?? false,
       description: map['description'] as String? ?? '',
+        videoUrl: (map['videoUrl'] ?? map['video'] ?? map['carVideo'])
+          ?.toString(),
       phoneNumber: phoneNumber,
       onTap: onTap,
       showBrandBadge: showBrandBadge,
@@ -136,6 +140,7 @@ class _CarCardState extends State<CarCard> {
         'reviewCount': _displayReviewCount,
         'isNew': widget.isNew,
         'description': widget.description,
+        'videoUrl': widget.videoUrl,
       };
 
       if (_isFavorite) {
@@ -194,6 +199,7 @@ class _CarCardState extends State<CarCard> {
         reviewCount: _displayReviewCount,
         rating: _displayRating,
         isNew: widget.isNew,
+        videoUrl: widget.videoUrl,
         phoneNumber: widget.phoneNumber,
       );
 

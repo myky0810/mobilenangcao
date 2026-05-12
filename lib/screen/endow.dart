@@ -16,16 +16,16 @@ class EndowScreen extends StatefulWidget {
 }
 
 class _EndowScreenState extends State<EndowScreen> {
-  static const _bgBase = Color(0xFF252525);
+  static const _bgBase = Color(0xFF1E335A);
 
   static const _bgGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF545454),
-      Color(0xFF3A3A3A),
-      Color(0xFF252525),
-      Color(0xFF171717),
+      Color(0xFF263D67),
+      Color(0xFF223861),
+      Color(0xFF1E335A),
+    Color(0xFF1B2F55),
     ],
     stops: [0.0, 0.35, 0.75, 1.0],
   );
@@ -369,7 +369,7 @@ class _EndowScreenState extends State<EndowScreen> {
   Widget _buildNotificationItem(NotificationModel notification) {
     return Container(
       color: notification.isRead
-          ? const Color(0xFF252525)
+          ? const Color(0xFF1E335A)
           : const Color(0xFF2F2F2F),
       child: Material(
         color: Colors.transparent,
@@ -510,7 +510,7 @@ class _EndowScreenState extends State<EndowScreen> {
       child: Container(
         height: 70,
         decoration: BoxDecoration(
-          color: const Color(0xFF1a1a1a),
+          color: const Color(0xFF1B2F55),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
@@ -844,7 +844,7 @@ class _EndowScreenState extends State<EndowScreen> {
   void _showNotificationOptions(NotificationModel notification) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF333333),
+      backgroundColor: const Color(0xFF1E335A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -917,7 +917,7 @@ class _EndowScreenState extends State<EndowScreen> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        backgroundColor: const Color(0xFF333333),
+        backgroundColor: const Color(0xFF1E335A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -963,7 +963,7 @@ class _EndowScreenState extends State<EndowScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF444444),
+                    color: Colors.grey[800],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(

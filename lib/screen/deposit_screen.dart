@@ -1254,7 +1254,7 @@ class _DepositScreenState extends State<DepositScreen> {
                 borderRadius: BorderRadius.circular(14),
               ),
               elevation: 0,
-              disabledBackgroundColor: Colors.grey,
+              disabledBackgroundColor: Colors.grey[500],
             ),
             child: _isLoading
                 ? const SizedBox(

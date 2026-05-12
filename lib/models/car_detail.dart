@@ -10,6 +10,7 @@ class CarDetailData {
   final int reviewCount;
   final bool isNew;
   final String? phoneNumber;
+  final String? videoUrl;
   final String? category;
   final String? seats;
   final String? fuelType;
@@ -32,6 +33,7 @@ class CarDetailData {
     required this.reviewCount,
     required this.isNew,
     this.phoneNumber,
+    this.videoUrl,
     this.category,
     this.seats,
     this.fuelType,
@@ -123,6 +125,9 @@ class CarDetailData {
       reviewCount: parseReviewCount(map['reviewCount']),
       isNew: map['isNew'] == true,
       phoneNumber: (map['phoneNumber'] as String?)?.trim(),
+        videoUrl: (map['videoUrl'] ?? map['video'] ?? map['carVideo'])
+          ?.toString()
+          .trim(),
       category: (map['category'] as String?)?.trim(),
       seats: (map['seats'] as String?)?.trim(),
       fuelType: (map['fuelType'] as String?)?.trim(),
@@ -148,6 +153,7 @@ class CarDetailData {
       'reviewCount': reviewCount,
       'isNew': isNew,
       'phoneNumber': phoneNumber,
+      'videoUrl': videoUrl,
       'category': category,
       'seats': seats,
       'fuelType': fuelType,

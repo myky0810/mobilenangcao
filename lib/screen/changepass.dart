@@ -15,7 +15,7 @@ class ChangePassScreen extends StatefulWidget {
 
 class _ChangePassScreenState extends State<ChangePassScreen> {
   // Match admin background tone from chat screen
-  static const Color _showroomBase = Color(0xFF1E2A47);
+  static const Color _showroomBase = Color(0xFF1E335A);
   static const List<Color> _showroomGradient = [
     _showroomBase,
     _showroomBase,

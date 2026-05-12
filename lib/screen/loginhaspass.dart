@@ -100,7 +100,10 @@ class _LoginHasPassScreenState extends State<LoginHasPassScreen>
           context,
           '/home',
           (route) => false,
-          arguments: '+84$phone',
+          arguments: {
+            'phoneNumber': '+84$phone',
+            'forceRoleCheck': true,
+          },
         );
       } catch (e) {
         debugPrint('❌ Navigation error: $e');

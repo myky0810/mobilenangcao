@@ -337,7 +337,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _primaryColor,
-                      disabledBackgroundColor: Colors.grey.shade800,
+                      disabledBackgroundColor: Colors.grey[800],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28),
                       ),
@@ -528,41 +528,57 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Xe:',
-                            style: GoogleFonts.leagueSpartan(
-                              color: _primaryColor,
-                              fontWeight: FontWeight.w600,
+                          SizedBox(
+                            width: 64,
+                            child: Text(
+                              'Xe:',
+                              style: GoogleFonts.leagueSpartan(
+                                color: _primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          Text(
-                            widget.carName,
-                            style: GoogleFonts.leagueSpartan(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Text(
+                              widget.carName,
+                              style: GoogleFonts.leagueSpartan(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.right,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Số tiền:',
-                            style: GoogleFonts.leagueSpartan(
-                              color: _primaryColor,
-                              fontWeight: FontWeight.w600,
+                          SizedBox(
+                            width: 64,
+                            child: Text(
+                              'Số tiền:',
+                              style: GoogleFonts.leagueSpartan(
+                                color: _primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          Text(
-                            '${widget.amount.toStringAsFixed(0)} VNĐ',
-                            style: GoogleFonts.leagueSpartan(
-                              color: _accentColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          Expanded(
+                            child: Text(
+                              '${widget.amount.toStringAsFixed(0)} VNĐ',
+                              style: GoogleFonts.leagueSpartan(
+                                color: _accentColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              textAlign: TextAlign.right,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -657,21 +673,46 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       try {
         // Lưu booking data vào Firestore
         if (widget.bookingData != null) {
+          final transactionId = 'PM${DateTime.now().millisecondsSinceEpoch}';
+          final paidAt = FieldValue.serverTimestamp();
+
+          final transactionData = {
+            ...widget.bookingData!,
+            'transactionId': transactionId,
+            'kind': 'deposit',
+            'source': 'payment_methods',
+            'paymentMethod': _selectedPaymentMethod,
+            'amount': widget.amount,
+            'status': 'paid',
+            'paymentStatus': 'paid',
+            'depositStatus': 'confirmed',
+            'createdAt': FieldValue.serverTimestamp(),
+            'paidAt': paidAt,
+            'updatedAt': FieldValue.serverTimestamp(),
+          };
+
           final depositData = {
             ...widget.bookingData!,
             'paymentMethod': _selectedPaymentMethod,
-            'depositId': DateTime.now().millisecondsSinceEpoch.toString(),
+            'depositId': transactionId,
+            'transactionId': transactionId,
             'depositStatus': 'confirmed',
             'paymentStatus': 'paid',
-            'depositDate': FieldValue.serverTimestamp(),
+            'depositDate': paidAt,
             'expiresAt': Timestamp.fromDate(
               DateTime.now().add(const Duration(days: 7)),
             ),
           };
 
           await FirebaseFirestore.instance
+              .collection('transactions')
+              .doc(transactionId)
+              .set(transactionData, SetOptions(merge: true));
+
+          await FirebaseFirestore.instance
               .collection('deposits')
-              .add(depositData);
+              .doc(transactionId)
+              .set(depositData, SetOptions(merge: true));
 
           // ✅ TỰ TẠO WARRANTY PENDING KHI ĐẶT CỌC THÀNH CÔNG
           final phone = (widget.bookingData?['userPhone'] ?? '')
@@ -688,7 +729,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 showroomAddress:
                     widget.bookingData?['showroom']?['address'] ?? '',
                 bookingId: depositData['depositId'] ?? '',
-                transactionId: '',
+                transactionId: transactionId,
               );
             } catch (e) {
               debugPrint('⚠️ Warranty creation failed: $e');

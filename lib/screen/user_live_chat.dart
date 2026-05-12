@@ -20,8 +20,8 @@ class UserLiveChatScreen extends StatefulWidget {
 }
 
 class _UserLiveChatScreenState extends State<UserLiveChatScreen> {
-  static const Color _bg = Color(0xFF111827);
-  static const Color _card = Color(0xFF1F2937);
+  static const Color _bg = Color(0xFF1E335A);
+  static const Color _card = Color(0xFF1B2F55);
   static const Color _accent = Color(0xFF00E676);
 
   late final TextEditingController _messageController;

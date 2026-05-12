@@ -466,7 +466,7 @@ class _MapScreenState extends State<MapScreen> {
     int selectedIndex,
   ) {
     const primaryBlue = Color(0xFF4285F4);
-    const altGray = Color(0xFF9E9E9E);
+    const altBlue = Color(0xFF757575);
 
     final set = <Polyline>{};
     for (var i = 0; i < routes.length; i++) {
@@ -476,7 +476,7 @@ class _MapScreenState extends State<MapScreen> {
         Polyline(
           polylineId: PolylineId('route_$i'),
           points: points,
-          color: isSelected ? primaryBlue : altGray,
+          color: isSelected ? primaryBlue : altBlue,
           width: isSelected ? 7 : 4,
           zIndex: isSelected ? 2 : 1,
         ),
@@ -841,7 +841,7 @@ class _MapScreenState extends State<MapScreen> {
                                 _formatDistance(distanceMeters),
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey.shade700,
+                                  color: const Color(0xFF616161),
                                 ),
                               ),
                               if (selected)

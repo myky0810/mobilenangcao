@@ -186,9 +186,9 @@ class _CreatePassScreenState extends State<CreatePassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E2A47),
+      backgroundColor: const Color(0xFF1E335A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E2A47),
+        backgroundColor: const Color(0xFF1E335A),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),

@@ -20,11 +20,11 @@ class WarrantyScreen extends StatefulWidget {
 
 class _WarrantyScreenState extends State<WarrantyScreen> {
   // ── Colors ──
-  // Match HomeScreen background (gray premium)
-  static const _bg = Color(0xFF252525);
+  // Match HomeScreen background (blue premium)
+  static const _bg = Color(0xFF1E335A);
   static const _card = Color(0xFF141822);
   static const _accent = Color(0xFF3B82F6);
-  static const _cardSurface = Color(0xFF14161B);
+  static const _cardSurface = Color(0xFF121A2B);
 
   String? get _userId {
     final phone = widget.phoneNumber;

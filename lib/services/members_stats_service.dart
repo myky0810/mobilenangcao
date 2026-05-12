@@ -5,8 +5,8 @@ import '../data/firebase_helper.dart';
 /// Aggregates Elite Members stats from Firestore and persists a compact summary.
 ///
 /// Data sources in this repo:
-/// - Deposits flow: `deposits` collection (some flows) and `bookings` collection
-///   (VietQR flow saves paid info in bookings).
+/// - Deposits flow: `transactions` is the source of truth.
+/// - `deposits` is treated as a legacy/projection fallback only.
 /// - Test drive registration: `test_drive_bookings` collection.
 ///
 /// Summary is stored at:
@@ -47,16 +47,35 @@ class MembersStatsService {
       }
     }
 
+    final transactionsSnap = await safeGet('transactions');
     final depositsSnap = await safeGet('deposits');
-    final bookingsSnap = await safeGet('bookings');
     final testDriveSnap = await safeGet('test_drive_bookings');
 
-    final paidAgg = _aggregatePaidInvestments(
-      userId: normalized,
-      snaps: [
-        if (depositsSnap != null) depositsSnap,
-        if (bookingsSnap != null) bookingsSnap,
+    final paidFromTransactions = (transactionsSnap == null)
+        ? _PaidAgg.empty()
+        : _aggregatePaidTransactions(
+            userId: normalized,
+            snap: transactionsSnap,
+          );
+
+    final paidFromLegacyDeposits = (depositsSnap == null)
+        ? _PaidAgg.empty()
+        : _aggregateLegacyDeposits(
+            userId: normalized,
+            snap: depositsSnap,
+            knownTransactionIds: paidFromTransactions.referenceIds,
+          );
+
+    final paidAgg = _PaidAgg(
+      totalVnd: paidFromTransactions.totalVnd + paidFromLegacyDeposits.totalVnd,
+      activities: [
+        ...paidFromTransactions.activities,
+        ...paidFromLegacyDeposits.activities,
       ],
+      referenceIds: {
+        ...paidFromTransactions.referenceIds,
+        ...paidFromLegacyDeposits.referenceIds,
+      },
     );
 
     final testDriveAgg = (testDriveSnap == null)
@@ -97,66 +116,162 @@ class MembersStatsService {
     }, SetOptions(merge: true));
   }
 
-  static _PaidAgg _aggregatePaidInvestments({
+  static _PaidAgg _aggregatePaidTransactions({
     required String userId,
-    required List<QuerySnapshot<Map<String, dynamic>>> snaps,
+    required QuerySnapshot<Map<String, dynamic>> snap,
   }) {
     var total = 0.0;
     final activities = <Map<String, dynamic>>[];
+    final referenceIds = <String>{};
 
-    for (final snap in snaps) {
-      for (final doc in snap.docs) {
-        final data = doc.data();
+    for (final doc in snap.docs) {
+      final data = doc.data();
+      if (!_isDepositTransaction(data)) continue;
 
-        final rawPhone =
-            (data['customerPhone'] ??
-                    data['userPhone'] ??
-                    data['phoneNumber'] ??
-                    data['userId'])
-                ?.toString();
-        if (rawPhone == null || rawPhone.trim().isEmpty) continue;
-        if (FirebaseHelper.normalizePhone(rawPhone) != userId) continue;
+      final rawPhone =
+          (data['customerPhone'] ?? data['userPhone'] ?? data['phoneNumber'])
+              ?.toString();
+      if (rawPhone == null || rawPhone.trim().isEmpty) continue;
+      if (FirebaseHelper.normalizePhone(rawPhone) != userId) continue;
 
-        final paymentStatus = (data['paymentStatus'] ?? data['status'])
-            ?.toString()
-            .toLowerCase();
-        final isPaid = paymentStatus == 'paid' || paymentStatus == 'success';
-        if (!isPaid) continue;
+      if (!_isPaid(data)) continue;
 
-        final amountRaw =
-            data['depositAmount'] ??
-            data['amount'] ??
-            data['totalAmount'] ??
-            data['totalPrice'] ??
-            0;
-        final amount = (amountRaw is num)
-            ? amountRaw.toDouble()
-            : double.tryParse(amountRaw.toString()) ?? 0.0;
-        if (amount <= 0) continue;
+      final amountRaw = data['amount'] ?? data['depositAmount'] ?? 0;
+      final amount = _toDouble(amountRaw);
+      if (amount <= 0) continue;
 
-        total += amount;
+      total += amount;
 
-        final ts = _bestTimestamp(data, [
-          'paidAt',
-          'depositDate',
-          'updatedAt',
-          'createdAt',
-          'date',
-        ]);
+      final txId = (data['transactionId'] ?? doc.id).toString().trim();
+      if (txId.isNotEmpty) {
+        referenceIds.add(txId);
+      }
 
-        if (ts != null) {
-          activities.add({
-            'type': 'deposit',
-            'refCollection': doc.reference.parent.id,
-            'refId': doc.id,
-            'amountVnd': amount,
-            'date': ts,
-          });
-        }
+      final ts = _bestTimestamp(data, ['paidAt', 'updatedAt', 'createdAt']);
+      if (ts != null) {
+        activities.add({
+          'type': 'deposit',
+          'refCollection': 'transactions',
+          'refId': doc.id,
+          'amountVnd': amount,
+          'date': ts,
+        });
       }
     }
 
-    return _PaidAgg(totalVnd: total, activities: activities);
+    return _PaidAgg(
+      totalVnd: total,
+      activities: activities,
+      referenceIds: referenceIds,
+    );
+  }
+
+  static _PaidAgg _aggregateLegacyDeposits({
+    required String userId,
+    required QuerySnapshot<Map<String, dynamic>> snap,
+    required Set<String> knownTransactionIds,
+  }) {
+    var total = 0.0;
+    final activities = <Map<String, dynamic>>[];
+    final referenceIds = <String>{};
+
+    for (final doc in snap.docs) {
+      final data = doc.data();
+
+      final rawPhone =
+          (data['customerPhone'] ?? data['userPhone'] ?? data['phoneNumber'])
+              ?.toString();
+      if (rawPhone == null || rawPhone.trim().isEmpty) continue;
+      if (FirebaseHelper.normalizePhone(rawPhone) != userId) continue;
+
+      final txId = (data['transactionId'] ?? data['depositId'] ?? '')
+          .toString()
+          .trim();
+      if (txId.isNotEmpty && knownTransactionIds.contains(txId)) {
+        continue;
+      }
+
+      if (!_isPaid(data)) continue;
+
+      final amountRaw =
+          data['depositAmount'] ?? data['amount'] ?? data['totalAmount'] ?? 0;
+      final amount = _toDouble(amountRaw);
+      if (amount <= 0) continue;
+
+      total += amount;
+      if (txId.isNotEmpty) {
+        referenceIds.add(txId);
+      }
+
+      final ts = _bestTimestamp(data, [
+        'depositDate',
+        'paidAt',
+        'updatedAt',
+        'createdAt',
+      ]);
+      if (ts != null) {
+        activities.add({
+          'type': 'deposit',
+          'refCollection': 'deposits',
+          'refId': doc.id,
+          'amountVnd': amount,
+          'date': ts,
+        });
+      }
+    }
+
+    return _PaidAgg(
+      totalVnd: total,
+      activities: activities,
+      referenceIds: referenceIds,
+    );
+  }
+
+  static bool _isDepositTransaction(Map<String, dynamic> data) {
+    final kind = (data['kind'] ?? data['type'] ?? data['flow'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (kind == 'deposit' || kind == 'car_deposit') return true;
+
+    final transferContent = (data['transferContent'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+    if (transferContent.contains('dat coc') ||
+        transferContent.contains('đặt cọc')) {
+      return true;
+    }
+
+    final hasCar = (data['carName'] ?? '').toString().trim().isNotEmpty;
+    final hasContact = (data['customerPhone'] ?? data['userPhone'] ?? '')
+        .toString()
+        .trim()
+        .isNotEmpty;
+    final amount = _toDouble(
+      data['amount'] ?? data['depositAmount'] ?? data['totalAmount'],
+    );
+
+    return hasCar && hasContact && amount > 0;
+  }
+
+  static bool _isPaid(Map<String, dynamic> data) {
+    final paymentStatus =
+        (data['paymentStatus'] ?? data['status'] ?? data['depositStatus'])
+            .toString()
+            .toLowerCase();
+    return paymentStatus == 'paid' ||
+        paymentStatus == 'success' ||
+        paymentStatus == 'completed' ||
+        paymentStatus == 'confirmed';
+  }
+
+  static double _toDouble(dynamic raw) {
+    if (raw == null) return 0;
+    if (raw is num) return raw.toDouble();
+    final cleaned = raw.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+    if (cleaned.isEmpty) return 0;
+    return double.tryParse(cleaned) ?? 0;
   }
 
   static _TestDriveAgg _aggregateTestDrives({
@@ -213,9 +328,18 @@ class MembersStatsService {
 }
 
 class _PaidAgg {
-  _PaidAgg({required this.totalVnd, required this.activities});
+  _PaidAgg({
+    required this.totalVnd,
+    required this.activities,
+    required this.referenceIds,
+  });
+
+  factory _PaidAgg.empty() =>
+      _PaidAgg(totalVnd: 0, activities: const [], referenceIds: const {});
+
   final double totalVnd;
   final List<Map<String, dynamic>> activities;
+  final Set<String> referenceIds;
 }
 
 class _TestDriveAgg {

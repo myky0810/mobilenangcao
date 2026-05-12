@@ -23,10 +23,10 @@ class _EliteMembersScreenState extends State<EliteMembersScreen> {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF545454),
-      Color(0xFF3A3A3A),
-      Color(0xFF252525),
-      Color(0xFF171717),
+      Color(0xFF263D67),
+      Color(0xFF223861),
+      Color(0xFF1E335A),
+    Color(0xFF1B2F55),
     ],
     stops: [0.0, 0.35, 0.75, 1.0],
   );

@@ -708,6 +708,22 @@ class _AdminWarrantiesScreenState extends State<AdminWarrantiesScreen> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       } else {
+        final docPath = (warranty['docPath'] ?? '').toString();
+        if (docPath.isNotEmpty) {
+          await FirebaseFirestore.instance.doc(docPath).update({
+            'status': newStatus,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã cập nhật trạng thái thành ${_statusLabel(newStatus)}',
+              ),
+            ),
+          );
+          return;
+        }
+
         final docId = (warranty['docId'] ?? '').toString();
         if (docId.isEmpty) {
           throw Exception('Thiếu document ID để cập nhật trạng thái');

@@ -480,6 +480,40 @@ class AdminMigrationService {
     return result;
   }
 
+  static Future<Map<String, int>> migrateTransactions({
+    bool logRun = true,
+  }) async {
+    final result = await _migrateSimpleCollection(
+      collection: 'transactions',
+      fields: const [
+        'transactionId',
+        'status',
+        'paymentStatus',
+        'depositStatus',
+        'paymentMethod',
+        'amount',
+        'depositAmount',
+        'customerName',
+        'customerPhone',
+        'customerEmail',
+        'carName',
+        'carBrand',
+        'userPhone',
+        'bookingId',
+      ],
+    );
+    if (logRun) {
+      await _safeWriteMigrationLog(
+        mode: 'single',
+        collection: 'transactions',
+        success: true,
+        scanned: result['scanned'] ?? 0,
+        updated: result['updated'] ?? 0,
+      );
+    }
+    return result;
+  }
+
   static Future<Map<String, int>> migrateBookings({bool logRun = true}) async {
     final result = await _migrateSimpleCollection(
       collection: 'bookings',
@@ -505,12 +539,46 @@ class AdminMigrationService {
     return result;
   }
 
-  static Future<Map<String, int>> migrateWarranties({
+  static Future<Map<String, int>> migrateTestDriveBookings({
     bool logRun = true,
   }) async {
     final result = await _migrateSimpleCollection(
-      collection: 'warranties',
+      collection: 'test_drive_bookings',
       fields: const [
+        'status',
+        'name',
+        'phone',
+        'email',
+        'userPhone',
+        'carName',
+        'carBrand',
+        'date',
+        'time',
+        'location',
+        'showroomName',
+        'showroomAddress',
+      ],
+    );
+    if (logRun) {
+      await _safeWriteMigrationLog(
+        mode: 'single',
+        collection: 'test_drive_bookings',
+        success: true,
+        scanned: result['scanned'] ?? 0,
+        updated: result['updated'] ?? 0,
+      );
+    }
+    return result;
+  }
+
+  static Future<Map<String, int>> migrateWarranties({
+    bool logRun = true,
+  }) async {
+    final snapshot = await _db.collectionGroup('warranties').get();
+    var updated = 0;
+
+    for (final doc in snapshot.docs) {
+      final patch = _deleteTrailingSpaceKeys(const [
         'status',
         'customerName',
         'customerPhone',
@@ -519,8 +587,16 @@ class AdminMigrationService {
         'carBrand',
         'vin',
         'licensePlate',
-      ],
-    );
+      ]);
+
+      if (patch.isNotEmpty) {
+        patch['updatedAt'] = FieldValue.serverTimestamp();
+        await doc.reference.update(patch);
+        updated++;
+      }
+    }
+
+    final result = {'scanned': snapshot.docs.length, 'updated': updated};
     if (logRun) {
       await _safeWriteMigrationLog(
         mode: 'single',
@@ -690,7 +766,12 @@ class AdminMigrationService {
     await run('products', () => migrateProducts(logRun: false));
     await run('brands', () => migrateBrands(logRun: false));
     await run('deposits', () => migrateDeposits(logRun: false));
+    await run('transactions', () => migrateTransactions(logRun: false));
     await run('bookings', () => migrateBookings(logRun: false));
+    await run(
+      'test_drive_bookings',
+      () => migrateTestDriveBookings(logRun: false),
+    );
     await run('warranties', () => migrateWarranties(logRun: false));
     await run('notifications', () => migrateNotifications(logRun: false));
     await run('banners', () => migrateBanners(logRun: false));

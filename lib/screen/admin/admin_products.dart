@@ -1186,6 +1186,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     final imageController = TextEditingController(
       text: (product?['image'] ?? product?['carImage'] ?? '').toString(),
     );
+    final videoController = TextEditingController(
+      text: (product?['videoUrl'] ?? product?['video'] ?? product?['carVideo'] ?? '')
+          .toString(),
+    );
     final descController = TextEditingController(
       text: (product?['description'] ?? '').toString(),
     );
@@ -1395,6 +1399,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                       hintText: 'https://example.com/car.jpg',
                     ),
                     _buildTextField(
+                      'URL video (mp4 hoặc gif)',
+                      videoController,
+                      keyboardType: TextInputType.url,
+                      hintText: 'https://example.com/car.mp4 hoặc assets/videos/mercedes.mp4',
+                    ),
+                    _buildTextField(
                       'Gallery URL (mỗi dòng 1 URL)',
                       galleryController,
                       maxLines: 3,
@@ -1446,6 +1456,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                         ? imagePath
                         : (product?['image'] ?? product?['carImage'] ?? '')
                               .toString();
+                    final resolvedVideoUrl = videoController.text.trim().isNotEmpty
+                      ? videoController.text.trim()
+                      : (product?['videoUrl'] ??
+                            product?['video'] ??
+                            product?['carVideo'] ??
+                            '')
+                          .toString();
 
                     final resolvedBrandName = selectedBrandName.trim();
                     final resolvedBrandId = await _resolveBrandId(
@@ -1530,6 +1547,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                           : priceNoteController.text.trim(),
                       'image': resolvedImagePath,
                       'carImage': resolvedImagePath,
+                      'videoUrl': resolvedVideoUrl,
+                      'video': resolvedVideoUrl,
+                      'carVideo': resolvedVideoUrl,
                       'gallery': resolvedGallery,
                       'images': resolvedGallery,
                       'carImages': resolvedGallery,
